@@ -1,0 +1,9 @@
+[submodule "third-party/gsl"]
+	path = thirdparty/gsl
+	url = git@github.com:Microsoft/GSL.git
+[submodule "thirdparty/rapidxml_ns"]
+	path = thirdparty/rapidxml_ns
+	url = git@github.com:svgpp/rapidxml_ns.git
+[submodule "thirdparty/rapidjson"]
+	path = thirdparty/rapidjson
+	url = git@github.com:Tencent/rapidjson.git
