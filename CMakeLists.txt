@@ -13,6 +13,6 @@ if(Boost_FOUND)
     add_compile_options ("-O3")
     add_compile_options ("-mtune=native")
     add_compile_options ("-g")
-    add_executable(test main.cpp fail.hpp utils.hpp netinc.hpp listener.hpp mainClass.hpp include/virt_wrap/Connection.hpp include/virt_wrap/TypesParam.hpp include/virt_wrap/type_ops.hpp include/virt_wrap/AdminConnection.hpp) # List all files that will be compiled
-    target_link_libraries(test ${Boost_LIBRARIES} virt pthread ) # `executable_name` ${Boost_LIBRAIRIES} pthred crypto ssl
+    add_executable(test main.cpp http_wrapper.hpp utils.hpp netinc.hpp include/virt_wrap/Connection.hpp include/virt_wrap/TypesParam.hpp include/virt_wrap/type_ops.hpp include/virt_wrap/AdminConnection.hpp)
+    target_link_libraries(test ${Boost_LIBRARIES} virt pthread )
 endif()
