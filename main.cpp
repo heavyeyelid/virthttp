@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     virConnectPtr conn;
 
     conn = virConnectOpen("qemu:///system");
-    if (conn == NULL) {
+    if (conn == nullptr) {
         std::cout << "Failed to open connection to qemu:///system !\n";
         return 1;
     } else {
