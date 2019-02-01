@@ -7,3 +7,6 @@
 [submodule "thirdparty/rapidjson"]
 	path = thirdparty/rapidjson
 	url = git@github.com:Tencent/rapidjson.git
+[submodule "thirdparty/lift"]
+	path = thirdparty/lift
+	url = git@github.com:rollbear/lift.git

@@ -4,16 +4,14 @@
 #include <exception>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
+#include "fwd.hpp"
+#include "Domain.hpp"
 #include "type_ops.hpp"
+#include "utility.hpp"
 
 namespace virt {
 
-  unsigned long getVersion(){
-    unsigned long ret{};
-    if(virGetVersion(&ret, nullptr, nullptr))
-      throw std::runtime_error{"virGetVersion"};
-    return ret;
-  }
+  unsigned long getVersion();
 
   enum class CredentialType : int {
     AUTHNAME = VIR_CRED_AUTHNAME, // Identify to authorize as
@@ -35,12 +33,7 @@ namespace virt {
       const gsl::czstring<>  defresult; /* Optional default result */
       std::string result{};
 
-      ConnectCredential(const virConnectCredential& in) :
-          type(CredentialType(in.type)),
-          prompt(in.prompt),
-          challenge(in.challenge),
-          defresult(in.defresult) {
-      }
+      ConnectCredential(const virConnectCredential& in) noexcept;
   };
 
   using ConnectAuthCallback = bool (*)(gsl::span<ConnectCredential>);
@@ -50,42 +43,13 @@ namespace virt {
   public:
 
     template <typename Container>
-    inline ConnectionAuth(Container c, Callback callback) : callback(callback) {
-      if constexpr (std::is_same_v<Container, std::vector<CredentialType>>)
-          cred_types = std::forward(c);
-      else {
-        cred_types.reserve(c.size());
-        std::copy(c.begin(), c.end(), std::back_inserter(cred_types));
-      }
-
-    }
+    inline ConnectionAuth(Container c, Callback callback);
 
     inline ConnectionAuth(const ConnectionAuth&) = default;
     inline ConnectionAuth(ConnectionAuth&&) noexcept = default;
 
 
-    explicit operator virConnectAuth() noexcept {
-      virConnectAuth ret;
-      ret.credtype = reinterpret_cast<int*>(cred_types.data());
-      ret.ncredtype = gsl::narrow_cast<unsigned>(cred_types.size());
-      ret.cbdata = reinterpret_cast<void*>(&callback);
-
-      ret.cb = +[](virConnectCredentialPtr creds_ptr, unsigned int ncreds, void* cbdata) -> int {
-        std::vector<ConnectCredential> creds{};
-        creds.reserve(ncreds);
-        std::transform(creds_ptr, creds_ptr + ncreds, std::back_inserter(creds), [](const auto& cred){return ConnectCredential{cred};});
-        const bool ret = (*reinterpret_cast<Callback*>(cbdata))(creds);
-        auto it = creds_ptr;
-        for (const auto& [t, p, c, d, res] : creds){
-          it->result = static_cast<char*>(malloc(it->resultlen = res.length() + 1u));
-          std::copy(res.begin(), res.end(), it->result);
-          ++it;
-        }
-        return ret;
-      };
-
-      return ret;
-    }
+    explicit operator virConnectAuth() noexcept;
 
 
     std::vector<CredentialType> cred_types{};
@@ -97,105 +61,101 @@ namespace virt {
 
   public:
     enum class Flags : unsigned {
-      RO         = (1 << 0),  /* A readonly connection */
-      NO_ALIASES = (1 << 1),  /* Don't try to resolve URI aliases */
+      RO         = VIR_CONNECT_RO,  /* A readonly connection */
+      NO_ALIASES = VIR_CONNECT_NO_ALIASES,  /* Don't try to resolve URI aliases */
+    };
+    struct List {
+      struct Domains {
+        enum class Flags : unsigned {
+          ACTIVE         = VIR_CONNECT_LIST_DOMAINS_ACTIVE,
+          INACTIVE       = VIR_CONNECT_LIST_DOMAINS_INACTIVE,
+
+          PERSISTENT     = VIR_CONNECT_LIST_DOMAINS_PERSISTENT,
+          TRANSIENT      = VIR_CONNECT_LIST_DOMAINS_TRANSIENT,
+
+          RUNNING        = VIR_CONNECT_LIST_DOMAINS_RUNNING,
+          PAUSED         = VIR_CONNECT_LIST_DOMAINS_PAUSED,
+          SHUTOFF        = VIR_CONNECT_LIST_DOMAINS_SHUTOFF,
+          OTHER          = VIR_CONNECT_LIST_DOMAINS_OTHER,
+
+          MANAGEDSAVE    = VIR_CONNECT_LIST_DOMAINS_MANAGEDSAVE,
+          NO_MANAGEDSAVE = VIR_CONNECT_LIST_DOMAINS_NO_MANAGEDSAVE,
+
+          AUTOSTART = VIR_CONNECT_LIST_DOMAINS_AUTOSTART,
+          NO_AUTOSTART = VIR_CONNECT_LIST_DOMAINS_NO_AUTOSTART,
+
+          HAS_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_HAS_SNAPSHOT,
+          NO_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_NO_SNAPSHOT,
+        };
+      };
+    };
+    struct GetAllDomains {
+      struct Stats {
+        enum class Flags : unsigned {
+          ACTIVE	=	VIR_CONNECT_GET_ALL_DOMAINS_STATS_ACTIVE,
+          INACTIVE	=	VIR_CONNECT_GET_ALL_DOMAINS_STATS_INACTIVE,
+          OTHER	=	VIR_CONNECT_GET_ALL_DOMAINS_STATS_OTHER,
+          PAUSED	=	VIR_CONNECT_GET_ALL_DOMAINS_STATS_PAUSED,
+          PERSISTENT	=	VIR_CONNECT_LIST_DOMAINS_PERSISTENT,
+          RUNNING	=	VIR_CONNECT_LIST_DOMAINS_RUNNING,
+          SHUTOFF	=	VIR_CONNECT_LIST_DOMAINS_SHUTOFF,
+          TRANSIENT	=	VIR_CONNECT_LIST_DOMAINS_TRANSIENT,
+          NOWAIT	=	VIR_CONNECT_GET_ALL_DOMAINS_STATS_NOWAIT, // report statistics that can be obtained immediately without any blocking
+          BACKING	=	VIR_CONNECT_GET_ALL_DOMAINS_STATS_BACKING, // include backing chain for block stats
+          ENFORCE_STATS	= VIR_CONNECT_GET_ALL_DOMAINS_STATS_ENFORCE_STATS, // enforce requested stats
+        };
+      };
     };
 
 
-    inline Connection(gsl::czstring<> name, bool rd_only = false) noexcept {
-      underlying = rd_only ? virConnectOpenReadOnly(name) : virConnectOpen(name);
-    }
+    inline Connection(gsl::czstring<> name, bool rd_only = false) noexcept;
 
     template <typename Callback = virConnectAuthCallbackPtr>
-    inline Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, Flags flags) noexcept {
-      virConnectAuth c_auth = auth;
-      underlying = virConnectOpenAuth(name, &c_auth, to_integral(flags));
-    }
+    inline Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, Flags flags) noexcept;
 
-    inline Connection(Connection&& conn) noexcept {
-      underlying = conn.underlying;
-    }
+    inline Connection(Connection&& conn) noexcept;
 
-    inline ~Connection(){
-      if(underlying)
-        virConnectClose(underlying);
-    }
+    inline ~Connection();
 
-    void ref(){
-      if(virConnectRef(underlying))
-        throw std::runtime_error{"virConnectRef"};
-    }
+    void ref();
 
     template <typename Data>
-    void registerCloseCallback(void(*cb)(Data&), std::unique_ptr<Data> data = nullptr){
-      virConnectRegisterCloseCallback(underlying, reinterpret_cast<virConnectCloseFunc>(cb), &data, &std::unique_ptr<Data>::get_deleter());
-    }
-    template <typename Data>
-    void registerCloseCallback(void(*cb)()){
-      if(virConnectRegisterCloseCallback(underlying, reinterpret_cast<virConnectCloseFunc>(cb), nullptr, nullptr))
-        throw std::runtime_error{"virConnectRegisterCloseCallback"};
-    }
+    void registerCloseCallback(void(*cb)(Data&), std::unique_ptr<Data> data = nullptr);
+    void registerCloseCallback(void(*cb)());
 
     template <typename Data>
-    void unregisterCloseCallback(void(*cb)(Data&)){
-      if(virConnectUnregisterCloseCallback(underlying, reinterpret_cast<virConnectCloseFunc>(cb)))
-        throw std::runtime_error{"unregisterCloseCallback"};
-    }
+    void unregisterCloseCallback(void(*cb)(Data&));
+    void unregisterCloseCallback(void(*cb)());
 
-    void unregisterCloseCallback(void(*cb)()){
-      if(virConnectUnregisterCloseCallback(underlying, reinterpret_cast<virConnectCloseFunc>(cb)))
-        throw std::runtime_error{"unregisterCloseCallback"};
-    }
+    void setKeepAlive(int interval, unsigned count);
 
-    void setKeepAlive(int interval, unsigned count) {
-      if (virConnectSetKeepAlive(underlying, interval, count))
-        throw std::runtime_error{"virConnectSetKeepAlive"};
-    }
+    inline gsl::zstring<> getCapabilities() const noexcept;
+    inline gsl::zstring<> getHostname() const noexcept;
 
-    inline gsl::zstring<> getCapabilities() const noexcept {
-      return virConnectGetCapabilities(underlying);
-    }
-    inline gsl::zstring<> getHostname() const noexcept {
-      return virConnectGetHostname(underlying);
-    }
+    unsigned long	getLibVersion() const;
 
-    unsigned long	getLibVersion() const {
-      unsigned long ret{};
-      if(virConnectGetLibVersion(underlying, &ret))
-        throw std::runtime_error{"virConnectGetLibVersion"};
-      return ret;
-    }
+    int getMaxVcpus(gsl::czstring<> type) const noexcept;
 
-    int getMaxVcpus(gsl::czstring<> type) const noexcept {
-      return virConnectGetMaxVcpus(underlying, type);
-    }
+    gsl::zstring<> getSysInfo(unsigned flags) const noexcept;
 
-    gsl::zstring<> getSysInfo(unsigned flags) const noexcept {
-      return virConnectGetSysinfo(underlying, flags);
-    }
+    gsl::czstring<> getType() const noexcept;
+    gsl::zstring<> getURI() const noexcept;
 
-    gsl::czstring<> getType() const noexcept {
-      return virConnectGetType(underlying);
-    }
-    gsl::zstring<> getURI() const noexcept {
-      return virConnectGetURI(underlying);
-    }
+    inline bool isAlive() const noexcept;
+    inline bool isEncrypted() const noexcept;
+    inline bool isSecure() const noexcept;
 
-    inline bool isAlive() const noexcept {
-      return virConnectIsAlive(underlying) > 0;
-    }
-    inline bool isEncrypted() const noexcept {
-      return virConnectIsEncrypted(underlying) > 0;
-    }
-    inline bool isSecure() const noexcept {
-      return virConnectIsSecure(underlying) > 0;
-    }
+    inline int numOfDomains() const noexcept;
+
+    std::vector<int> listDomains() const;
+    std::vector<Domain> listAllDomains(List::Domains::Flags flags) const;
+
+    auto getAllDomainStats();
 
   };
 
 
-
-  Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs){
-    return Connection::Flags(to_integral(lhs) | to_integral(rhs));
-  }
+  constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
+  constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Domains::Flags lhs, Connection::List::Domains::Flags rhs) noexcept;
+  constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs, Connection::GetAllDomains::Stats::Flags rhs) noexcept;
 }
