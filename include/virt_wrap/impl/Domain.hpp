@@ -46,7 +46,7 @@ namespace virt {
     return virDomainIsActive(underlying) != 0;
   }
 
-  void Domain::reboot(Domain::Shutdown::Flags flags){
+  void Domain::reboot(Domain::ShutdownFlags flags){
     virDomainReboot(underlying, to_integral(flags));
   }
   void Domain::rename(gsl::czstring<> name){
@@ -61,7 +61,7 @@ namespace virt {
   void Domain::setAutoStart(bool as){
     virDomainSetAutostart(underlying, as ? 1 : 0);
   }
-  void Domain::shutdown(Domain::Shutdown::Flags flags){
+  void Domain::shutdown(Domain::ShutdownFlags flags){
     virDomainShutdownFlags(underlying, to_integral(flags));
   }
   void Domain::suspend(){

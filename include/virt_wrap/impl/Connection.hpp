@@ -176,13 +176,13 @@ namespace virt {
 
   auto Connection::listAllDomains(List::Domains::Flags flags) const -> std::vector<Domain> {
     std::vector<Domain> ret;
-    virDomainPtr *domains;
+    gsl::owner<virDomainPtr*> domains;
 
     const auto res = virConnectListAllDomains(underlying, &domains, to_integral(flags));
     if(res < 0)
       throw std::runtime_error{"virConnectListAllDomains"};
 
-    ret.reserve(res);
+    ret.reserve(static_cast<unsigned>(res));
     std::transform(domains, domains + res, std::back_inserter(ret), [](virDomainPtr d){return Domain{d};});
     std::for_each(domains, domains + res, virDomainFree);
     free(domains);

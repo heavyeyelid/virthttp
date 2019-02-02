@@ -5,56 +5,40 @@
 
 #include <iostream>
 #include <gsl/gsl>
+#include "fwd.hpp"
 
-inline std::string config_file_loc = "config.ini";
+constexpr auto config_file_loc = "config.ini";
 
-class Logger : public std::string
+class Logger
 {
 public:
-    template <typename T>
-    void warning(T msg) {
-        if (!isQuiet)
-            std::cout << "WARN: " << msg << std::endl;
-    }
-  template <typename T>
-    void error(T msg) {
-        if (!isQuiet)
-          std::cerr << "ERROR: " << msg << std::endl;
-    }
-    template <typename T>
-    void info(T msg)
-    {
-        if (!isQuiet)
-            std::cout << "INFO: " << msg << std::endl;
-    }
-    template <typename T>
-    void debug(T msg)
-    {
-        if(isDebug){
-            if(!isQuiet)
-                std::cout << "DEBUG: " << msg << std::endl;
-        }
+    template <typename... Ts>
+    void raw(std::ostream& os, Ts... msg){
+      (std::cout << ... << msg);
+      std::cout << std::endl;
     }
 
-    void warning(const std::string& msg) {
+    template <typename... Ts>
+    void warning(Ts... msg) {
         if (!isQuiet)
-            std::cout << "WARN: " << msg << std::endl;
+          raw(std::cout, "WARN: ", msg...);
     }
-    void error(const std::string& msg) {
+    template <typename... Ts>
+    void error(Ts... msg) {
         if (!isQuiet)
-            std::cerr << "ERROR: " << msg << std::endl;
+          raw(std::cerr, "ERROR: ", msg...);
     }
-    void info(const std::string& msg)
+    template <typename... Ts>
+    void info(Ts... msg)
     {
         if (!isQuiet)
-            std::cout << "INFO: " << msg << std::endl;
+          raw(std::cout, "INFO: ", msg...);
     }
-    void debug(const std::string& msg)
+    template <typename... Ts>
+    void debug(Ts... msg)
     {
-        if(isDebug){
-            if(!isQuiet)
-                std::cout << "DEBUG: " << msg << std::endl;
-        }
+        if(isDebug && !isQuiet)
+          raw(std::cout, "DEBUG: ", msg...);
     }
 
     void setQuiet(bool b) {
@@ -69,4 +53,4 @@ private:
     bool isDebug = false;
 };
 
-inline Logger logger;
+inline Logger logger{}; // default ctor and dtor doesn't generate any code out of main

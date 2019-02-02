@@ -40,9 +40,7 @@ namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 // Return a reasonable mime type based on the extension of a file.
-beast::string_view
-mime_type(beast::string_view path)
-{
+beast::string_view mime_type(beast::string_view path){
     using beast::iequals;
     auto const ext = [&path]
     {
@@ -109,20 +107,16 @@ path_cat(
 template<
     class Body, class Allocator,
     class Send>
-void
-handle_request(
+void handle_request(
     beast::string_view doc_root,
     http::request<Body, http::basic_fields<Allocator>>&& req,
-    Send&& send)
-{
+    Send&& send){
     rapidjson::Document d;
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
     // Returns a bad request response
-    auto const bad_request =
-    [&req](beast::string_view why)
-    {
+    const auto bad_request = [&](beast::string_view why){
         http::response<http::string_body> res{http::status::bad_request, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
@@ -132,12 +126,10 @@ handle_request(
         return res;
     };
 
-    std::cout << "Received from a session: HTTP " << req.method() << ' ' << req.target();
+    std::cout << "Received from a Session: HTTP " << req.method() << ' ' << req.target();
 
     // Returns a not found response
-    auto const not_found =
-    [&req](beast::string_view target)
-    {
+    const auto not_found = [&](beast::string_view target){
         http::response<http::string_body> res{http::status::not_found, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
@@ -173,18 +165,17 @@ handle_request(
 
 
     if( req.target().starts_with("/libvirt") ) {
-        const char* json = "{\"project\":\"rapidjson\",\"stars\":10}";
+        constexpr auto json = R"({"project":"rapidjson","stars":10})";
         d.Parse(json);
 
-        rapidjson::Value& s = d["stars"];
+        auto& s = d["stars"];
         s.SetInt(s.GetInt() + 1);
 
         d.Accept(writer);
-        virConnectPtr conn;
 
         // driver[+transport]://[username@][hostname][:port]/[path][?extraparameters]
         //setConnURI("qemu","","","","","/system","");
-        //conn = virConnectOpen();
+        //virt::Connection conn{connURI.data()};
     }
 
     // Build the path to the requested file
@@ -212,7 +203,7 @@ handle_request(
     */
 
     const auto size = buffer.GetSize();
-    std::string json_string = buffer.GetString();
+    const auto json_string = buffer.GetString();
 
     // Respond to HEAD request
     if(req.method() == http::verb::head)
@@ -227,7 +218,7 @@ handle_request(
 
     // Respond to GET request
     http::response<http::string_body> res{http::status::ok, req.version()};
-    res.body() = std::move(json_string);
+    res.body() = json_string;
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, "application/json");
     res.content_length(size);
@@ -239,22 +230,22 @@ handle_request(
 
 // Report a failure
 void
-fail(beast::error_code ec, char const* what)
+fail(beast::error_code ec, const char* what)
 {
     std::cerr << what << ": " << ec.message() << "\n";
 }
 
 // Handles an HTTP server connection
-class session : public std::enable_shared_from_this<session>
+class Session : public std::enable_shared_from_this<Session>
 {
     // This is the C++11 equivalent of a generic lambda.
     // The function object is used to send an HTTP message.
     struct send_lambda
     {
-        session& self_;
+        Session& self_;
 
         explicit
-        send_lambda(session& self)
+        send_lambda(Session& self)
             : self_(self)
         {
         }
@@ -280,7 +271,7 @@ class session : public std::enable_shared_from_this<session>
                 net::bind_executor(
                     self_.strand_,
                     std::bind(
-                        &session::on_write,
+                        &Session::on_write,
                         self_.shared_from_this(),
                         std::placeholders::_1,
                         std::placeholders::_2,
@@ -300,26 +291,22 @@ class session : public std::enable_shared_from_this<session>
 public:
     // Take ownership of the socket
     explicit
-    session(
+    Session(
         tcp::socket socket,
-        std::shared_ptr<std::string const> const& doc_root)
-        : socket_(std::move(socket))
-        , strand_(socket_.get_executor())
-        , doc_root_(doc_root)
-        , lambda_(*this)
+        std::shared_ptr<std::string const> const& doc_root) :
+        socket_(std::move(socket)),
+        strand_(socket_.get_executor()),
+        doc_root_(doc_root),
+        lambda_(*this)
     {
     }
 
     // Start the asynchronous operation
-    void
-    run()
-    {
+    void run(){
         do_read();
     }
 
-    void
-    do_read()
-    {
+    void do_read(){
         // Make the request empty before reading,
         // otherwise the operation behavior is undefined.
         req_ = {};
@@ -329,17 +316,15 @@ public:
             net::bind_executor(
                 strand_,
                 std::bind(
-                    &session::on_read,
+                    &Session::on_read,
                     shared_from_this(),
                     std::placeholders::_1,
                     std::placeholders::_2)));
     }
 
-    void
-    on_read(
+    void on_read(
         beast::error_code ec,
-        std::size_t bytes_transferred)
-    {
+        std::size_t bytes_transferred){
         boost::ignore_unused(bytes_transferred);
 
         // This means they closed the connection
@@ -353,19 +338,16 @@ public:
         handle_request(*doc_root_, std::move(req_), lambda_);
     }
 
-    void
-    on_write(
+    void on_write(
         beast::error_code ec,
         std::size_t bytes_transferred,
-        bool close)
-    {
+        bool close){
         boost::ignore_unused(bytes_transferred);
 
         if(ec)
             return fail(ec, "write");
 
-        if(close)
-        {
+        if(close){
             // This means we should close the connection, usually because
             // the response indicated the "Connection: close" semantic.
             return do_close();
@@ -379,8 +361,7 @@ public:
     }
 
     void
-    do_close()
-    {
+    do_close(){
         // Send a TCP shutdown
         beast::error_code ec;
         socket_.shutdown(tcp::socket::shutdown_send, ec);
@@ -392,43 +373,39 @@ public:
 //------------------------------------------------------------------------------
 
 // Accepts incoming connections and launches the sessions
-class listener : public std::enable_shared_from_this<listener>
+class Listener : public std::enable_shared_from_this<Listener>
 {
     tcp::acceptor acceptor_;
     tcp::socket socket_;
-    std::shared_ptr<std::string const> doc_root_;
+    std::shared_ptr<const std::string> doc_root_;
 
 public:
-    listener(
+    Listener(
         net::io_context& ioc,
         tcp::endpoint endpoint,
-        std::shared_ptr<std::string const> const& doc_root)
+        const std::shared_ptr<const std::string>& doc_root)
         : acceptor_(ioc)
         , socket_(ioc)
-        , doc_root_(doc_root)
-    {
+        , doc_root_(doc_root){
         beast::error_code ec;
 
         // Open the acceptor
         acceptor_.open(endpoint.protocol(), ec);
-        if(ec)
-        {
+        if(ec){
             fail(ec, "open");
             return;
         }
 
         // Allow address reuse
         acceptor_.set_option(net::socket_base::reuse_address(true), ec);
-        if(ec)
-        {
+        if(ec){
             fail(ec, "set_option");
             return;
         }
 
         // Bind to the server address
         acceptor_.bind(endpoint, ec);
-        if(ec)
-        {
+        if(ec){
             fail(ec, "bind");
             return;
         }
@@ -436,44 +413,34 @@ public:
         // Start listening for connections
         acceptor_.listen(
             net::socket_base::max_listen_connections, ec);
-        if(ec)
-        {
+        if(ec){
             fail(ec, "listen");
             return;
         }
     }
 
     // Start accepting incoming connections
-    void
-    run()
-    {
-        if(! acceptor_.is_open())
+    void run(){
+        if(!acceptor_.is_open())
             return;
         do_accept();
     }
 
-    void
-    do_accept()
-    {
+    void do_accept(){
         acceptor_.async_accept(
             socket_,
             std::bind(
-                &listener::on_accept,
+                &Listener::on_accept,
                 shared_from_this(),
                 std::placeholders::_1));
     }
 
-    void
-    on_accept(beast::error_code ec)
-    {
+    void on_accept(beast::error_code ec){
         if(ec)
-        {
             fail(ec, "accept");
-        }
-        else
-        {
-            // Create the session and run it
-            std::make_shared<session>(
+        else {
+            // Create the Session and run it
+            std::make_shared<Session>(
                 std::move(socket_),
                 doc_root_)->run();
         }
