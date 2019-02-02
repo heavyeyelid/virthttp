@@ -6,10 +6,41 @@
 
 #include <libvirt/libvirt.h>
 #include <lift.hpp>
+#include <libvirt/libvirt-common.h>
 #include "../TypesParam.hpp"
 #include "../utility.hpp"
 
 namespace virt {
+  TypedParameter::TypedParameter(const virTypedParameter& from, virt::TypedParameter::no_name_tag) {
+    switch(from.type){
+      case VIR_TYPED_PARAM_INT:
+        val.emplace<int>(from.value.i);
+        break;
+      case VIR_TYPED_PARAM_UINT:
+        val.emplace<unsigned>(from.value.ui);
+        break;
+      case VIR_TYPED_PARAM_LLONG:
+        val.emplace<long long>(from.value.l);
+        break;
+      case VIR_TYPED_PARAM_ULLONG:
+        val.emplace<unsigned long long>(from.value.ul);
+        break;
+      case VIR_TYPED_PARAM_DOUBLE:
+        val.emplace<double>(from.value.d);
+        break;
+      case VIR_TYPED_PARAM_BOOLEAN:
+        val.emplace<bool>(from.value.b);
+        break;
+      case VIR_TYPED_PARAM_STRING:
+        val.emplace<std::string>(from.value.s);
+        break;
+      default:
+        throw std::runtime_error{"Non-standard type-parameter"};
+    }
+  }
+  TypedParameter::TypedParameter(const virTypedParameter& from) : TypedParameter(from, no_name_tag{}) {
+    name = from.field;
+  }
   inline TypedParams::~TypedParams() noexcept {
     if(underlying)
       virTypedParamsFree(underlying, size);
@@ -47,5 +78,17 @@ namespace virt {
       [&, this](bool v){add(name, v);},
       [&, this](gsl::czstring<> v){add(name, v);}
     }, tp.val);
+  }
+
+  template <typename T>
+  T TypedParams::get(gsl::czstring<> name) const {
+    const auto it = std::find_if(underlying, underlying + size, [&](const virTypedParameter& tp){return std::strcmp(name, tp.field) == 0;});
+    return std::get<T>(TypedParameter{it, TypedParameter::no_name_tag{}}.val);
+  }
+
+  template <typename T>
+  T& TypedParams::get(gsl::czstring<> name) {
+    auto it = std::find_if(underlying, underlying + size, [&](const virTypedParameter& tp){return std::strcmp(name, tp.field) == 0;});
+    return std::get<T>(TypedParameter{it, TypedParameter::no_name_tag{}}.val);
   }
 }
