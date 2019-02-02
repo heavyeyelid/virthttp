@@ -9,7 +9,7 @@
 #include "wrapper/config.hpp"
 #include "logger.hpp"
 #include "virt_wrap.hpp"
-#include "ResourcesInterface.hpp"
+#include "wrapper/config.hpp"
 
 using namespace std::literals;
 
@@ -21,8 +21,8 @@ int main(int argc, char* argv[])
     INIReader reader(config_file_loc);
 
     if (reader.ParseError() < 0) {
-        logger.warning(std::string("Can't load ", config_file_loc));
-        logger.warning("Using default config");
+        logger.warning("Can't load " + config_file_loc);
+        logger.info("Using default config");
     }
 
     iniConfig.setGlobalConfigFromIni(config_file_loc);

@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <INIReader.h>
-#include "ResourcesInterface.hpp"
+#include "logger.hpp"
 
 class IniConfig : public INIReader {
 public:
@@ -15,7 +15,7 @@ public:
 
         if (reader.ParseError() < 0) {
             logger.warning("Can't load libvirtd config from " + iniFile);
-            logger.warning("Using default libvirtd config (qemu:///system)");
+            logger.info("Using default libvirtd config (qemu:///system)");
         } else logger.info("LibVirtD config loaded from " + iniFile);
 
         connDRIV = reader.Get("libvirtd", "driver", "qemu");
@@ -35,14 +35,13 @@ public:
         str = str + "://";
         if(!connUNAME.empty())
             str = str + connUNAME + "@";
-        if(!connHOST.empty())
-            str = str + connHOST;
+        str = str + connHOST;
         if(!connPORT.empty())
             str = str + ":" + connPORT;
         str = str + "/" + connPATH;
         if(!connEXTP.empty())
             str = str + "?" + connEXTP;
-        connURI = const_cast<char *>(str.c_str());
+        connURI = (str.c_str());
     }
 
     std::string getConnURI() {
@@ -59,5 +58,7 @@ private:
             connEXTP,
             connDRIV;
 
-    char* connURI;
+    const char* connURI;
 };
+
+inline IniConfig iniConfig;

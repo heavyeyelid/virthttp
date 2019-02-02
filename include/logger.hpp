@@ -6,6 +6,8 @@
 #include <iostream>
 #include <gsl/gsl>
 
+inline std::string config_file_loc = "config.ini";
+
 class Logger : public std::string
 {
 public:
@@ -33,6 +35,28 @@ public:
                 std::cout << "DEBUG: " << msg << std::endl;
         }
     }
+
+    void warning(const std::string& msg) {
+        if (!isQuiet)
+            std::cout << "WARN: " << msg << std::endl;
+    }
+    void error(const std::string& msg) {
+        if (!isQuiet)
+            std::cerr << "ERROR: " << msg << std::endl;
+    }
+    void info(const std::string& msg)
+    {
+        if (!isQuiet)
+            std::cout << "INFO: " << msg << std::endl;
+    }
+    void debug(const std::string& msg)
+    {
+        if(isDebug){
+            if(!isQuiet)
+                std::cout << "DEBUG: " << msg << std::endl;
+        }
+    }
+
     void setQuiet(bool b) {
         isQuiet = b;
     }
@@ -44,3 +68,5 @@ private:
     bool isQuiet = false;
     bool isDebug = false;
 };
+
+inline Logger logger;

@@ -33,7 +33,6 @@
 #include <rapidjson/stringbuffer.h>
 #include <libvirt/libvirt.h>
 #include "config.hpp"
-#include "ResourcesInterface.hpp"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -133,7 +132,7 @@ handle_request(
         return res;
     };
 
-    logger.info("Received from a session: HTTP " + req.method() + ' ' + req.target());
+    std::cout << "Received from a session: HTTP " << req.method() << ' ' << req.target();
 
     // Returns a not found response
     auto const not_found =

@@ -33,7 +33,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/type_ops.hpp
             include/virt_wrap/AdminConnection.hpp
             include/virt_wrap/utility.hpp
-            include/virt_wrap/Domain.hpp include/virt_wrap/fwd.hpp include/virt_wrap/impl/Connection.hpp include/virt_wrap/impl/Domain.hpp include/virt_wrap/impl/TypedParams.hpp include/wrapper/config.hpp include/virt_wrap.hpp include/logger.hpp include/ResourcesInterface.hpp)
+            include/virt_wrap/Domain.hpp include/virt_wrap/fwd.hpp include/virt_wrap/impl/Connection.hpp include/virt_wrap/impl/Domain.hpp include/virt_wrap/impl/TypedParams.hpp include/wrapper/config.hpp include/virt_wrap.hpp include/logger.hpp)
 
     target_link_libraries (test ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
     if(WIN32)
