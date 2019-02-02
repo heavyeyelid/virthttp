@@ -3,8 +3,9 @@
 //
 #include <libvirt/libvirt.h>
 #include <iostream>
-#include "include/wrapper/http_wrapper.hpp"
 #include <INIReader.h>
+#include "include/wrapper/http_wrapper.hpp"
+#include "include/logger.hpp"
 
 std::string config_file_loc = "config.ini";
 
@@ -13,7 +14,8 @@ int main(int argc, char* argv[])
     INIReader reader(config_file_loc);
 
     if (reader.ParseError() < 0) {
-        std::cerr << "Can't load " << config_file_loc << std::endl;
+        warning("Can't load " + config_file_loc);
+        warning("Using default config");
     }
 
     auto const address = net::ip::make_address(reader.Get("http_server","address","0.0.0.0"));
