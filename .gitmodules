@@ -10,3 +10,6 @@
 [submodule "thirdparty/lift"]
 	path = thirdparty/lift
 	url = git@github.com:rollbear/lift.git
+[submodule "thirdparty\\inih"]
+	path = thirdparty\\inih
+	url = git@github.com:jtilly/inih.git

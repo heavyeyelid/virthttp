@@ -4,16 +4,22 @@
 #include <libvirt/libvirt.h>
 #include <iostream>
 #include "include/wrapper/http_wrapper.hpp"
-#include "include/wrapper/config.hpp"
+#include <INIReader.h>
+
+std::string config_file_loc = "config.ini";
 
 int main(int argc, char* argv[])
 {
-    std::cout << IniConfig().connURI;
+    INIReader reader(config_file_loc);
 
-    auto const address = net::ip::make_address("0.0.0.0");
-    auto const port = static_cast<unsigned short>(std::atoi("8081"));
-    auto const doc_root = std::make_shared<std::string>(".");
-    auto const threads = std::max<int>(1, std::atoi("1"));
+    if (reader.ParseError() < 0) {
+        std::cerr << "Can't load " << config_file_loc << std::endl;
+    }
+
+    auto const address = net::ip::make_address(reader.Get("http_server","address","0.0.0.0"));
+    auto const port = static_cast<unsigned short>(std::atoi(reader.Get("http_server", "port", "8081").c_str()));
+    auto const doc_root = std::make_shared<std::string>(reader.Get("http_server", "doc_root", "."));
+    auto const threads = std::max<int>(1, std::atoi(reader.Get("http_server", "threads", "1").c_str()));
 
     // The io_context is required for all I/O
     net::io_context ioc{threads};

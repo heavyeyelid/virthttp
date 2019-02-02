@@ -16,7 +16,10 @@ if (Boost_FOUND AND LibVirt_FOUND)
             thirdparty/gsl/include
             thirdparty/lift/include
             thirdparty/rapidjson/include
-            thirdparty/rapidxml_ns)
+            thirdparty/rapidxml_ns
+            thirdparty/inih
+            )
+
     add_compile_options ("-O3")
     add_compile_options ("-mtune=native")
     add_compile_options ("-g")
@@ -24,7 +27,6 @@ if (Boost_FOUND AND LibVirt_FOUND)
             main.cpp
             include/wrapper/http_wrapper.hpp
             include/utils.hpp
-            thirdparty/INIReader.h
             include/virt_wrap/Connection.hpp
             include/virt_wrap/TypesParam.hpp
             include/virt_wrap/type_ops.hpp
