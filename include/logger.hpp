@@ -5,30 +5,45 @@
 
 #include <iostream>
 
-class warning : public std::exception
+class Logger : public std::string
 {
 public:
-    warning(const std::string& msg) {
-        std::cout << "WARN: " << msg << std::endl;
+    void warning(const std::string& msg) {
+        logging = msg;
+        if (!isQuiet)
+            std::cout << "WARN: " << msg << std::endl;
     }
-    const char* what() {
-        return msg.c_str();
+    void error(const std::string& msg) {
+        logging = msg;
+        if (!isQuiet)
+            std::cerr << "ERROR: " << msg << std::endl;
+    }
+    void info(const std::string& msg)
+    {
+        logging = msg;
+        if (!isQuiet)
+            std::cout << "INFO: " << msg << std::endl;
+    }
+    void debug(const std::string& msg)
+    {
+        if(isDebug){
+            logging = msg;
+            if(!isQuiet)
+                std::cout << "DEBUG: " << msg << std::endl;
+        }
+    }
+    const char* getLogs() {
+        return logging.c_str();
+    }
+    void setQuiet(bool b) {
+        isQuiet = b;
+    }
+    void setDebug(bool b) {
+        isDebug = b;
     }
 
 private:
-    std::string msg;
-};
-
-class error : public std::exception
-{
-public:
-    error(const std::string& msg) {
-        std::cerr << "ERROR: " << msg << std::endl;
-    }
-    const char* what() {
-        return msg.c_str();
-    }
-
-private:
-    std::string msg;
+    std::string logging;
+    bool isQuiet = false;
+    bool isDebug = false;
 };

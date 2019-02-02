@@ -5,18 +5,28 @@
 #include <iostream>
 #include <INIReader.h>
 #include "include/wrapper/http_wrapper.hpp"
+#include "include/wrapper/config.hpp"
 #include "include/logger.hpp"
 
 std::string config_file_loc = "config.ini";
 
 int main(int argc, char* argv[])
 {
+    Logger logger;
+    logger.setQuiet(false);
+    logger.setDebug(true);
+
     INIReader reader(config_file_loc);
 
     if (reader.ParseError() < 0) {
-        warning("Can't load " + config_file_loc);
-        warning("Using default config");
+        logger.warning("Can't load " + config_file_loc);
+        logger.warning("Using default config");
     }
+
+    IniConfig conf;
+    conf.setGlobalConfigFromIni(config_file_loc);
+    conf.setConnURI();
+    logger.info(conf.getConnURI());
 
     auto const address = net::ip::make_address(reader.Get("http_server","address","0.0.0.0"));
     auto const port = static_cast<unsigned short>(std::atoi(reader.Get("http_server", "port", "8081").c_str()));
