@@ -5,20 +5,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <INIReader.h>
+#include "ResourcesInterface.hpp"
 
-#include "../logger.hpp"
-
-class IniConfig {
+class IniConfig : public INIReader {
 public:
     void setGlobalConfigFromIni(std::string iniFile) {
         INIReader reader(iniFile);
 
         if (reader.ParseError() < 0) {
-            std::cout << "Can't load libvirtd config from " + iniFile << std::endl;
-            std::cout << "Using default libvirtd config (qemu:///system)" << std::endl;
-        } else std::cout << "LibVirtD config loaded from " + iniFile << std::endl;
+            logger.warning("Can't load libvirtd config from " + iniFile);
+            logger.warning("Using default libvirtd config (qemu:///system)");
+        } else logger.info("LibVirtD config loaded from " + iniFile);
 
         connDRIV = reader.Get("libvirtd", "driver", "qemu");
         connTRANS = reader.Get("libvirtd", "transport", "");

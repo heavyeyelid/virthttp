@@ -28,7 +28,7 @@ namespace virt {
         INTERFACE = VIR_DOMAIN_STATS_INTERFACE, // domain interfaces info
         BLOCK	=	VIR_DOMAIN_STATS_BLOCK, // domain block info
         PERF = VIR_DOMAIN_STATS_PERF, // domain perf event info
-        IOTHREAD	=	VIR_DOMAIN_STATS_IOTHREAD, // iothread poll info
+        //IOTHREAD	=	VIR_DOMAIN_STATS_IOTHREAD, // iothread poll info
       };
       class Record;
     };

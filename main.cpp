@@ -9,28 +9,25 @@
 #include "wrapper/config.hpp"
 #include "logger.hpp"
 #include "virt_wrap.hpp"
+#include "ResourcesInterface.hpp"
 
 using namespace std::literals;
 
-gsl::czstring<> config_file_loc = "config.ini";
-
 int main(int argc, char* argv[])
 {
-    Logger logger;
     logger.setQuiet(false);
     logger.setDebug(true);
 
     INIReader reader(config_file_loc);
 
     if (reader.ParseError() < 0) {
-        logger.warning("Can't load "s + config_file_loc);
+        logger.warning(std::string("Can't load ", config_file_loc));
         logger.warning("Using default config");
     }
 
-    IniConfig conf;
-    conf.setGlobalConfigFromIni(config_file_loc);
-    conf.setConnURI();
-    logger.info(conf.getConnURI());
+    iniConfig.setGlobalConfigFromIni(config_file_loc);
+    iniConfig.setConnURI();
+    logger.info("libvirt server URI: " + iniConfig.getConnURI());
 
     auto const address = net::ip::make_address(reader.Get("http_server","address","0.0.0.0"));
     auto const port = static_cast<unsigned short>(std::atoi(reader.Get("http_server", "port", "8081").c_str()));
