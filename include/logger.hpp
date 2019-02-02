@@ -4,36 +4,34 @@
 #pragma once
 
 #include <iostream>
+#include <gsl/gsl>
 
 class Logger : public std::string
 {
 public:
-    void warning(const std::string& msg) {
-        logging = msg;
+    template <typename T>
+    void warning(T msg) {
         if (!isQuiet)
             std::cout << "WARN: " << msg << std::endl;
     }
-    void error(const std::string& msg) {
-        logging = msg;
+  template <typename T>
+    void error(T msg) {
         if (!isQuiet)
-            std::cerr << "ERROR: " << msg << std::endl;
+          std::cerr << "ERROR: " << msg << std::endl;
     }
-    void info(const std::string& msg)
+    template <typename T>
+    void info(T msg)
     {
-        logging = msg;
         if (!isQuiet)
             std::cout << "INFO: " << msg << std::endl;
     }
-    void debug(const std::string& msg)
+    template <typename T>
+    void debug(T msg)
     {
         if(isDebug){
-            logging = msg;
             if(!isQuiet)
                 std::cout << "DEBUG: " << msg << std::endl;
         }
-    }
-    const char* getLogs() {
-        return logging.c_str();
     }
     void setQuiet(bool b) {
         isQuiet = b;
@@ -43,7 +41,6 @@ public:
     }
 
 private:
-    std::string logging;
     bool isQuiet = false;
     bool isDebug = false;
 };
