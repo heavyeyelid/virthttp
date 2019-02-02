@@ -6,41 +6,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../INIReader.h"
+#include <INIReader.h>
+
+#include "../logger.hpp"
 
 class IniConfig {
 public:
-    const std::string config_file_loc = "config.ini";
-
-    std::string
-            connTRANS,
-            connUNAME,
-            connHOST,
-            connPORT,
-            connPATH,
-            connEXTP,
-            connDRIV;
-
-    char* connURI;
-
-    void setGlobalConfigFromIni() {
-        INIReader reader(config_file_loc);
+    void setGlobalConfigFromIni(std::string iniFile) {
+        INIReader reader(iniFile);
 
         if (reader.ParseError() < 0) {
-            std::cerr << "Can't load " << config_file_loc << std::endl;
-        }
+            std::cout << "Can't load libvirtd config from " + iniFile << std::endl;
+            std::cout << "Using default libvirtd config (qemu:///system)" << std::endl;
+        } else std::cout << "LibVirtD config loaded from " + iniFile << std::endl;
 
-        std::cout << "Config loaded from " << config_file_loc << std::endl;
-        connDRIV = reader.Get("libvirtd", "driver", "UNKNOWN");
-        connTRANS = reader.Get("libvirtd", "transport", "UNKNOWN");
-        connUNAME = reader.Get("libvirtd", "username", "UNKNOWN");
-        connHOST = reader.Get("libvirtd", "hostname", "UNKNOWN");
-        connPORT = reader.Get("libvirtd", "port", "UNKNOWN");
-        connPATH = reader.Get("libvirtd", "path", "UNKNOWN");
-        connEXTP = reader.Get("libvirtd", "extras", "UNKNOWN");
-
-        if(connDRIV.empty() || connPATH.empty())
-            std::cerr << "Please specify at least the driver and path in " << config_file_loc;
+        connDRIV = reader.Get("libvirtd", "driver", "qemu");
+        connTRANS = reader.Get("libvirtd", "transport", "");
+        connUNAME = reader.Get("libvirtd", "username", "");
+        connHOST = reader.Get("libvirtd", "hostname", "");
+        connPORT = reader.Get("libvirtd", "port", "");
+        connPATH = reader.Get("libvirtd", "path", "system");
+        connEXTP = reader.Get("libvirtd", "extras", "");
     }
 
     // Full URI: driver[+transport]://[username@][hostname][:port]/[path][?extraparameters]
@@ -61,8 +47,19 @@ public:
         connURI = const_cast<char *>(str.c_str());
     }
 
-    IniConfig() {
-        setGlobalConfigFromIni();
-        setConnURI();
+    std::string getConnURI() {
+        return connURI;
     }
+
+private:
+    std::string
+            connTRANS,
+            connUNAME,
+            connHOST,
+            connPORT,
+            connPATH,
+            connEXTP,
+            connDRIV;
+
+    char* connURI;
 };
