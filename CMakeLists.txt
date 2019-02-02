@@ -19,9 +19,8 @@ if(Boost_FOUND)
     add_compile_options ("-g")
     add_executable(test
             main.cpp
-            http_wrapper.hpp
-            utils.hpp
-            netinc.hpp
+            include/wrapper/http_wrapper.hpp
+            include/utils.hpp
             include/virt_wrap/Connection.hpp
             include/virt_wrap/TypesParam.hpp
             include/virt_wrap/type_ops.hpp

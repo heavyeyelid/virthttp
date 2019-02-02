@@ -28,6 +28,10 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <libvirt/libvirt.h>
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -97,6 +101,20 @@ path_cat(
     return result;
 }
 
+char* getConnURI( // driver[+transport]://[username@][hostname][:port]/[path][?extraparameters]
+        std::string connDRIV,
+        std::string connTRANS,
+        std::string connUNAME,
+        std::string connHOST,
+        std::string connPORT,
+        std::string connPATH,
+        std::string connEXTP)
+{
+    std::string str = connDRIV + "+" + connTRANS + "://" + connUNAME + "@" + connHOST + ":" + connPORT + "/" + connPATH + "?" + connEXTP;
+    std::cout << str;
+    return const_cast<char *>("Hello");
+}
+
 // This function produces an HTTP response for the given
 // request. The type of the response object depends on the
 // contents of the request, so the interface requires the
@@ -110,6 +128,10 @@ handle_request(
     http::request<Body, http::basic_fields<Allocator>>&& req,
     Send&& send)
 {
+    rapidjson::Document d;
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
     // Returns a bad request response
     auto const bad_request =
     [&req](beast::string_view why)
@@ -122,6 +144,8 @@ handle_request(
         res.prepare_payload();
         return res;
     };
+
+    std::cout << "Received from a session: HTTP " << req.method() << ' ' << req.target() << std::endl;
 
     // Returns a not found response
     auto const not_found =
@@ -160,7 +184,26 @@ handle_request(
         req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
+
+    if( req.target().starts_with("/libvirt") ) {
+        const char* json = "{\"project\":\"rapidjson\",\"stars\":10}";
+        d.Parse(json);
+
+        rapidjson::Value& s = d["stars"];
+        s.SetInt(s.GetInt() + 1);
+
+        d.Accept(writer);
+        virConnectPtr conn;
+
+        char connDRIV, connTRANS, connUNAME, connHOST, connPORT, connPATH, connEXTP;
+        // driver[+transport]://[username@][hostname][:port]/[path][?extraparameters]
+        getConnURI("qemu","","","","","/system","");
+        //conn = virConnectOpen();
+
+    }
+
     // Build the path to the requested file
+    /*
     std::string path = path_cat(doc_root, req.target());
     if(req.target().back() == '/')
         path.append("index.html");
@@ -169,6 +212,7 @@ handle_request(
     beast::error_code ec;
     http::file_body::value_type body;
     body.open(path.c_str(), beast::file_mode::scan, ec);
+
 
     // Handle the case where the file doesn't exist
     if(ec == beast::errc::no_such_file_or_directory)
@@ -180,25 +224,27 @@ handle_request(
 
     // Cache the size since we need it after the move
     auto const size = body.size();
+    */
+
+    const auto size = buffer.GetSize();
+    std::string json_string = buffer.GetString();
 
     // Respond to HEAD request
     if(req.method() == http::verb::head)
     {
         http::response<http::empty_body> res{http::status::ok, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, mime_type(path));
+        res.set(http::field::content_type, "application/json_str");
         res.content_length(size);
         res.keep_alive(req.keep_alive());
         return send(std::move(res));
     }
 
     // Respond to GET request
-    http::response<http::file_body> res{
-        std::piecewise_construct,
-        std::make_tuple(std::move(body)),
-        std::make_tuple(http::status::ok, req.version())};
+    http::response<http::string_body> res{http::status::ok, req.version()};
+    res.body() = std::move(json_string);
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, mime_type(path));
+    res.set(http::field::content_type, "application/json");
     res.content_length(size);
     res.keep_alive(req.keep_alive());
     return send(std::move(res));
