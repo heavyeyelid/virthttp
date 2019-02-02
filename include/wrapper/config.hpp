@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../INIReader.h"
+#include "../../thirdparty/INIReader.h"
 
 class IniConfig {
 public:

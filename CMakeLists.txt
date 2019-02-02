@@ -24,7 +24,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             main.cpp
             include/wrapper/http_wrapper.hpp
             include/utils.hpp
-            include/INIReader.h
+            thirdparty/INIReader.h
             include/virt_wrap/Connection.hpp
             include/virt_wrap/TypesParam.hpp
             include/virt_wrap/type_ops.hpp
