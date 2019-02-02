@@ -30,6 +30,22 @@ namespace virt {
       };
       class Record;
     };
+    enum class State {
+      NOSTATE     = VIR_DOMAIN_NOSTATE,     /* no state */
+      RUNNING     = VIR_DOMAIN_RUNNING,     /* the domain is running */
+      BLOCKED     = VIR_DOMAIN_BLOCKED,     /* the domain is blocked on resource */
+      PAUSED      = VIR_DOMAIN_PAUSED,      /* the domain is paused by user */
+      SHUTDOWN    = VIR_DOMAIN_SHUTDOWN,    /* the domain is being shut down */
+      SHUTOFF     = VIR_DOMAIN_SHUTOFF,     /* the domain is shut off */
+      CRASHED     = VIR_DOMAIN_CRASHED,     /* the domain is crashed */
+      PMSUSPENDED = VIR_DOMAIN_PMSUSPENDED, /* the domain is suspended by guest power management */
+    };
+    enum class UndefineFlagsValues {
+      MANAGED_SAVE       = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,       /* Also remove any managed save */
+      SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain, then also remove any snapshot metadata */
+      NVRAM              = VIR_DOMAIN_UNDEFINE_NVRAM,              /* Also remove any nvram file */
+      KEEP_NVRAM         = VIR_DOMAIN_UNDEFINE_KEEP_NVRAM,         /* Keep nvram file */
+    };
 
     inline ~Domain() noexcept;
 
@@ -40,8 +56,14 @@ namespace virt {
   };
 
   class Domain::Stats::Record {
+    friend Connection;
+
     Domain dom;
-    std::vector<TypedParameter> params;
+    std::vector<TypedParameter> params{};
+
+    explicit Record(const virDomainStatsRecord&) noexcept;
+
+  public:
   };
 
   constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;

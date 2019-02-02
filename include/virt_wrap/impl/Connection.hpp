@@ -163,7 +163,7 @@ namespace virt {
     return virConnectNumOfDomains(underlying);
   }
 
-  std::vector<int> Connection::listDomains() const {
+  auto Connection::listDomains() const -> std::vector<int> {
     std::vector<int> ret{};
     const auto max_size = numOfDomains();
     ret.resize(gsl::narrow_cast<unsigned>(max_size));
@@ -174,7 +174,7 @@ namespace virt {
     return ret;
   }
 
-  std::vector<Domain> Connection::listAllDomains(List::Domains::Flags flags) const {
+  auto Connection::listAllDomains(List::Domains::Flags flags) const -> std::vector<Domain> {
     std::vector<Domain> ret;
     virDomainPtr *domains;
 
@@ -190,9 +190,17 @@ namespace virt {
     return ret;
   }
 
-  auto Connection::getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags){
+  auto Connection::getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags) -> std::vector<Domain::Stats::Record>{
     virDomainStatsRecordPtr* ptr;
-    virConnectGetAllDomainStats(underlying, to_integral(stats), &ptr, to_integral(flags));
+    const int res = virConnectGetAllDomainStats(underlying, to_integral(stats), &ptr, to_integral(flags));
+    if(res < 0)
+      throw std::runtime_error{"virConnectGetAllDomainStats"};
+
+    std::vector<Domain::Stats::Record> recs;
+    recs.reserve(static_cast<std::size_t>(res));
+    std::transform(*ptr, *ptr + res, std::back_inserter(recs), [](const virDomainStatsRecord& rec) {return Domain::Stats::Record{rec};});
+    virDomainStatsRecordListFree(ptr);
+    return recs;
   }
 
 

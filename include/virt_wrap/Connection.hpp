@@ -33,7 +33,7 @@ namespace virt {
       const gsl::czstring<>  defresult; /* Optional default result */
       std::string result{};
 
-      ConnectCredential(const virConnectCredential& in) noexcept;
+      explicit ConnectCredential(const virConnectCredential& in) noexcept;
   };
 
   using ConnectAuthCallback = bool (*)(gsl::span<ConnectCredential>);
@@ -147,10 +147,10 @@ namespace virt {
 
     inline int numOfDomains() const noexcept;
 
-    std::vector<int> listDomains() const;
-    std::vector<Domain> listAllDomains(List::Domains::Flags flags) const;
+    auto listDomains() const -> std::vector<int>;
+    auto listAllDomains(List::Domains::Flags flags) const -> std::vector<Domain>;
 
-    auto getAllDomainStats();
+    auto getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags) -> std::vector<Domain::Stats::Record>;
 
   };
 
