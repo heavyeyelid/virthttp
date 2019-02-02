@@ -4,9 +4,12 @@
 #include <libvirt/libvirt.h>
 #include <iostream>
 #include "include/wrapper/http_wrapper.hpp"
+#include "include/wrapper/config.hpp"
 
 int main(int argc, char* argv[])
 {
+    std::cout << IniConfig().connURI;
+
     auto const address = net::ip::make_address("0.0.0.0");
     auto const port = static_cast<unsigned short>(std::atoi("8081"));
     auto const doc_root = std::make_shared<std::string>(".");

@@ -32,6 +32,7 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <libvirt/libvirt.h>
+#include "config.hpp"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -99,20 +100,6 @@ path_cat(
     result.append(path.data(), path.size());
 #endif
     return result;
-}
-
-char* getConnURI( // driver[+transport]://[username@][hostname][:port]/[path][?extraparameters]
-        std::string connDRIV,
-        std::string connTRANS,
-        std::string connUNAME,
-        std::string connHOST,
-        std::string connPORT,
-        std::string connPATH,
-        std::string connEXTP)
-{
-    std::string str = connDRIV + "+" + connTRANS + "://" + connUNAME + "@" + connHOST + ":" + connPORT + "/" + connPATH + "?" + connEXTP;
-    std::cout << str;
-    return const_cast<char *>("Hello");
 }
 
 // This function produces an HTTP response for the given
@@ -195,11 +182,9 @@ handle_request(
         d.Accept(writer);
         virConnectPtr conn;
 
-        char connDRIV, connTRANS, connUNAME, connHOST, connPORT, connPATH, connEXTP;
         // driver[+transport]://[username@][hostname][:port]/[path][?extraparameters]
-        getConnURI("qemu","","","","","/system","");
+        //setConnURI("qemu","","","","","/system","");
         //conn = virConnectOpen();
-
     }
 
     // Build the path to the requested file
