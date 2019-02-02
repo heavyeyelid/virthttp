@@ -3,8 +3,9 @@
 //
 #include <libvirt/libvirt.h>
 #include <iostream>
-#include "include/wrapper/http_wrapper.hpp"
-#include "include/wrapper/config.hpp"
+#include "wrapper/http_wrapper.hpp"
+#include "wrapper/config.hpp"
+#include "virt_wrap.hpp"
 
 int main(int argc, char* argv[])
 {

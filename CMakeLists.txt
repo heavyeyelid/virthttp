@@ -16,7 +16,9 @@ if (Boost_FOUND AND LibVirt_FOUND)
             thirdparty/gsl/include
             thirdparty/lift/include
             thirdparty/rapidjson/include
-            thirdparty/rapidxml_ns)
+            thirdparty/rapidxml_ns
+            thirdparty
+            include)
     add_compile_options ("-O3")
     add_compile_options ("-mtune=native")
     add_compile_options ("-g")
@@ -24,13 +26,12 @@ if (Boost_FOUND AND LibVirt_FOUND)
             main.cpp
             include/wrapper/http_wrapper.hpp
             include/utils.hpp
-            include/INIReader.h
             include/virt_wrap/Connection.hpp
             include/virt_wrap/TypesParam.hpp
             include/virt_wrap/type_ops.hpp
             include/virt_wrap/AdminConnection.hpp
             include/virt_wrap/utility.hpp
-            include/virt_wrap/Domain.hpp include/virt_wrap/fwd.hpp include/virt_wrap/impl/Connection.hpp include/virt_wrap/impl/Domain.hpp include/virt_wrap/impl/TypedParams.hpp include/wrapper/config.hpp)
+            include/virt_wrap/Domain.hpp include/virt_wrap/fwd.hpp include/virt_wrap/impl/Connection.hpp include/virt_wrap/impl/Domain.hpp include/virt_wrap/impl/TypedParams.hpp include/wrapper/config.hpp include/virt_wrap.hpp)
     target_link_libraries (test ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
     if(WIN32)
         target_link_libraries(test Ws2_32.lib WSock32.Lib)

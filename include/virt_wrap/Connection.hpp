@@ -57,6 +57,8 @@ namespace virt {
   };
 
   class Connection {
+    friend Domain;
+
     virConnectPtr underlying = nullptr;
 
   public:
