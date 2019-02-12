@@ -155,10 +155,7 @@ namespace virt {
     auto listDomains() const -> std::vector<int>;
     template <typename StrT>
     auto listDefinedDomains() const = delete;
-    template <>
-    auto listDefinedDomains<std::string>() const;
-    template <>
-    auto listDefinedDomains<gsl::zstring<>>() const;
+
 
     auto listAllDomains(List::Domains::Flags flags) const -> std::vector<Domain>;
 
