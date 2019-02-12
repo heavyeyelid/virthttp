@@ -114,7 +114,7 @@ void handle_request(
     rapidjson::Document d;
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-
+    std::cout << req.at("a");
     // Returns a bad request response
     const auto bad_request = [&](beast::string_view why){
         http::response<http::string_body> res{http::status::bad_request, req.version()};

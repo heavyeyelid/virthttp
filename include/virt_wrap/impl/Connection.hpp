@@ -81,10 +81,6 @@ namespace virt {
     underlying = virConnectOpenAuth(name, &c_auth, to_integral(flags));
   }
 
-  inline Connection::Connection(Connection&& conn) noexcept {
-    underlying = conn.underlying;
-  }
-
   inline Connection::~Connection(){
     if(underlying)
       virConnectClose(underlying);
@@ -162,6 +158,9 @@ namespace virt {
   inline int Connection::numOfDomains() const noexcept {
     return virConnectNumOfDomains(underlying);
   }
+  inline int Connection::numOfDefinedDomains() const noexcept {
+    return virConnectNumOfDefinedDomains(underlying);
+  }
 
   auto Connection::listDomains() const -> std::vector<int> {
     std::vector<int> ret{};
@@ -171,6 +170,44 @@ namespace virt {
     if(res < 0)
       throw std::runtime_error{"virConnectListDomains"};
     ret.resize(gsl::narrow_cast<unsigned>(res));
+    return ret;
+  }
+  template <>
+  auto Connection::listDefinedDomains<gsl::zstring<>>() const {
+    std::vector<gsl::owner<gsl::zstring<>>> buf{};
+    const auto max_size = numOfDomains();
+    buf.resize(gsl::narrow_cast<unsigned>(max_size));
+    const auto res = virConnectListDefinedDomains(underlying, buf.data(), max_size);
+    if(res < 0)
+      throw std::runtime_error{"virConnectListDefinedDomains"};
+    std::vector<std::unique_ptr<gsl::zstring<>>, decltype(std::free)> ret;
+    ret.reserve(gsl::narrow_cast<unsigned>(res));
+    std::transform(std::make_move_iterator(buf.begin()),
+                   std::make_move_iterator(buf.end()),
+                   std::back_inserter(ret),
+                   [](gsl::owner<gsl::zstring<>> str){
+                     return {ret, std::free};
+                   });
+    return ret;
+  }
+  template <>
+  auto Connection::listDefinedDomains<std::string>() const {
+    std::vector<gsl::owner<gsl::zstring<>>> buf{};
+    const auto max_size = numOfDefinedDomains();
+    buf.resize(gsl::narrow_cast<unsigned>(max_size));
+    const auto res = virConnectListDefinedDomains(underlying, buf.data(), max_size);
+    if(res < 0)
+      throw std::runtime_error{"virConnectListDefinedDomains"};
+    std::vector<std::string> ret;
+    ret.reserve(gsl::narrow_cast<unsigned>(res));
+    std::transform(std::make_move_iterator(buf.begin()),
+              std::make_move_iterator(buf.end()),
+              std::back_inserter(ret),
+              [](gsl::owner<gsl::zstring<>> str){
+                const std::string ret{str};
+                std::free(str);
+                return ret;
+              });
     return ret;
   }
 
@@ -185,7 +222,7 @@ namespace virt {
     ret.reserve(static_cast<unsigned>(res));
     std::transform(domains, domains + res, std::back_inserter(ret), [](virDomainPtr d){return Domain{d};});
     std::for_each(domains, domains + res, virDomainFree);
-    free(domains);
+    std::free(domains);
 
     return ret;
   }
@@ -201,6 +238,33 @@ namespace virt {
     std::transform(*ptr, *ptr + res, std::back_inserter(recs), [](const virDomainStatsRecord& rec) {return Domain::Stats::Record{rec};});
     virDomainStatsRecordListFree(ptr);
     return recs;
+  }
+
+  Domain Connection::domainLookupByID(int id) const noexcept {
+    return Domain{virDomainLookupByID(underlying, id)};
+  }
+  Domain Connection::domainLookupByName(gsl::czstring<> name) const noexcept {
+    return Domain{virDomainLookupByName(underlying, name)};
+  }
+  Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept {
+    return Domain{virDomainLookupByUUIDString(underlying, uuid_str)};
+  }
+
+  virNodeInfo Connection::nodeGetInfo() const {
+    virNodeInfo ret{};
+    virNodeGetInfo(underlying, &ret);
+    return ret;
+  }
+  auto Connection::nodeGetFreeMemory() const {
+    return virNodeGetFreeMemory(underlying);
+  }
+  auto Connection::nodeGetCellsFreeMemory() const {
+    std::vector<unsigned long long> ret{};
+    ret.resize(nodeGetInfo().nodes);
+    const int res = virNodeGetCellsFreeMemory(underlying, ret.data(), 0, gsl::narrow_cast<int>(ret.size()));
+    if(res < 0)
+      throw std::runtime_error{"virNodeGetCellsFreeMemory"};
+    return ret;
   }
 
 

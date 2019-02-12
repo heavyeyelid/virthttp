@@ -114,8 +114,10 @@ namespace virt {
 
     template <typename Callback = virConnectAuthCallbackPtr>
     inline Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, Flags flags) noexcept;
-
-    inline Connection(Connection&& conn) noexcept;
+    inline Connection(const Connection& conn) noexcept = delete;
+    constexpr Connection(Connection&& conn) noexcept = default;
+    inline Connection& operator=(const Connection& conn) noexcept = delete;
+    inline Connection& operator=(Connection&& conn) noexcept = default;
 
     inline ~Connection();
 
@@ -148,12 +150,27 @@ namespace virt {
     inline bool isSecure() const noexcept;
 
     inline int numOfDomains() const noexcept;
+    inline int numOfDefinedDomains() const noexcept;
 
     auto listDomains() const -> std::vector<int>;
+    template <typename StrT>
+    auto listDefinedDomains() const = delete;
+    template <>
+    auto listDefinedDomains<std::string>() const;
+    template <>
+    auto listDefinedDomains<gsl::zstring<>>() const;
+
     auto listAllDomains(List::Domains::Flags flags) const -> std::vector<Domain>;
 
     auto getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags) -> std::vector<Domain::Stats::Record>;
 
+    Domain domainLookupByID(int) const noexcept;
+    Domain domainLookupByName(gsl::czstring<>) const noexcept;
+    Domain domainLookupByUUIDString(gsl::czstring<>) const noexcept;
+
+    virNodeInfo nodeGetInfo() const;
+    auto nodeGetFreeMemory() const;
+    auto nodeGetCellsFreeMemory() const;
   };
 
 
