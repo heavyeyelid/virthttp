@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <libvirt/libvirt.h>
 #include <algorithm>
 
 // From C++ Weekly - Ep 134 (Jason Turner) : https://www.youtube.com/watch?v=EsUmnLgz8QY
