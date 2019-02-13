@@ -14,23 +14,16 @@
 using namespace std::literals;
 
 int main(int argc, const gsl::czstring<> *const argv){
-    iniConfig = std::make_unique<IniConfig>(config_file_loc);
     logger.setQuiet(false);
     logger.setDebug(true);
 
-    const INIReader reader(config_file_loc);
+    logger.info("libvirt server URI: ", iniConfig.getConnURI());
+    logger.info("http server URI: ", iniConfig.getHttpURI());
 
-    if (reader.ParseError() < 0) {
-        logger.warning("Can't load ", config_file_loc);
-        logger.info("Using default config");
-    }
-
-    logger.info("libvirt server URI: ", iniConfig->getConnURI());
-
-    const auto address = net::ip::make_address(reader.Get("http_server","address","0.0.0.0"));
-    const auto port = static_cast<unsigned short>(reader.GetInteger("http_server", "port", 8081));
-    const auto doc_root = std::make_shared<std::string>(reader.Get("http_server", "doc_root", "."));
-    const auto threads = std::max(1, gsl::narrow_cast<int>(reader.GetInteger("http_server", "threads", 1)));
+    const auto address = net::ip::make_address(iniConfig.http_address);
+    const auto port = static_cast<unsigned short>(iniConfig.http_port);
+    const auto doc_root = std::make_shared<std::string>(iniConfig.http_doc_root);
+    const auto threads = std::max(1, gsl::narrow_cast<int>(iniConfig.http_threads));
 
     // The io_context is required for all I/O
     net::io_context ioc{threads};
@@ -50,8 +43,6 @@ int main(int argc, const gsl::czstring<> *const argv){
                 });
     ioc.run();
 
-    iniConfig.reset(nullptr); // Better to run destructors in the lifetime of main
+    //iniConfig.reset(nullptr); // Better to run destructors in the lifetime of main
     return EXIT_SUCCESS;
 }
-
-#include "wrapper/impl/config.hpp"

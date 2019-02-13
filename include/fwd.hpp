@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include <memory>
+#include "wrapper/config.hpp"
 
-class Logger;
-class IniConfig;
-
-inline std::unique_ptr<IniConfig> iniConfig = nullptr;
+IniConfig iniConfig;
