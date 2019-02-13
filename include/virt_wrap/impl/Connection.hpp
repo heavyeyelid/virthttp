@@ -180,13 +180,15 @@ namespace virt {
     const auto res = virConnectListDefinedDomains(underlying, buf.data(), max_size);
     if(res < 0)
       throw std::runtime_error{"virConnectListDefinedDomains"};
-    std::vector<std::unique_ptr<gsl::zstring<>>, decltype(std::free)> ret;
+    constexpr auto d = +[](gsl::owner<char*> p){std::free(p);};
+    using D = decltype(d);
+    std::vector<std::unique_ptr<char[], D>> ret;
     ret.reserve(gsl::narrow_cast<unsigned>(res));
     std::transform(std::make_move_iterator(buf.begin()),
                    std::make_move_iterator(buf.end()),
                    std::back_inserter(ret),
-                   [](gsl::owner<gsl::zstring<>> str){
-                     return {ret, std::free};
+                   [=](gsl::owner<gsl::zstring<>> str) {
+                     return std::unique_ptr<char[], D>(str, d);
                    });
     return ret;
   }

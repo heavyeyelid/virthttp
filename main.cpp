@@ -46,3 +46,6 @@ int main(int argc, const gsl::czstring<> *const argv){
     //iniConfig.reset(nullptr); // Better to run destructors in the lifetime of main
     return EXIT_SUCCESS;
 }
+
+#include "virt_wrap/impl/Connection.hpp"
+#include "virt_wrap/impl/Domain.hpp"
