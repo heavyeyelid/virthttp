@@ -164,29 +164,22 @@ void handle_request(
         req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
-    try {
-        if(req.at("X-Auth-Key") == iniConfig.http_auth_key){
-            if( req.target().starts_with("/libvirt") ) {
-                virConnectPtr conn;
-                logger.debug("Opening connection to ", iniConfig.getConnURI());
-                conn = virConnectOpen(iniConfig.getConnURI().c_str());
-                if (conn == nullptr) {
-                    logger.error("Failed to open connection to ", iniConfig.getConnURI());
-                }
-                constexpr auto json = R"({"project":"rapidjson","stars":10})";
-                d.Parse(json);
-
-                auto& s = d["stars"];
-                s.SetInt(s.GetInt() + 1);
-
-                d.Accept(writer);
-
-                //virt::Connection conn{connURI.data()};
-                virConnectClose(conn);
+    if(req["X-Auth-Key"] == iniConfig.http_auth_key){
+        if( req.target().starts_with("/libvirt") ) {
+            logger.debug("Opening connection to ", iniConfig.getConnURI());
+            virt::Connection conn{iniConfig.connURI.data()};
+            if (!conn) {
+                logger.error("Failed to open connection to ", iniConfig.getConnURI());
             }
+            constexpr auto json = R"({"project":"rapidjson","stars":10})";
+            d.Parse(json);
+
+            auto& s = d["stars"];
+            s.SetInt(s.GetInt() + 1);
+
+            d.Accept(writer);
+
         }
-    } catch (std::exception& e) {
-        logger.error(e.what());
     }
 
     // Build the path to the requested file
