@@ -69,6 +69,7 @@ namespace virt {
     struct List {
       struct Domains {
         enum class Flags : unsigned {
+          DEFAULT = 0,
           ACTIVE         = VIR_CONNECT_LIST_DOMAINS_ACTIVE,
           INACTIVE       = VIR_CONNECT_LIST_DOMAINS_INACTIVE,
 
@@ -157,7 +158,7 @@ namespace virt {
     auto listDefinedDomains() const = delete;
 
 
-    auto listAllDomains(List::Domains::Flags flags) const -> std::vector<Domain>;
+    auto listAllDomains(List::Domains::Flags flags = List::Domains::Flags::DEFAULT) const -> std::vector<Domain>;
 
     auto getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags) -> std::vector<Domain::Stats::Record>;
 
