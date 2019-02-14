@@ -49,3 +49,4 @@ int main(int argc, const gsl::czstring<> *const argv){
 
 #include "virt_wrap/impl/Connection.hpp"
 #include "virt_wrap/impl/Domain.hpp"
+#include "virt_wrap/impl/TypedParams.hpp"
