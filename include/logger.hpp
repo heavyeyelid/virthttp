@@ -5,9 +5,6 @@
 
 #include <iostream>
 #include <gsl/gsl>
-#include "fwd.hpp"
-
-constexpr auto config_file_loc = "config.ini";
 
 class Logger
 {

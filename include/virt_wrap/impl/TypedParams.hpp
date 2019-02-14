@@ -6,7 +6,6 @@
 
 #include <libvirt/libvirt.h>
 #include <lift.hpp>
-#include <libvirt/libvirt-common.h>
 #include "../TypesParam.hpp"
 #include "../utility.hpp"
 
@@ -76,7 +75,7 @@ namespace virt {
       [&, this](unsigned long long v){add(name, v);},
       [&, this](double v){add(name, v);},
       [&, this](bool v){add(name, v);},
-      [&, this](gsl::czstring<> v){add(name, v);}
+      [&, this](std::string v){add(name, v.c_str());}
     }, tp.val);
   }
 

@@ -32,7 +32,8 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <libvirt/libvirt.h>
-#include "config.hpp"
+#include "fwd.hpp"
+#include "virt_wrap.hpp"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -114,7 +115,7 @@ void handle_request(
     rapidjson::Document d;
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    std::cout << req.at("a");
+
     // Returns a bad request response
     const auto bad_request = [&](beast::string_view why){
         http::response<http::string_body> res{http::status::bad_request, req.version()};
@@ -126,7 +127,7 @@ void handle_request(
         return res;
     };
 
-    std::cout << "Received from a Session: HTTP " << req.method() << ' ' << req.target();
+    std::cout << "Received from a Session: HTTP " << req.method() << ' ' << req.target() << std::endl;
 
     // Returns a not found response
     const auto not_found = [&](beast::string_view target){
@@ -163,19 +164,22 @@ void handle_request(
         req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
+    if(req["X-Auth-Key"] == iniConfig.http_auth_key){
+        if( req.target().starts_with("/libvirt") ) {
+            logger.debug("Opening connection to ", iniConfig.getConnURI());
+            virt::Connection conn{iniConfig.connURI.data()};
+            if (!conn) {
+                logger.error("Failed to open connection to ", iniConfig.getConnURI());
+            }
+            constexpr auto json = R"({"project":"rapidjson","stars":10})";
+            d.Parse(json);
 
-    if( req.target().starts_with("/libvirt") ) {
-        constexpr auto json = R"({"project":"rapidjson","stars":10})";
-        d.Parse(json);
+            auto& s = d["stars"];
+            s.SetInt(s.GetInt() + 1);
 
-        auto& s = d["stars"];
-        s.SetInt(s.GetInt() + 1);
+            d.Accept(writer);
 
-        d.Accept(writer);
-
-        // driver[+transport]://[username@][hostname][:port]/[path][?extraparameters]
-        //setConnURI("qemu","","","","","/system","");
-        //virt::Connection conn{connURI.data()};
+        }
     }
 
     // Build the path to the requested file
@@ -210,7 +214,7 @@ void handle_request(
     {
         http::response<http::empty_body> res{http::status::ok, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, "application/json_str");
+        res.set(http::field::content_type, "application/json");
         res.content_length(size);
         res.keep_alive(req.keep_alive());
         return send(std::move(res));

@@ -168,6 +168,8 @@ namespace virt {
     virNodeInfo nodeGetInfo() const;
     auto nodeGetFreeMemory() const;
     auto nodeGetCellsFreeMemory() const;
+
+    constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
   };
 
 
