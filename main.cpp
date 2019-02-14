@@ -43,7 +43,7 @@ int main(int argc, const gsl::czstring<> *const argv){
                 });
     ioc.run();
 
-    //iniConfig.reset(nullptr); // Better to run destructors in the lifetime of main
+  //iniConfig.reset(nullptr); // Better to run destructors in the lifetime of main
     return EXIT_SUCCESS;
 }
 

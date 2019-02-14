@@ -72,8 +72,15 @@ namespace virt {
     void create();
     Info getInfo() const;
     gsl::czstring<> getName() const noexcept;
+    unsigned getID() const noexcept;
     unsigned char getUUID() const;
     bool isActive() const;
+
+    std::string getUUIDString() const noexcept;
+    auto getOSType() const;
+    unsigned long getMaxMemory() const noexcept;
+    bool setMaxMemory(unsigned long);
+    bool setMemory(unsigned long);
 
     void reboot(ShutdownFlags flags = ShutdownFlags::DEFAULT);
     void rename(gsl::czstring<>);

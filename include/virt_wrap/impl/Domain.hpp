@@ -38,12 +38,37 @@ namespace virt {
     return virDomainGetName(underlying);
   }
 
+  unsigned Domain::getID() const noexcept {
+    return virDomainGetID(underlying);
+  }
+
   unsigned char Domain::getUUID() const {
     unsigned char ret;
     const auto res = virDomainGetUUID(underlying, &ret);
     if(res < 0)
       throw std::runtime_error{"virDomainGetUUID"};
     return ret;
+  }
+
+  std::string Domain::getUUIDString() const noexcept {
+    std::string ret{};
+    ret.resize(VIR_UUID_STRING_BUFLEN);
+    virDomainGetUUIDString(underlying, ret.data());
+    ret.resize(std::strlen(ret.data()));
+    ret.shrink_to_fit();
+    return ret;
+  }
+  auto Domain::getOSType() const {
+    return std::unique_ptr<char[], void(*)(char*)>{virDomainGetOSType(underlying), reinterpret_cast<void(*)(char*)>(std::free)};
+  }
+  unsigned long Domain::getMaxMemory() const noexcept {
+    return virDomainGetMaxMemory(underlying);
+  }
+  bool Domain::setMaxMemory(unsigned long mem) {
+    return virDomainSetMaxMemory(underlying, mem) == 0;
+  }
+  bool Domain::setMemory(unsigned long mem) {
+    return virDomainSetMemory(underlying, mem) == 0;
   }
 
   bool Domain::isActive() const {

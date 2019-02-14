@@ -223,7 +223,7 @@ namespace virt {
 
     ret.reserve(static_cast<unsigned>(res));
     std::transform(domains, domains + res, std::back_inserter(ret), [](virDomainPtr d){return Domain{d};});
-    std::for_each(domains, domains + res, virDomainFree);
+    //std::for_each(domains, domains + res, virDomainFree);
     std::free(domains);
 
     return ret;
