@@ -71,6 +71,7 @@ namespace virt {
 
     void create();
     Info getInfo() const;
+    gsl::czstring<> getName() const noexcept;
     unsigned char getUUID() const;
     bool isActive() const;
 

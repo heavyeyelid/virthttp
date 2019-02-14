@@ -34,6 +34,10 @@ namespace virt {
     return info;
   }
 
+  gsl::czstring<> Domain::getName() const noexcept {
+    return virDomainGetName(underlying);
+  }
+
   unsigned char Domain::getUUID() const {
     unsigned char ret;
     const auto res = virDomainGetUUID(underlying, &ret);
