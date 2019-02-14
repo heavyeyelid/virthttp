@@ -17,13 +17,6 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/bind_executor.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
 #include <algorithm>
 #include <cstdlib>
 #include <functional>
@@ -32,10 +25,14 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <boost/asio.hpp>
+#include <boost/beast.hpp>
+#include <boost/config.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <libvirt/libvirt.h>
+#include "virt_wrap.hpp"
 #include "virt_wrap/Connection.hpp"
 #include "virt_wrap/Domain.hpp"
 #include "virt_wrap/TypesParam.hpp"
@@ -43,7 +40,6 @@
 #include "virt_wrap/impl/Domain.hpp"
 #include "virt_wrap/impl/TypedParams.hpp"
 #include "fwd.hpp"
-#include "virt_wrap.hpp"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -171,16 +167,15 @@ void handle_request(
         req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
-    size_t size = 0;
-    std::string json_string = "";
+    std::size_t size = 0;
+    std::string json_string{};
 
     if(req["X-Auth-Key"] == iniConfig.http_auth_key){
         if( req.target().starts_with("/libvirt") ) {
             rapidjson::Document d{};
             d.SetObject();
             d.AddMember("results", "", d.GetAllocator());
-            auto& results = d["results"];
-            results.SetArray();
+            auto& results = d["results"].SetArray();
 
             logger.debug("Opening connection to ", iniConfig.getConnURI());
             virt::Connection conn{iniConfig.connURI.data()};
@@ -189,15 +184,13 @@ void handle_request(
             }
 
             for(const auto& dom : conn.listAllDomains()){
-                rapidjson::Value res_val;
+                rapidjson::Value res_val{};
                 res_val.SetObject();
 
-                std::string name;
-                name.assign(dom.getName(), std::strlen(dom.getName()));
+                const std::string name{dom.getName(), std::strlen(dom.getName())};
                 res_val.AddMember("name", name, d.GetAllocator());
                 res_val.AddMember("id", dom.getID(), d.GetAllocator());
-                std::string osType;
-                osType.assign(dom.getOSType().get(), std::strlen(dom.getOSType().get()));
+                const std::string osType{dom.getOSType().get(), std::strlen(dom.getOSType().get())};
                 res_val.AddMember("os", osType, d.GetAllocator());
                 results.PushBack(res_val, d.GetAllocator());
 
@@ -208,7 +201,7 @@ void handle_request(
             }
 
             rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<> > writer(buffer);
+            rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<>> writer(buffer);
             d.Accept(writer);
             size = buffer.GetSize();
             json_string = buffer.GetString();
