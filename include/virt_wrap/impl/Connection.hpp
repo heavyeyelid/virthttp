@@ -222,8 +222,9 @@ namespace virt {
       throw std::runtime_error{"virConnectListAllDomains"};
 
     ret.reserve(static_cast<unsigned>(res));
-    std::transform(domains, domains + res, std::back_inserter(ret), [](virDomainPtr d){return Domain{d};});
+    //std::transform(domains, domains + res, std::back_inserter(ret), [](virDomainPtr d){return Domain{d};});
     //std::for_each(domains, domains + res, virDomainFree);
+    std::for_each(domains, domains + res, [&](virDomainPtr d){ret.emplace_back(d);});
     std::free(domains);
 
     return ret;

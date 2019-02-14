@@ -21,7 +21,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             thirdparty/inih
             include)
 
-    add_compile_options ("-O3")
+    add_compile_options ("-O1")
     add_compile_options ("-mtune=native")
     add_compile_options ("-g")
     add_executable (test

@@ -15,7 +15,6 @@ namespace virt {
     friend Connection;
 
     virDomainPtr underlying = nullptr;
-    inline explicit Domain(virDomainPtr ptr) noexcept;
 
   public:
     using Info = virDomainInfo;
@@ -65,8 +64,11 @@ namespace virt {
       KEEP_NVRAM         = VIR_DOMAIN_UNDEFINE_KEEP_NVRAM,         /* Keep nvram file */
     };
 
+    inline explicit Domain(virDomainPtr ptr) noexcept;
     Domain(const Domain&) = delete;
     Domain(Domain&&) noexcept = default;
+    Domain& operator=(const Domain&) = delete;
+    Domain& operator=(Domain&&) = default;
     inline ~Domain() noexcept;
 
     void create();

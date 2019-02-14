@@ -2,7 +2,6 @@
 // Created by hugo on 30.01.19.
 //
 #include <iostream>
-#include <INIReader.h>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
 #include "wrapper/http_wrapper.hpp"
@@ -47,6 +46,9 @@ int main(int argc, const gsl::czstring<> *const argv){
     return EXIT_SUCCESS;
 }
 
+#include "virt_wrap/Connection.hpp"
+#include "virt_wrap/Domain.hpp"
+#include "virt_wrap/TypesParam.hpp"
 #include "virt_wrap/impl/Connection.hpp"
 #include "virt_wrap/impl/Domain.hpp"
 #include "virt_wrap/impl/TypedParams.hpp"

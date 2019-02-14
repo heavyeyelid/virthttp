@@ -47,7 +47,7 @@ public:
         http_port = reader.GetInteger("http_server", "port", 8081);
         http_doc_root = reader.Get("http_server", "doc_root", ".");
         http_threads = reader.GetInteger("http_server", "threads", 1);
-        http_auth_key = reader.Get("http_server", "auth-key", "");
+        http_auth_key = reader.Get("http_server", "auth-key", "123456789abcdefgh");
 
         connDRIV = reader.Get("libvirtd", "driver", "qemu");
         connTRANS = reader.Get("libvirtd", "transport", "");

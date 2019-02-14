@@ -13,6 +13,10 @@
 //
 //------------------------------------------------------------------------------
 
+#pragma once
+
+#define RAPIDJSON_HAS_STDSTRING 1
+
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -32,6 +36,12 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <libvirt/libvirt.h>
+#include "virt_wrap/Connection.hpp"
+#include "virt_wrap/Domain.hpp"
+#include "virt_wrap/TypesParam.hpp"
+#include "virt_wrap/impl/Connection.hpp"
+#include "virt_wrap/impl/Domain.hpp"
+#include "virt_wrap/impl/TypedParams.hpp"
 #include "fwd.hpp"
 #include "virt_wrap.hpp"
 
@@ -112,9 +122,6 @@ void handle_request(
     beast::string_view doc_root,
     http::request<Body, http::basic_fields<Allocator>>&& req,
     Send&& send){
-    rapidjson::Document d;
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
     // Returns a bad request response
     const auto bad_request = [&](beast::string_view why){
@@ -164,21 +171,47 @@ void handle_request(
         req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
+    size_t size = 0;
+    std::string json_string = "";
+
     if(req["X-Auth-Key"] == iniConfig.http_auth_key){
         if( req.target().starts_with("/libvirt") ) {
+            rapidjson::Document d{};
+            d.SetObject();
+            d.AddMember("results", "", d.GetAllocator());
+            auto& results = d["results"];
+            results.SetArray();
+
             logger.debug("Opening connection to ", iniConfig.getConnURI());
             virt::Connection conn{iniConfig.connURI.data()};
             if (!conn) {
                 logger.error("Failed to open connection to ", iniConfig.getConnURI());
             }
-            constexpr auto json = R"({"project":"rapidjson","stars":10})";
-            d.Parse(json);
 
-            auto& s = d["stars"];
-            s.SetInt(s.GetInt() + 1);
+            for(const auto& dom : conn.listAllDomains()){
+                rapidjson::Value res_val;
+                res_val.SetObject();
 
+                std::string name;
+                name.assign(dom.getName(), std::strlen(dom.getName()));
+                res_val.AddMember("name", name, d.GetAllocator());
+                res_val.AddMember("id", dom.getID(), d.GetAllocator());
+                std::string osType;
+                osType.assign(dom.getOSType().get(), std::strlen(dom.getOSType().get()));
+                res_val.AddMember("os", osType, d.GetAllocator());
+                results.PushBack(res_val, d.GetAllocator());
+
+                logger.debug(name);
+                logger.debug(dom.getUUIDString());
+                logger.debug(dom.getID());
+                logger.debug(osType);
+            }
+
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<> > writer(buffer);
             d.Accept(writer);
-
+            size = buffer.GetSize();
+            json_string = buffer.GetString();
         }
     }
 
@@ -206,8 +239,7 @@ void handle_request(
     auto const size = body.size();
     */
 
-    const auto size = buffer.GetSize();
-    const auto json_string = buffer.GetString();
+
 
     // Respond to HEAD request
     if(req.method() == http::verb::head)

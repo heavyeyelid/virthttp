@@ -6,4 +6,4 @@
 
 #include "wrapper/config.hpp"
 
-IniConfig iniConfig;
+inline IniConfig iniConfig;
