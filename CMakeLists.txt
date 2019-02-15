@@ -7,7 +7,7 @@ if(!MACOS AND !MINGW)
     set (CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-    find_package (Boost 1.66
+find_package (Boost 1.66
         REQUIRED
         COMPONENTS system)
 
