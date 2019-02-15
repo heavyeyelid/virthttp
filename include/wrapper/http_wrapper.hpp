@@ -175,30 +175,48 @@ void handle_request(
             rapidjson::Document d{};
             d.SetObject();
             d.AddMember("results", "", d.GetAllocator());
-            auto& results = d["results"].SetArray();
+            d.AddMember("success", false, d.GetAllocator());
+            d.AddMember("errors", "", d.GetAllocator());
+            d.AddMember("messages", "", d.GetAllocator());
+            auto& jResults = d["results"].SetArray();
+            auto& jErrors = d["errors"].SetArray();
+            auto& jMessages = d["messages"].SetArray();
 
             logger.debug("Opening connection to ", iniConfig.getConnURI());
-            virt::Connection conn{iniConfig.connURI.data()};
-            if (!conn) {
+            try {
+                virt::Connection conn{iniConfig.connURI.data()};
+
+                for(const auto& dom : conn.listAllDomains()){
+                    rapidjson::Value res_val{};
+                    res_val.SetObject();
+
+                    const std::string name{dom.getName(), std::strlen(dom.getName())};
+                    res_val.AddMember("name", name, d.GetAllocator());
+                    res_val.AddMember("id", dom.getID(), d.GetAllocator());
+                    const std::string osType{dom.getOSType().get(), std::strlen(dom.getOSType().get())};
+                    res_val.AddMember("os", osType, d.GetAllocator());
+                    jResults.PushBack(res_val, d.GetAllocator());
+                    d["success"] = true;
+
+                    logger.debug(name);
+                    logger.debug(dom.getUUIDString());
+                    logger.debug(dom.getID());
+                    logger.debug(osType);
+                }
+            } catch (const std::exception& e){
+                d["success"] = false;
+                rapidjson::Value err_val{};
+                err_val.SetObject();
+                err_val.AddMember("error", "Failed to open connection to LibVirtD", d.GetAllocator());
+                jErrors.PushBack(err_val, d.GetAllocator());
                 logger.error("Failed to open connection to ", iniConfig.getConnURI());
+                logger.debug(e.what());
             }
+//            if (!conn) {
+//                logger.error("Failed to open connection to ", iniConfig.getConnURI());
+//            }
 
-            for(const auto& dom : conn.listAllDomains()){
-                rapidjson::Value res_val{};
-                res_val.SetObject();
 
-                const std::string name{dom.getName(), std::strlen(dom.getName())};
-                res_val.AddMember("name", name, d.GetAllocator());
-                res_val.AddMember("id", dom.getID(), d.GetAllocator());
-                const std::string osType{dom.getOSType().get(), std::strlen(dom.getOSType().get())};
-                res_val.AddMember("os", osType, d.GetAllocator());
-                results.PushBack(res_val, d.GetAllocator());
-
-                logger.debug(name);
-                logger.debug(dom.getUUIDString());
-                logger.debug(dom.getID());
-                logger.debug(osType);
-            }
 
             rapidjson::StringBuffer buffer;
             rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<>> writer(buffer);
