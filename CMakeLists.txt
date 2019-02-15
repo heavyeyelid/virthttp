@@ -3,9 +3,11 @@ project (HeavyEyelid)
 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
-set (CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+if(!MACOS AND !MINGW)
+    set (CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
-find_package (Boost 1.66
+    find_package (Boost 1.66
         REQUIRED
         COMPONENTS system)
 
