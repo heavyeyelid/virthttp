@@ -192,22 +192,21 @@ void handle_request(
 
                     const std::string name{dom.getName(), std::strlen(dom.getName())};
                     res_val.AddMember("name", name, d.GetAllocator());
-                    res_val.AddMember("id", dom.getID(), d.GetAllocator());
-                    const std::string osType{dom.getOSType().get(), std::strlen(dom.getOSType().get())};
-                    res_val.AddMember("os", osType, d.GetAllocator());
+                    res_val.AddMember("uuid", dom.getUUIDString(), d.GetAllocator());
+                    res_val.AddMember("status", dom.getInfo().state, d.GetAllocator());
                     jResults.PushBack(res_val, d.GetAllocator());
                     d["success"] = true;
 
                     logger.debug(name);
                     logger.debug(dom.getUUIDString());
-                    logger.debug(dom.getID());
-                    logger.debug(osType);
+                    logger.debug(static_cast<int>(dom.getInfo().state));
                 }
             } catch (const std::exception& e){
                 d["success"] = false;
                 rapidjson::Value err_val{};
                 err_val.SetObject();
-                err_val.AddMember("error", "Failed to open connection to LibVirtD", d.GetAllocator());
+                err_val.AddMember("code", 10, d.GetAllocator());
+                err_val.AddMember("message", "Failed to open connection to LibVirtD", d.GetAllocator());
                 jErrors.PushBack(err_val, d.GetAllocator());
                 logger.error("Failed to open connection to ", iniConfig.getConnURI());
                 logger.debug(e.what());
