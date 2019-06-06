@@ -1,15 +1,15 @@
 [submodule "third-party/gsl"]
 	path = thirdparty/gsl
-	url = git@github.com:Microsoft/GSL.git
+	url = https://github.com/microsoft/GSL.git
 [submodule "thirdparty/rapidxml_ns"]
 	path = thirdparty/rapidxml_ns
-	url = git@github.com:svgpp/rapidxml_ns.git
+	url = https://github.com/svgpp/rapidxml_ns.git
 [submodule "thirdparty/rapidjson"]
 	path = thirdparty/rapidjson
-	url = git@github.com:Tencent/rapidjson.git
+	url = https://github.com/Tencent/rapidjson.git
 [submodule "thirdparty/lift"]
 	path = thirdparty/lift
-	url = git@github.com:rollbear/lift.git
+	url = https://github.com/rollbear/lift.git
 [submodule "thirdparty/inih"]
 	path = thirdparty/inih
-	url = git@github.com:jtilly/inih.git
+	url = https://github.com/jtilly/inih.git
