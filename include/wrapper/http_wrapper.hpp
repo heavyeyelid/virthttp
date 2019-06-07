@@ -182,41 +182,51 @@ void handle_request(
             logger.debug("Opening connection to ", iniConfig.getConnURI());
             try {
                 virt::Connection conn{iniConfig.connURI.data()};
-//                const std::string test{req.target().substr(17)};
-//
-//                //Listing information about a specified domain
-//                std::optional<virt::Domain> dom;
-//                if (req.target().starts_with("/libvirt/domains/by-name/")) {
-//                    const std::string substr{req.target().substr(25)};
-//                    dom = conn.domainLookupByName(substr.c_str());
-//                    logger.debug(substr);
-//                    dom->getInfo();
-//                } else if (req.target().starts_with("/libvirt/domains/by-id/")) {
-//                    const std::string substr{req.target().substr(23)};
-//                    dom = conn.domainLookupByID(std::stoi(substr));
-//                    dom->getInfo();
-//                    logger.debug(substr);
-//                } else {
-//                    const std::string substr{req.target().substr(17)};
-//                    dom = conn.domainLookupByUUIDString(substr.c_str());
-//                    dom->getInfo();
-//                    logger.debug(substr);
-//                }
-//            }
-                for (const auto &dom : conn.listAllDomains()) {
-                    rapidjson::Value res_val{};
-                    res_val.SetObject();
+                if (req.target().starts_with("/libvirt/domains/by-name")) {
+                    logger.debug("Getting domain information by name");
+                    const std::string substr{req.target().substr(25)};
+                    try {
+                        virt::Domain dom = conn.domainLookupByName(substr.c_str());
+                        rapidjson::Value res_val{};
+                        res_val.SetObject();
 
-                    const std::string name{dom.getName(), std::strlen(dom.getName())};
-                    res_val.AddMember("name", name, d.GetAllocator());
-                    res_val.AddMember("uuid", dom.getUUIDString(), d.GetAllocator());
-                    res_val.AddMember("status", dom.getInfo().state, d.GetAllocator());
-                    jResults.PushBack(res_val, d.GetAllocator());
-                    d["success"] = true;
+                        const std::string name{dom.getName(), std::strlen(dom.getName())};
+                        res_val.AddMember("name", name, d.GetAllocator());
+                        res_val.AddMember("uuid", dom.getUUIDString(), d.GetAllocator());
+                        res_val.AddMember("status", dom.getInfo().state, d.GetAllocator());
+//                        res_val.AddMember("os", dom.getOSType(), d.GetAllocator());
+                        res_val.AddMember("ram", dom.getInfo().memory, d.GetAllocator());
+                        res_val.AddMember("ram_max", dom.getInfo().maxMem, d.GetAllocator());
+                        res_val.AddMember("cpu", dom.getInfo().nrVirtCpu, d.GetAllocator());
 
-                    logger.debug(name);
-                    logger.debug(dom.getUUIDString());
-                    logger.debug(static_cast<int>(dom.getInfo().state));
+                        jResults.PushBack(res_val, d.GetAllocator());
+                        d["success"] = true;
+                    } catch (const std::exception &e) {
+                        d["success"] = false;
+                        rapidjson::Value err_val{};
+                        err_val.SetObject();
+                        err_val.AddMember("code", 100, d.GetAllocator());
+                        err_val.AddMember("message", "Cannot find VM with a such name", d.GetAllocator());
+
+                        logger.error("Cannot find VM with name: ", substr);
+                        logger.debug(e.what());
+                    }
+                } else {
+                    for (const auto &dom : conn.listAllDomains()) {
+                        rapidjson::Value res_val{};
+                        res_val.SetObject();
+
+                        const std::string name{dom.getName(), std::strlen(dom.getName())};
+                        res_val.AddMember("name", name, d.GetAllocator());
+                        res_val.AddMember("uuid", dom.getUUIDString(), d.GetAllocator());
+                        res_val.AddMember("status", dom.getInfo().state, d.GetAllocator());
+                        jResults.PushBack(res_val, d.GetAllocator());
+                        d["success"] = true;
+
+                        logger.debug(name);
+                        logger.debug(dom.getUUIDString());
+                        logger.debug(static_cast<int>(dom.getInfo().state));
+                    }
                 }
             } catch (const std::exception &e) {
                 d["success"] = false;
