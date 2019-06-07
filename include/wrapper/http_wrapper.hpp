@@ -32,6 +32,7 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <libvirt/libvirt.h>
+#include <urlparser.hpp>
 #include "virt_wrap.hpp"
 #include "virt_wrap/Connection.hpp"
 #include "virt_wrap/Domain.hpp"
@@ -182,6 +183,8 @@ void handle_request(
             logger.debug("Opening connection to ", iniConfig.getConnURI());
             try {
                 virt::Connection conn{iniConfig.connURI.data()};
+                std::string path = path_cat(doc_root, req.target())
+
                 if (req.target().starts_with("/libvirt/domains/by-name")) {
                     logger.debug("Getting domain information by name");
                     const std::string substr{req.target().substr(25)};
