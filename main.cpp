@@ -12,7 +12,7 @@
 
 using namespace std::literals;
 
-int main(int argc, const gsl::czstring<> *const argv){
+int main(int argc, char **argv){
     logger.setQuiet(false);
     logger.setDebug(true);
 
