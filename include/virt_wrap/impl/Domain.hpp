@@ -18,6 +18,10 @@ namespace virt {
     virDomainFree(underlying);
   }
 
+  constexpr inline Domain::operator bool() const noexcept {
+   return underlying != nullptr;
+  }
+
   Domain Domain::createXML(Connection& c, gsl::czstring<> xml, CreateFlags flags) {
     return Domain{virDomainCreateXML(c.underlying, xml, to_integral(flags))};
 

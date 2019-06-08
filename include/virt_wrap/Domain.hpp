@@ -71,6 +71,8 @@ namespace virt {
     Domain& operator=(Domain&&) = default;
     inline ~Domain() noexcept;
 
+    constexpr inline explicit operator bool() const noexcept;
+
     void create();
     Info getInfo() const;
     gsl::czstring<> getName() const noexcept;
