@@ -15,6 +15,8 @@
 #include <string_view>
 #include <vector>
 #include <ctll.hpp>
+
+#define CTRE_DISABLE_GREEDY_OPT 1
 #include <ctre.hpp>
 
 constexpr auto url_pattern = ctll::fixed_string{R"(^(?:(http[s]?|ftp)://)?([^/]+?)(?::(\d+))?(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
@@ -43,7 +45,8 @@ private:
 
     scheme = s_scheme;
     host = s_host;
-    port = std::strtoul(s_port.to_view().data(), nullptr, 10);
+    if(s_port)
+      port = std::strtoul(s_port.to_view().data(), nullptr, 10);
     path = s_path;
     std::string_view sv_query = s_query;
 
