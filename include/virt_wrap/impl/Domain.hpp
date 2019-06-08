@@ -59,7 +59,7 @@ namespace virt {
     return ret;
   }
   auto Domain::getOSType() const {
-    return std::unique_ptr<char[], void(*)(char*)>{virDomainGetOSType(underlying), reinterpret_cast<void(*)(char*)>(std::free)};
+    return std::unique_ptr<char[], void(*)(char*)>{virDomainGetOSType(underlying), +[](char* cstr){std::free(cstr);}};
   }
   unsigned long Domain::getMaxMemory() const noexcept {
     return virDomainGetMaxMemory(underlying);
