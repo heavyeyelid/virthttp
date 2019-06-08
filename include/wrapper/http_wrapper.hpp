@@ -156,6 +156,9 @@ void handle_request(
 
     // Make sure we can handle the method
     if (req.method() != http::verb::get &&
+        req.method() != http::verb::patch &&
+        req.method() != http::verb::post &&
+        req.method() != http::verb::put &&
         req.method() != http::verb::head)
         return send(bad_request("Unknown HTTP-method"));
 
@@ -168,22 +171,25 @@ void handle_request(
     std::size_t size = 0;
     std::string json_string{};
 
-    rapidjson::Document d{};
-    d.SetObject();
-    d.AddMember("results", "", d.GetAllocator());
-    d.AddMember("success", false, d.GetAllocator());
-    d.AddMember("errors", "", d.GetAllocator());
-    d.AddMember("messages", "", d.GetAllocator());
-    auto &jResults = d["results"].SetArray();
-    auto &jErrors = d["errors"].SetArray();
-    auto &jMessages = d["messages"].SetArray();
+    auto path = path_cat(doc_root, req.target());
+    auto URL = URLParser(path.c_str());
+
+    rapidjson::Document json_res{};
+    json_res.SetObject();
+    json_res.AddMember("results", "", json_res.GetAllocator());
+    json_res.AddMember("success", false, json_res.GetAllocator());
+    json_res.AddMember("errors", "", json_res.GetAllocator());
+    json_res.AddMember("messages", "", json_res.GetAllocator());
+    auto &jResults = json_res["results"].SetArray();
+    auto &jErrors = json_res["errors"].SetArray();
+    auto &jMessages = json_res["messages"].SetArray();
+
 
     if (req["X-Auth-Key"] == iniConfig.http_auth_key) {
         if (req.target().starts_with("/libvirt/domains")) {
             logger.debug("Opening connection to ", iniConfig.getConnURI());
             try {
                 virt::Connection conn{iniConfig.connURI.data()};
-                std::string path = path_cat(doc_root, req.target())
 
                 if (req.target().starts_with("/libvirt/domains/by-name")) {
                     logger.debug("Getting domain information by name");
@@ -193,74 +199,118 @@ void handle_request(
                         rapidjson::Value res_val{};
                         res_val.SetObject();
 
-                        const std::string name{dom.getName(), std::strlen(dom.getName())};
-                        res_val.AddMember("name", name, d.GetAllocator());
-                        res_val.AddMember("uuid", dom.getUUIDString(), d.GetAllocator());
-                        res_val.AddMember("status", dom.getInfo().state, d.GetAllocator());
-//                        res_val.AddMember("os", dom.getOSType(), d.GetAllocator());
-                        res_val.AddMember("ram", dom.getInfo().memory, d.GetAllocator());
-                        res_val.AddMember("ram_max", dom.getInfo().maxMem, d.GetAllocator());
-                        res_val.AddMember("cpu", dom.getInfo().nrVirtCpu, d.GetAllocator());
+                        if (req.method() == http::verb::patch) {
+                            rapidjson::Document json_req{};
+                            json_req.Parse(req.body().data());
+                            if (json_req["status"] == 5 && dom.getInfo().state == 1) {
+                                try {
+                                    dom.shutdown();
+                                    res_val.AddMember("status", 5, json_res.GetAllocator());
+                                    rapidjson::Value msg_val{};
+                                    msg_val.SetObject();
+                                    msg_val.AddMember("shutdown", "Domain is shutting down",
+                                                      json_res.GetAllocator());
 
-                        jResults.PushBack(res_val, d.GetAllocator());
-                        d["success"] = true;
+                                    jMessages.PushBack(msg_val, json_res.GetAllocator());
+                                    jResults.PushBack(res_val, json_res.GetAllocator());
+                                    json_res["success"] = true;
+
+                                } catch (std::exception &e) {
+                                    json_res["success"] = false;
+                                    rapidjson::Value err_val{};
+
+                                    err_val.SetObject();
+                                    err_val.AddMember("code", 200, json_res.GetAllocator());
+                                    err_val.AddMember("message", "Cannot shut down the VM", json_res.GetAllocator());
+                                    jErrors.PushBack(err_val, json_res.GetAllocator());
+
+                                    logger.error("Cannot shut down this VM: ", substr);
+                                    logger.debug(e.what());
+                                }
+                            } else {
+                                json_res["success"] = false;
+                                rapidjson::Value err_val{};
+                                err_val.SetObject();
+
+                                err_val.AddMember("code", 201, json_res.GetAllocator());
+                                err_val.AddMember("message", "Domain is not running", json_res.GetAllocator());
+                                jErrors.PushBack(err_val, json_res.GetAllocator());
+                            }
+                        }
+
+                        if (req.method() == http::verb::get) {
+                            const std::string name{dom.getName(), std::strlen(dom.getName())};
+                            res_val.AddMember("name", name, json_res.GetAllocator());
+                            res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
+                            res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
+//                            res_val.AddMember("os", dom.getOSType(), json_res.GetAllocator());
+                            res_val.AddMember("ram", dom.getInfo().memory, json_res.GetAllocator());
+                            res_val.AddMember("ram_max", dom.getInfo().maxMem, json_res.GetAllocator());
+                            res_val.AddMember("cpu", dom.getInfo().nrVirtCpu, json_res.GetAllocator());
+
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
+                        }
                     } catch (const std::exception &e) {
-                        d["success"] = false;
+                        json_res["success"] = false;
                         rapidjson::Value err_val{};
                         err_val.SetObject();
-                        err_val.AddMember("code", 100, d.GetAllocator());
-                        err_val.AddMember("message", "Cannot find VM with a such name", d.GetAllocator());
+                        err_val.AddMember("code", 100, json_res.GetAllocator());
+                        err_val.AddMember("message", "Cannot find VM with a such name", json_res.GetAllocator());
+                        jErrors.PushBack(err_val, json_res.GetAllocator());
 
                         logger.error("Cannot find VM with name: ", substr);
                         logger.debug(e.what());
                     }
                 } else {
-                    for (const auto &dom : conn.listAllDomains()) {
-                        rapidjson::Value res_val{};
-                        res_val.SetObject();
+                    if (req.method() == http::verb::get) {
+                        for (const auto &dom : conn.listAllDomains()) {
+                            rapidjson::Value res_val{};
+                            res_val.SetObject();
 
-                        const std::string name{dom.getName(), std::strlen(dom.getName())};
-                        res_val.AddMember("name", name, d.GetAllocator());
-                        res_val.AddMember("uuid", dom.getUUIDString(), d.GetAllocator());
-                        res_val.AddMember("status", dom.getInfo().state, d.GetAllocator());
-                        jResults.PushBack(res_val, d.GetAllocator());
-                        d["success"] = true;
+                            const std::string name{dom.getName(), std::strlen(dom.getName())};
+                            res_val.AddMember("name", name, json_res.GetAllocator());
+                            res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
+                            res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
 
-                        logger.debug(name);
-                        logger.debug(dom.getUUIDString());
-                        logger.debug(static_cast<int>(dom.getInfo().state));
+                            logger.debug(name);
+                            logger.debug(dom.getUUIDString());
+                            logger.debug(static_cast<int>(dom.getInfo().state));
+                        }
                     }
                 }
             } catch (const std::exception &e) {
-                d["success"] = false;
+                json_res["success"] = false;
                 rapidjson::Value err_val{};
                 err_val.SetObject();
-                err_val.AddMember("code", 10, d.GetAllocator());
-                err_val.AddMember("message", "Failed to open connection to LibVirtD", d.GetAllocator());
-                jErrors.PushBack(err_val, d.GetAllocator());
+                err_val.AddMember("code", 10, json_res.GetAllocator());
+                err_val.AddMember("message", "Failed to open connection to LibVirtD", json_res.GetAllocator());
+                jErrors.PushBack(err_val, json_res.GetAllocator());
                 logger.error("Failed to open connection to ", iniConfig.getConnURI());
                 logger.debug(e.what());
             }
         } else {
-            d["success"] = false;
+            json_res["success"] = false;
             rapidjson::Value jErrorValue{};
             jErrorValue.SetObject();
-            jErrorValue.AddMember("code", 2, d.GetAllocator());
-            jErrorValue.AddMember("message", "Bad URL", d.GetAllocator());
-            jErrors.PushBack(jErrorValue, d.GetAllocator());
+            jErrorValue.AddMember("code", 2, json_res.GetAllocator());
+            jErrorValue.AddMember("message", "Bad URL", json_res.GetAllocator());
+            jErrors.PushBack(jErrorValue, json_res.GetAllocator());
         }
     } else {
-        d["success"] = false;
+        json_res["success"] = false;
         rapidjson::Value jErrorValue{};
         jErrorValue.SetObject();
-        jErrorValue.AddMember("code", 1, d.GetAllocator());
-        jErrorValue.AddMember("message", "Bad X-Auth-Key", d.GetAllocator());
-        jErrors.PushBack(jErrorValue, d.GetAllocator());
+        jErrorValue.AddMember("code", 1, json_res.GetAllocator());
+        jErrorValue.AddMember("message", "Bad X-Auth-Key", json_res.GetAllocator());
+        jErrors.PushBack(jErrorValue, json_res.GetAllocator());
     }
 
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<>> writer(buffer);
-    d.Accept(writer);
+    json_res.Accept(writer);
     size = buffer.GetSize();
     json_string = buffer.GetString();
 
@@ -313,8 +363,7 @@ void handle_request(
 //------------------------------------------------------------------------------
 
 // Report a failure
-void
-fail(beast::error_code ec, const char *what) {
+void fail(beast::error_code ec, const char *what) {
     std::cerr << what << ": " << ec.message() << "\n";
 }
 

@@ -60,6 +60,8 @@ public:
         setURL(URL);
     }
 
+    ~URLParser() = default;
+
     void setURL(const char *URL) {
         url = URL;
         url_len = strlen(URL);
@@ -72,5 +74,37 @@ public:
                 return queriesPtr[i].value;
         }
         return nullptr;
+    }
+
+    char *getPath() {
+        char *str = (char *) malloc(sizeof(char *));
+        for (uint i = 0; i <= 6; i++) {
+            str = (char *) realloc(str, (i+1) * sizeof(char*));
+            str[i] = url[i];
+        }
+        uint i;
+        if (std::strcmp(str, "http://") == 0)
+            i = 7;
+        else if (std::strcmp(str, "https://") == 0)
+            i = 8;
+        else
+            i = 0;
+
+        while (url[i] != '/' && i < url_len)
+            i++;
+        char *res = nullptr;
+        uint j = 0;
+        while (url[i] != '?' && i < url_len) {
+            res = (char *) realloc(res, (j+1) * sizeof(char *));
+            res[j] = url[i];
+            i++; j++;
+        }
+        if (res)
+            res[j] = '\0';
+        return res;
+    }
+
+    const char *getURL() {
+        return url;
     }
 };
