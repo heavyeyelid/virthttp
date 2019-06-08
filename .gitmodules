@@ -13,3 +13,6 @@
 [submodule "thirdparty/inih"]
 	path = thirdparty/inih
 	url = https://github.com/jtilly/inih.git
+[submodule "thirdparty/ctre"]
+	path = thirdparty/ctre
+	url = https://github.com/hanickadot/compile-time-regular-expressions
