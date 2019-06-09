@@ -3,7 +3,7 @@ cmake_policy (SET CMP0025 NEW) # Force CMAKE_<LANG>_COMPILER_ID to differenciate
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # using Clang
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0.0")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL "8.0.0")
         add_compile_definitions (CTRE_DISABLE_GREEDY_OPT)
     endif ()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
