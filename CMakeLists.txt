@@ -3,6 +3,9 @@ project (HeavyEyelid)
 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
+
+include (WA-ICEs) # Workarouds for known ICEs on certain compiler versions
+
 if (!MACOS AND !MINGW)
     set (CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif ()

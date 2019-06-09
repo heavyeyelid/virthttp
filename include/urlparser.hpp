@@ -15,8 +15,6 @@
 #include <string_view>
 #include <vector>
 #include <ctll.hpp>
-
-#define CTRE_DISABLE_GREEDY_OPT 1
 #include <ctre.hpp>
 
 constexpr auto url_pattern = ctll::fixed_string{R"(^(?:(http[s]?|ftp)://)?([^/]+?)(?::(\d+))?(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
