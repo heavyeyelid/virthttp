@@ -8,6 +8,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     endif ()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # using GCC
+    add_compile_definitions (HE_WA_CTRE_URL_SPLIT)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # using Intel C++
     message (WARNING "Current configured compiler is ICC, which we have not tested. Use at your own risk.")

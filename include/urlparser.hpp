@@ -17,11 +17,24 @@
 #include <ctll.hpp>
 #include <ctre.hpp>
 
+#ifndef HE_WA_CTRE_URL_SPLIT
 constexpr auto url_pattern = ctll::fixed_string{R"(^(?:(http[s]?|ftp)://)?([^/]+?)(?::(\d+))?(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
 
 static constexpr auto url_match(std::string_view sv) noexcept {
   return ctre::match<url_pattern>(sv);
 }
+#else
+[[deprecated]] constexpr auto url_pat_split1 = ctll::fixed_string{R"(^(?:(http[s]?|ftp)://)?([^/:]+)(.+)$)"};
+[[deprecated]] constexpr auto url_pat_split2 = ctll::fixed_string{R"(^(?::(\d+))?(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
+
+[[deprecated]] static constexpr auto url_match_split1(std::string_view sv) noexcept {
+  return ctre::match<url_pat_split1>(sv);
+}
+[[deprecated]] static constexpr auto url_match_split2(std::string_view sv) noexcept {
+  return ctre::match<url_pat_split2>(sv);
+}
+#endif
+
 
 class URLParser {
   struct Query {
@@ -39,8 +52,12 @@ private:
 
   void parse() noexcept {
     queries.clear();
+#ifndef HE_WA_CTRE_URL_SPLIT
     auto [s_all, s_scheme, s_host, s_port, s_path, s_query, s_fragment] = url_match(url);
-
+#else
+    auto [s_all1, s_scheme, s_host, s_next] = url_match_split1(url);
+    auto [s_all2, s_port, s_path, s_query, s_fragment] = url_match_split2(s_next.to_view());
+#endif
     scheme = s_scheme;
     host = s_host;
     if(s_port)
