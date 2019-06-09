@@ -27,10 +27,11 @@ public:
             httpURI;
 
     long
-            http_port,
-            http_threads;
+            http_port{},
+            http_threads{};
 
-    IniConfig() {
+  IniConfig() = default;
+    void init() {
         auto iniFile = config_file_loc;
 
         INIReader reader(config_file_loc);

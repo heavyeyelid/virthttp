@@ -19,6 +19,8 @@ int main(int argc, char **argv){
     logger.info("libvirt server URI: ", iniConfig.getConnURI());
     logger.info("http server URI: ", iniConfig.getHttpURI());
 
+    iniConfig.init();
+
     const auto address = net::ip::make_address(iniConfig.http_address);
     const auto port = static_cast<unsigned short>(iniConfig.http_port);
     const auto doc_root = std::make_shared<std::string>(iniConfig.http_doc_root);
