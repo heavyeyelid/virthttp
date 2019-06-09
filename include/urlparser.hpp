@@ -86,7 +86,7 @@ public:
   constexpr const flatmap<std::string_view, std::string_view>& getQueries() const noexcept {
     return queries;
   }
-  constexpr std::string_view getQuery(std::string_view key) const noexcept {
+  constexpr std::string_view operator[](std::string_view key) const noexcept {
     if(auto it = queries.find(key); it != queries.end())
       return it->second;
     return {};
