@@ -4,20 +4,15 @@
 
 #pragma once
 
-#if __cplusplus > 201703L // If in C++2a or above
-#  define CONSTEXPR2A constexpr
-#else
-#define CONSTEXPR2A
-#endif
-
 #include <algorithm>
 #include <cstring>
 #include <string_view>
 #include <vector>
 #include <ctll.hpp>
 #include <ctre.hpp>
+#include <flatmap.hpp>
 
-constexpr auto target_pattern = ctll::fixed_string{R"(^(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
+constexpr auto target_pattern = ctll::fixed_string{R"(^($|/[^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
 static constexpr auto target_match(std::string_view sv) noexcept {
   return ctre::match<target_pattern>(sv);
 }
@@ -44,15 +39,10 @@ static constexpr auto url_match(std::string_view sv) noexcept {
 
 class TargetParser {
 protected:
-  struct Query {
-    std::string_view name{};
-    std::string_view value{};
-  };
-
   std::string_view url{};
 
   std::string_view path;
-  std::vector<Query> queries = {};
+  flatmap<std::string_view, std::string_view> queries = {};
 
   constexpr std::string_view match() noexcept {
     auto res = target_match(url);
@@ -62,12 +52,9 @@ protected:
   }
   void parse_queries(std::string_view sv_query) noexcept {
     queries.clear();
-
     for (auto [s_match, s_name, s_value] : ctre::range<target_queries>(sv_query)){
-      queries.push_back({s_name, s_value});
+      queries.emplace(s_name, s_value);
     }
-
-    std::sort(queries.begin(), queries.end(), [](auto& a, auto& b){return a.name > b.name;});
   }
 
   void parse() noexcept {
@@ -92,13 +79,8 @@ public:
   constexpr std::string_view getURL() const noexcept {
     return url;
   }
-  CONSTEXPR2A std::string_view getQuery(const char* query) const noexcept {
-    return getQuery(std::string_view{query});
-  }
-  CONSTEXPR2A std::string_view getQuery(std::string_view query) const noexcept {
-    Query q{query, {}};
-    bool found = std::binary_search(queries.cbegin(), queries.cend(), q, [&](const Query& a, const Query& b){return a.name == b.name;});
-    return found ? q.value : "";
+  const flatmap<std::string_view, std::string_view>& getQueries() const noexcept {
+    return queries;
   }
 };
 
