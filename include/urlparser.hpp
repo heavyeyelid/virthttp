@@ -86,6 +86,11 @@ public:
   const flatmap<std::string_view, std::string_view>& getQueries() const noexcept {
     return queries;
   }
+  std::string_view getQuery(std::string_view key){
+    if(auto it = queries.find(key); it != queries.end())
+      return it->second;
+    return {};
+  }
 };
 
 class URLParser : public TargetParser {
