@@ -63,9 +63,6 @@ protected:
   void parse_queries(std::string_view sv_query) noexcept {
     queries.clear();
 
-    if(sv_query.length() > 0)
-      sv_query.remove_prefix(1); // strip leading '?'
-
     for (auto [s_match, s_name, s_value] : ctre::range<target_queries>(sv_query)){
       queries.push_back({s_name, s_value});
     }
@@ -125,7 +122,10 @@ private:
       port = std::strtoul(s_port.to_view().data(), nullptr, 10);
     path = s_path;
 
-    parse_queries(s_query);
+    std::string_view sv_query = s_query;
+    if(sv_query.length() > 0)
+      sv_query.remove_prefix(1); // strip leading '?'
+    parse_queries(sv_query);
   }
 
 public:
