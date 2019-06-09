@@ -17,6 +17,13 @@
 #include <ctll.hpp>
 #include <ctre.hpp>
 
+constexpr auto target_pattern = ctll::fixed_string{R"(^(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
+static constexpr auto target_match(std::string_view sv) noexcept {
+  return ctre::match<target_pattern>(sv);
+}
+
+constexpr auto target_queries = ctll::fixed_string{R"([&;]?([^=&;]*)=([^=&;]*))"};
+
 #ifndef HE_WA_CTRE_URL_SPLIT
 constexpr auto url_pattern = ctll::fixed_string{R"(^(?:(http[s]?|ftp)://)?([^/]+?)(?::(\d+))?(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
 
@@ -35,22 +42,76 @@ static constexpr auto url_match(std::string_view sv) noexcept {
 }
 #endif
 
-
-class URLParser {
+class TargetParser {
+protected:
   struct Query {
     std::string_view name{};
     std::string_view value{};
   };
 
+  std::string_view url{};
+
+  std::string_view path;
+  std::vector<Query> queries = {};
+
+  constexpr std::string_view match() noexcept {
+    auto res = target_match(url);
+    auto [s_all, s_path, s_query, s_fragment] = res;
+    path = s_path;
+    return s_query;
+  }
+  void parse_queries(std::string_view sv_query) noexcept {
+    queries.clear();
+
+    if(sv_query.length() > 0)
+      sv_query.remove_prefix(1); // strip leading '?'
+
+    for (auto [s_match, s_name, s_value] : ctre::range<target_queries>(sv_query)){
+      queries.push_back({s_name, s_value});
+    }
+
+    std::sort(queries.begin(), queries.end(), [](auto& a, auto& b){return a.name > b.name;});
+  }
+
+  void parse() noexcept {
+    parse_queries(match());
+  }
+public:
+  constexpr TargetParser() = default;
+  explicit TargetParser(std::string_view url): url(url) {}
+
+  void setURL(const char* v) {
+    url = v;
+    parse();
+  }
+  void setURL(std::string_view sv) {
+    url = sv;
+    parse();
+  }
+  constexpr std::string_view getPath() const noexcept {
+    return path;
+  }
+
+  constexpr std::string_view getURL() const noexcept {
+    return url;
+  }
+  CONSTEXPR2A std::string_view getQuery(const char* query) const noexcept {
+    return getQuery(std::string_view{query});
+  }
+  CONSTEXPR2A std::string_view getQuery(std::string_view query) const noexcept {
+    Query q{query, {}};
+    bool found = std::binary_search(queries.cbegin(), queries.cend(), q, [&](const Query& a, const Query& b){return a.name == b.name;});
+    return found ? q.value : "";
+  }
+};
+
+class URLParser : public TargetParser {
 private:
-  std::string url{};
   std::string_view scheme;
   std::string_view host;
   unsigned short port{0};
-  std::string_view path;
-  std::vector<Query> queries{};
 
-  void parse() noexcept {
+  void parse_all() noexcept {
     queries.clear();
 #ifndef HE_WA_CTRE_URL_SPLIT
     auto [s_all, s_scheme, s_host, s_port, s_path, s_query, s_fragment] = url_match(url);
@@ -63,32 +124,8 @@ private:
     if(s_port)
       port = std::strtoul(s_port.to_view().data(), nullptr, 10);
     path = s_path;
-    std::string_view sv_query = s_query;
 
-    if(sv_query.length() > 0)
-      sv_query.remove_prefix(1); // strip leading '?'
-
-    while(sv_query.length() > 0){
-      auto it = std::find_if(sv_query.begin(), sv_query.end(), [](auto c){return c == '=' || c == '&' || c == ';';});
-      auto& query = queries.emplace_back();
-      auto pos = std::distance(sv_query.begin(), it);
-
-      query.name = sv_query.substr(0, pos);
-      sv_query = sv_query.substr(pos);
-
-      if(it != sv_query.end() && *it == '='){
-        sv_query.remove_prefix(1);
-        it = std::find_if(sv_query.begin(), sv_query.end(), [](auto c){return c == '&' || c == ';';});
-        pos = std::distance(sv_query.begin(), it);
-
-        query.value = sv_query.substr(0, pos);
-        sv_query = sv_query.substr(pos);
-
-        if(it != sv_query.end())
-          sv_query.remove_prefix(1);
-      }
-    }
-    std::sort(queries.begin(), queries.end(), [](auto& a, auto& b){return a.name > b.name;});
+    parse_queries(s_query);
   }
 
 public:
@@ -109,20 +146,11 @@ public:
 
   void setURL(const char* v) {
     url = v;
-    parse();
+    parse_all();
   }
   void setURL(std::string_view sv) {
     url = sv;
-    parse();
-  }
-
-  CONSTEXPR2A std::string_view getQuery(const char* query) const noexcept {
-    return getQuery(std::string_view{query});
-  }
-  CONSTEXPR2A std::string_view getQuery(std::string_view query) const noexcept {
-    Query q{query, {}};
-    bool found = std::binary_search(queries.cbegin(), queries.cend(), q, [&](const Query& a, const Query& b){return a.name == b.name;});
-    return found ? q.value : "";
+    parse_all();
   }
 
   constexpr std::string_view getScheme() const noexcept {
@@ -138,13 +166,5 @@ public:
    * */
   constexpr unsigned short getPort() const noexcept {
     return port;
-  }
-
-  std::string_view getPath() const noexcept {
-    return path;
-  }
-
-  const std::string& getURL() const noexcept {
-      return url;
   }
 };
