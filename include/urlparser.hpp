@@ -64,7 +64,9 @@ protected:
   }
 public:
   constexpr TargetParser() = default;
-  explicit TargetParser(std::string_view url): url(url) {}
+  explicit TargetParser(std::string_view url): url(url) {
+    parse();
+  }
 
   void setURL(const char* v) {
     url = v;
