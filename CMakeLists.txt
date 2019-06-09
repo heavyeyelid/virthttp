@@ -49,7 +49,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap.hpp
             include/logger.hpp
             include/fwd.hpp
-            include/urlparser.hpp)
+            include/urlparser.hpp include/flatmap.hpp)
 
     target_link_libraries (HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
     if (WIN32)
