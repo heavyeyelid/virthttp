@@ -47,7 +47,7 @@ namespace http  = beast::http;          // from <boost/beast/http.hpp>
 namespace net   = boost::asio;          // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 
-std::string_view bsv2stdsv(boost::string_view bsv){
+constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept {
   return {bsv.data(), bsv.length()};
 }
 
