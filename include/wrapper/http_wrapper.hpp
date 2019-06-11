@@ -7,12 +7,6 @@
 // Official repository: https://github.com/boostorg/beast
 //
 
-//------------------------------------------------------------------------------
-//
-// Example: HTTP server, asynchronous
-//
-//------------------------------------------------------------------------------
-
 #pragma once
 
 #define RAPIDJSON_HAS_STDSTRING 1
@@ -40,6 +34,7 @@
 #include "virt_wrap/impl/Connection.hpp"
 #include "virt_wrap/impl/Domain.hpp"
 #include "virt_wrap/impl/TypedParams.hpp"
+#include "handler.hpp"
 #include "fwd.hpp"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -47,85 +42,81 @@ namespace http  = beast::http;          // from <boost/beast/http.hpp>
 namespace net   = boost::asio;          // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 
-constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept {
-  return {bsv.data(), bsv.length()};
-}
-
 // Return a reasonable mime type based on the extension of a file.
 beast::string_view mime_type(beast::string_view path) {
-  using beast::iequals;
-  auto const ext = [&path] {
-    auto const pos = path.rfind(".");
-    if(pos == beast::string_view::npos)
-      return beast::string_view{};
-    return path.substr(pos);
-  }();
-  if(iequals(ext, ".htm"))
-    return "text/html";
-  if(iequals(ext, ".html"))
-    return "text/html";
-  if(iequals(ext, ".php"))
-    return "text/html";
-  if(iequals(ext, ".css"))
-    return "text/css";
-  if(iequals(ext, ".txt"))
-    return "text/plain";
-  if(iequals(ext, ".js"))
-    return "application/javascript";
-  if(iequals(ext, ".json"))
-    return "application/json";
-  if(iequals(ext, ".xml"))
-    return "application/xml";
-  if(iequals(ext, ".swf"))
-    return "application/x-shockwave-flash";
-  if(iequals(ext, ".flv"))
-    return "video/x-flv";
-  if(iequals(ext, ".png"))
-    return "image/png";
-  if(iequals(ext, ".jpe"))
-    return "image/jpeg";
-  if(iequals(ext, ".jpeg"))
-    return "image/jpeg";
-  if(iequals(ext, ".jpg"))
-    return "image/jpeg";
-  if(iequals(ext, ".gif"))
-    return "image/gif";
-  if(iequals(ext, ".bmp"))
-    return "image/bmp";
-  if(iequals(ext, ".ico"))
-    return "image/vnd.microsoft.icon";
-  if(iequals(ext, ".tiff"))
-    return "image/tiff";
-  if(iequals(ext, ".tif"))
-    return "image/tiff";
-  if(iequals(ext, ".svg"))
-    return "image/svg+xml";
-  if(iequals(ext, ".svgz"))
-    return "image/svg+xml";
-  return "application/text";
+    using beast::iequals;
+    auto const ext = [&path] {
+        auto const pos = path.rfind(".");
+        if (pos == beast::string_view::npos)
+            return beast::string_view{};
+        return path.substr(pos);
+    }();
+    if (iequals(ext, ".htm"))
+        return "text/html";
+    if (iequals(ext, ".html"))
+        return "text/html";
+    if (iequals(ext, ".php"))
+        return "text/html";
+    if (iequals(ext, ".css"))
+        return "text/css";
+    if (iequals(ext, ".txt"))
+        return "text/plain";
+    if (iequals(ext, ".js"))
+        return "application/javascript";
+    if (iequals(ext, ".json"))
+        return "application/json";
+    if (iequals(ext, ".xml"))
+        return "application/xml";
+    if (iequals(ext, ".swf"))
+        return "application/x-shockwave-flash";
+    if (iequals(ext, ".flv"))
+        return "video/x-flv";
+    if (iequals(ext, ".png"))
+        return "image/png";
+    if (iequals(ext, ".jpe"))
+        return "image/jpeg";
+    if (iequals(ext, ".jpeg"))
+        return "image/jpeg";
+    if (iequals(ext, ".jpg"))
+        return "image/jpeg";
+    if (iequals(ext, ".gif"))
+        return "image/gif";
+    if (iequals(ext, ".bmp"))
+        return "image/bmp";
+    if (iequals(ext, ".ico"))
+        return "image/vnd.microsoft.icon";
+    if (iequals(ext, ".tiff"))
+        return "image/tiff";
+    if (iequals(ext, ".tif"))
+        return "image/tiff";
+    if (iequals(ext, ".svg"))
+        return "image/svg+xml";
+    if (iequals(ext, ".svgz"))
+        return "image/svg+xml";
+    return "application/text";
 }
 
 // Append an HTTP rel-path to a local filesystem path.
 // The returned path is normalized for the platform.
 std::string path_cat(beast::string_view base, beast::string_view path) {
-  if(base.empty())
-    return path.to_string();
-  std::string result = base.to_string();
+    if (base.empty())
+        return path.to_string();
+    std::string result = base.to_string();
 #if BOOST_MSVC
-  char constexpr path_separator = '\\';
-  if(result.back() == path_separator)
-    result.resize(result.size() - 1);
-  result.append(path.data(), path.size());
-  for(auto& c : result)
-    if(c == '/')
-      c = path_separator;
+    char constexpr path_separator = '\\';
+    if(result.back() == path_separator)
+      result.resize(result.size() - 1);
+    result.append(path.data(), path.size());
+    for(auto& c : result)
+      if(c == '/')
+        c = path_separator;
 #else
-  char constexpr path_separator = '/';
-  if(result.back() == path_separator)
-    result.resize(result.size() - 1);
-  result.append(path.data(), path.size());
+    char constexpr path_separator = '/';
+    if (result.back() == path_separator)
+        result.resize(result.size() - 1);
+    result.append(path.data(), path.size());
 #endif
-  return result;
+    return result;
 }
 
 // This function produces an HTTP response for the given
@@ -181,146 +172,10 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
   std::size_t size = 0;
   std::string json_string{};
 
-  auto target = TargetParser{bsv2stdsv(req.target())};
+    auto buffer = getResult(std::move(req));
 
-  rapidjson::Document json_res{};
-  json_res.SetObject();
-  json_res.AddMember("results", "", json_res.GetAllocator());
-  json_res.AddMember("success", false, json_res.GetAllocator());
-  json_res.AddMember("errors", "", json_res.GetAllocator());
-  json_res.AddMember("messages", "", json_res.GetAllocator());
-  auto& jResults  = json_res["results"].SetArray();
-  auto& jErrors   = json_res["errors"].SetArray();
-  auto& jMessages = json_res["messages"].SetArray();
-
-
-  if(req["X-Auth-Key"] == iniConfig.http_auth_key) {
-    if(req.target().starts_with("/libvirt/domains")) {
-      logger.debug("Opening connection to ", iniConfig.getConnURI());
-      try {
-        virt::Connection conn{iniConfig.connURI.data()};
-
-        if(req.target().starts_with("/libvirt/domains/by-name")) {
-          logger.debug("Getting domain information by name");
-          const std::string domain_name{req.target().substr(25)};
-          try {
-            virt::Domain dom = conn.domainLookupByName(domain_name.c_str());
-            rapidjson::Value res_val{};
-            res_val.SetObject();
-
-            if(req.method() == http::verb::patch) {
-              rapidjson::Document json_req{};
-              json_req.Parse(req.body().data());
-              if(json_req["status"] == 5 && dom.getInfo().state == 1) {
-                try {
-                  dom.shutdown();
-                  res_val.AddMember("status", 5, json_res.GetAllocator());
-                  rapidjson::Value msg_val{};
-                  msg_val.SetObject();
-                  msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
-
-                  jMessages.PushBack(msg_val, json_res.GetAllocator());
-                  jResults.PushBack(res_val, json_res.GetAllocator());
-                  json_res["success"] = true;
-
-                } catch(std::exception& e) {
-                  json_res["success"] = false;
-                  rapidjson::Value err_val{};
-
-                  err_val.SetObject();
-                  err_val.AddMember("code", 200, json_res.GetAllocator());
-                  err_val.AddMember("message", "Cannot shut down the VM", json_res.GetAllocator());
-                  jErrors.PushBack(err_val, json_res.GetAllocator());
-
-                  logger.error("Cannot shut down this VM: ", domain_name);
-                  logger.debug(e.what());
-                }
-              } else {
-                json_res["success"] = false;
-                rapidjson::Value err_val{};
-                err_val.SetObject();
-
-                err_val.AddMember("code", 201, json_res.GetAllocator());
-                err_val.AddMember("message", "Domain is not running", json_res.GetAllocator());
-                jErrors.PushBack(err_val, json_res.GetAllocator());
-              }
-            }
-
-            if(req.method() == http::verb::get) {
-              const std::string name{dom.getName(), std::strlen(dom.getName())};
-              res_val.AddMember("name", name, json_res.GetAllocator());
-              res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
-              res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
-              //                            res_val.AddMember("os", dom.getOSType(), json_res.GetAllocator());
-              res_val.AddMember("ram", dom.getInfo().memory, json_res.GetAllocator());
-              res_val.AddMember("ram_max", dom.getInfo().maxMem, json_res.GetAllocator());
-              res_val.AddMember("cpu", dom.getInfo().nrVirtCpu, json_res.GetAllocator());
-
-              jResults.PushBack(res_val, json_res.GetAllocator());
-              json_res["success"] = true;
-            }
-          } catch(const std::exception& e) {
-            json_res["success"] = false;
-            rapidjson::Value err_val{};
-            err_val.SetObject();
-            err_val.AddMember("code", 100, json_res.GetAllocator());
-            err_val.AddMember("message", "Cannot find VM with a such name", json_res.GetAllocator());
-            jErrors.PushBack(err_val, json_res.GetAllocator());
-
-            logger.error("Cannot find VM with name: ", domain_name);
-            logger.debug(e.what());
-          }
-        } else {
-          if(req.method() == http::verb::get) {
-            for(const auto& dom : conn.listAllDomains()) {
-              rapidjson::Value res_val{};
-              res_val.SetObject();
-
-              const std::string name{dom.getName(), std::strlen(dom.getName())};
-              res_val.AddMember("name", name, json_res.GetAllocator());
-              res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
-              res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
-              jResults.PushBack(res_val, json_res.GetAllocator());
-              json_res["success"] = true;
-
-              logger.debug(name);
-              logger.debug(dom.getUUIDString());
-              logger.debug(static_cast<int>(dom.getInfo().state));
-            }
-          }
-        }
-      } catch(const std::exception& e) {
-        json_res["success"] = false;
-        rapidjson::Value err_val{};
-        err_val.SetObject();
-        err_val.AddMember("code", 10, json_res.GetAllocator());
-        err_val.AddMember("message", "Failed to open connection to LibVirtD", json_res.GetAllocator());
-        jErrors.PushBack(err_val, json_res.GetAllocator());
-        logger.error("Failed to open connection to ", iniConfig.getConnURI());
-        logger.debug(e.what());
-      }
-    } else {
-      json_res["success"] = false;
-      rapidjson::Value jErrorValue{};
-      jErrorValue.SetObject();
-      jErrorValue.AddMember("code", 2, json_res.GetAllocator());
-      jErrorValue.AddMember("message", "Bad URL", json_res.GetAllocator());
-      jErrors.PushBack(jErrorValue, json_res.GetAllocator());
-    }
-  } else {
-    json_res["success"] = false;
-    rapidjson::Value jErrorValue{};
-    jErrorValue.SetObject();
-    jErrorValue.AddMember("code", 1, json_res.GetAllocator());
-    jErrorValue.AddMember("message", "Bad X-Auth-Key", json_res.GetAllocator());
-    jErrors.PushBack(jErrorValue, json_res.GetAllocator());
-  }
-
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<>> writer(buffer);
-  json_res.Accept(writer);
-  size        = buffer.GetSize();
-  json_string = buffer.GetString();
+    size = buffer.GetSize();
+    json_string = buffer.GetString();
 
   // Build the path to the requested file
   /*
@@ -377,10 +232,10 @@ void fail(beast::error_code ec, const char* what) {
 
 // Handles an HTTP server connection
 class Session : public std::enable_shared_from_this<Session> {
-  // This is the C++11 equivalent of a generic lambda.
-  // The function object is used to send an HTTP message.
-  struct send_lambda {
-    Session& self_;
+    // This is the C++11 equivalent of a generic lambda.
+    // The function object is used to send an HTTP message.
+    struct send_lambda {
+        Session &self_;
 
     explicit send_lambda(Session& self) : self_(self) {}
 
