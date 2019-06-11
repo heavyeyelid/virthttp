@@ -181,8 +181,7 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
   std::size_t size = 0;
   std::string json_string{};
 
-  auto path = path_cat(doc_root, req.target());
-  auto url  = URLParser{path};
+  auto target = TargetParser{bsv2stdsv(req.target())};
 
   rapidjson::Document json_res{};
   json_res.SetObject();
@@ -203,9 +202,9 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
 
         if(req.target().starts_with("/libvirt/domains/by-name")) {
           logger.debug("Getting domain information by name");
-          const std::string substr{req.target().substr(25)};
+          const std::string domain_name{req.target().substr(25)};
           try {
-            virt::Domain dom = conn.domainLookupByName(substr.c_str());
+            virt::Domain dom = conn.domainLookupByName(domain_name.c_str());
             rapidjson::Value res_val{};
             res_val.SetObject();
 
@@ -233,7 +232,7 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
                   err_val.AddMember("message", "Cannot shut down the VM", json_res.GetAllocator());
                   jErrors.PushBack(err_val, json_res.GetAllocator());
 
-                  logger.error("Cannot shut down this VM: ", substr);
+                  logger.error("Cannot shut down this VM: ", domain_name);
                   logger.debug(e.what());
                 }
               } else {
@@ -268,7 +267,7 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
             err_val.AddMember("message", "Cannot find VM with a such name", json_res.GetAllocator());
             jErrors.PushBack(err_val, json_res.GetAllocator());
 
-            logger.error("Cannot find VM with name: ", substr);
+            logger.error("Cannot find VM with name: ", domain_name);
             logger.debug(e.what());
           }
         } else {
