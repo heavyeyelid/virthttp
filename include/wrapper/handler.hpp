@@ -74,13 +74,51 @@ rapidjson::StringBuffer getResult(http::request<Body, http::basic_fields<Allocat
                                     logger.error("Cannot shut down this VM: ", substr);
                                     logger.debug(e.what());
                                 }
-                            } else {
+                            } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
+                                try {
+                                    dom.resume();
+                                    res_val.AddMember("status", 1, json_req.GetAllocator());
+                                    rapidjson::Value msg_val{};
+                                    msg_val.SetObject();
+                                    msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
+                                    jMessages.PushBack(msg_val, json_res.GetAllocator());
+                                    jResults.PushBack(res_val, json_res.GetAllocator());
+                                    json_res["success"] = true;
+                                } catch (std::exception &e) {
+                                    json_res["success"] = false;
+                                    rapidjson::Value err_val{};
+
+                                    err_val.SetObject();
+                                    err_val.AddMember("code", 202, json_res.GetAllocator());
+                                    err_val.AddMember("message", "Cannot start the VM", json_res.GetAllocator());
+                                    jErrors.PushBack(err_val, json_res.GetAllocator());
+
+                                    logger.error("Cannot start this VM: ", substr);
+                                    logger.debug(e.what());
+                                }
+                            } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
                                 json_res["success"] = false;
                                 rapidjson::Value err_val{};
                                 err_val.SetObject();
 
                                 err_val.AddMember("code", 201, json_res.GetAllocator());
                                 err_val.AddMember("message", "Domain is not running", json_res.GetAllocator());
+                                jErrors.PushBack(err_val, json_res.GetAllocator());
+                            } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
+                                json_res["success"] = false;
+                                rapidjson::Value err_val{};
+                                err_val.SetObject();
+
+                                err_val.AddMember("code", 203, json_res.GetAllocator());
+                                err_val.AddMember("message", "Domain is already running", json_res.GetAllocator());
+                                jErrors.PushBack(err_val, json_res.GetAllocator());
+                            } else {
+                                json_res["success"] = false;
+                                rapidjson::Value err_val{};
+                                err_val.SetObject();
+
+                                err_val.AddMember("code", 204, json_res.GetAllocator());
+                                err_val.AddMember("message", "No actions specified", json_res.GetAllocator());
                                 jErrors.PushBack(err_val, json_res.GetAllocator());
                             }
                         }
