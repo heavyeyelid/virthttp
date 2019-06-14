@@ -9,26 +9,20 @@
 #include "Connection.hpp"
 
 namespace virt {
-  class AdminConnection {
+class AdminConnection {
     virAdmConnectPtr underlying = nullptr;
 
   public:
-    inline AdminConnection(gsl::czstring<> name, Connection::Flags flags){
-      underlying = virAdmConnectOpen(name, to_integral(flags));
+    inline AdminConnection(gsl::czstring<> name, Connection::Flags flags) {
+        underlying = virAdmConnectOpen(name, to_integral(flags));
     }
 
-    ~AdminConnection(){
-      virAdmConnectClose(underlying);
-    }
+    ~AdminConnection() { virAdmConnectClose(underlying); }
 
-    inline bool isAlive(){
-      return virAdmConnectIsAlive(underlying) != 0;
-    }
+    inline bool isAlive() { return virAdmConnectIsAlive(underlying) != 0; }
 
-    inline gsl::zstring<> getURI(){
-      return virAdmConnectGetURI(underlying);
-    }
+    inline gsl::zstring<> getURI() { return virAdmConnectGetURI(underlying); }
 
-    //TODO
-  };
+    // TODO
+};
 }

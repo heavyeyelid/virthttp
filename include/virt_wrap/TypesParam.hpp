@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <string>
 #include <optional>
+#include <string>
 #include <variant>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
@@ -13,7 +13,7 @@
 #include "fwd.hpp"
 
 namespace virt {
-  class TypedParameter {
+class TypedParameter {
     friend TypedParams;
 
     struct no_name_tag {};
@@ -21,12 +21,14 @@ namespace virt {
   public:
     explicit TypedParameter(const virTypedParameter&);
     TypedParameter(const virTypedParameter&, no_name_tag);
-    using ValueType = std::variant<int, unsigned, long long, unsigned long long, double, bool, std::string>; // warning: 3x heavier
+    using ValueType =
+        std::variant<int, unsigned, long long, unsigned long long, double, bool,
+                     std::string>; // warning: 3x heavier
     std::string name{};
     ValueType val;
-  };
+};
 
-  class TypedParams {
+class TypedParams {
     friend Connection;
     friend Domain;
     friend TypedParameter;
@@ -45,12 +47,10 @@ namespace virt {
     void add(gsl::czstring<> name, double);
     void add(gsl::czstring<> name, bool);
     void add(gsl::czstring<> name, gsl::czstring<>);
-    void add(const TypedParameter& );
+    void add(const TypedParameter&);
 
-    template <typename T>
-    T get(gsl::czstring<> name) const;
-    template <typename T>
-    T& get(gsl::czstring<> name);
-  };
+    template <typename T> T get(gsl::czstring<> name) const;
+    template <typename T> T& get(gsl::czstring<> name);
+};
 
 }
