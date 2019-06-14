@@ -135,7 +135,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                     const auto name = rapidjson::StringRef(dom.getName());
                     res_val.AddMember("name", name, json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
-                    res_val.AddMember("status", info.state, json_res.GetAllocator());
+                    res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
                     jResults.PushBack(res_val, json_res.GetAllocator());
                     json_res["success"] = true;
 

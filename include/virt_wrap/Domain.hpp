@@ -59,6 +59,26 @@ class Domain {
         PMSUSPENDED = VIR_DOMAIN_PMSUSPENDED, /* the domain is suspended by
                                              guest power management */
     };
+    class States {
+        constexpr static std::array states = {
+            "No State",
+            "Running",
+            "Blocked",
+            "Paused",
+            "Shutdown",
+            "Shutoff",
+            "Crashed",
+            "Power Management Suspended"
+        };
+
+      public:
+        constexpr const char* operator[](State val) noexcept {
+            return states[to_integral(val)];
+        }
+        constexpr const char* operator[](unsigned char val) noexcept {
+            return states[+val];
+        }
+    } static States;
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
         SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain,
