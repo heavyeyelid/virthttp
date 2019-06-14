@@ -52,7 +52,7 @@ template <typename Key, typename Value> class flatmap_storage {
 
     const_iterator begin() const noexcept { return const_iterator{std::begin(m_values)}; }
 
-    const_iterator end() const noexcept { return const_iterator{std::end(m_values)}; }
+    constexpr const_iterator end() const noexcept { return const_iterator{std::end(m_values)}; }
 
     const_iterator cbegin() const noexcept { return begin(); }
 
@@ -591,7 +591,8 @@ template <typename Key, typename Value, typename Compare = std::less<>> class fl
 
     template <typename T, typename = std::enable_if_t<type_traits::is_callable<Compare, T, Key>{}>> iterator find(const T& key) noexcept;
 
-    template <typename T, typename = std::enable_if_t<type_traits::is_callable<Compare, T, Key>{}>> const_iterator find(const T& key) const noexcept;
+    template <typename T, typename = std::enable_if_t<type_traits::is_callable<Compare, T, Key>{}>>
+    constexpr const_iterator find(const T& key) const noexcept;
 
     template <typename T, typename = std::enable_if_t<type_traits::is_callable<Compare, T, Key>{}>> Value& operator[](const T& key);
 
@@ -625,7 +626,7 @@ template <typename Key, typename Value, typename Compare = std::less<>> class fl
 
     template <typename T> std::pair<iterator, bool> find_key(const T& key) noexcept;
 
-    template <typename T> std::pair<const_iterator, bool> find_key(const T& key) const noexcept;
+    template <typename T> constexpr std::pair<const_iterator, bool> find_key(const T& key) const noexcept;
 };
 
 template <typename Key, typename Value, typename Compare> inline flatmap<Key, Value, Compare>::flatmap(std::initializer_list<value_type> list) {
@@ -658,7 +659,7 @@ inline auto flatmap<Key, Value, Compare>::find_key(const K& key) noexcept -> std
 
 template <typename Key, typename Value, typename Compare>
 template <typename K>
-inline auto flatmap<Key, Value, Compare>::find_key(const K& key) const noexcept -> std::pair<const_iterator, bool> {
+inline constexpr auto flatmap<Key, Value, Compare>::find_key(const K& key) const noexcept -> std::pair<const_iterator, bool> {
     const Compare& comp = *this;
     auto key_compare = [&comp, this](auto& lh, auto& rh) { return comp(key_of(lh), key_of(rh)); };
     auto i = std::lower_bound(begin(), end(), key, key_compare);
@@ -748,7 +749,7 @@ inline auto flatmap<Key, Value, Compare>::find(const K& key) noexcept -> iterato
 
 template <typename Key, typename Value, typename Compare>
 template <typename K, typename>
-inline auto flatmap<Key, Value, Compare>::find(const K& key) const noexcept -> const_iterator {
+constexpr inline auto flatmap<Key, Value, Compare>::find(const K& key) const noexcept -> const_iterator {
     auto [iter, exact_match] = find_key(key);
     return exact_match ? iter : end();
 }
