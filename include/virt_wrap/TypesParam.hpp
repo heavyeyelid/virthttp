@@ -13,43 +13,56 @@
 #include "fwd.hpp"
 
 namespace virt {
-class TypedParameter {
-    friend TypedParams;
+    class TypedParameter {
+        friend TypedParams;
 
-    struct no_name_tag {};
+        struct no_name_tag {
+        };
 
-  public:
-    explicit TypedParameter(const virTypedParameter&);
-    TypedParameter(const virTypedParameter&, no_name_tag);
-    using ValueType = std::variant<int, unsigned, long long, unsigned long long, double, bool,
-                                   std::string>; // warning: 3x heavier
-    std::string name{};
-    ValueType val;
-};
+    public:
+        explicit TypedParameter(const virTypedParameter &);
 
-class TypedParams {
-    friend Connection;
-    friend Domain;
-    friend TypedParameter;
+        TypedParameter(const virTypedParameter &, no_name_tag);
 
-    virTypedParameterPtr underlying = nullptr;
-    int size = 0;
-    int capacity = 0;
+        using ValueType = std::variant<int, unsigned, long long, unsigned long long, double, bool,
+                std::string>; // warning: 3x heavier
+        std::string name{};
+        ValueType val;
+    };
 
-  public:
-    inline ~TypedParams() noexcept;
+    class TypedParams {
+        friend Connection;
+        friend Domain;
+        friend TypedParameter;
 
-    void add(gsl::czstring<> name, int);
-    void add(gsl::czstring<> name, unsigned);
-    void add(gsl::czstring<> name, long long);
-    void add(gsl::czstring<> name, unsigned long long);
-    void add(gsl::czstring<> name, double);
-    void add(gsl::czstring<> name, bool);
-    void add(gsl::czstring<> name, gsl::czstring<>);
-    void add(const TypedParameter&);
+        virTypedParameterPtr underlying = nullptr;
+        int size = 0;
+        int capacity = 0;
 
-    template <typename T> T get(gsl::czstring<> name) const;
-    template <typename T> T& get(gsl::czstring<> name);
-};
+    public:
+        inline ~TypedParams() noexcept;
+
+        void add(gsl::czstring<> name, int);
+
+        void add(gsl::czstring<> name, unsigned);
+
+        void add(gsl::czstring<> name, long long);
+
+        void add(gsl::czstring<> name, unsigned long long);
+
+        void add(gsl::czstring<> name, double);
+
+        void add(gsl::czstring<> name, bool);
+
+        void add(gsl::czstring<> name, gsl::czstring<>);
+
+        void add(const TypedParameter &);
+
+        template<typename T>
+        T get(gsl::czstring<> name) const;
+
+        template<typename T>
+        T &get(gsl::czstring<> name);
+    };
 
 }

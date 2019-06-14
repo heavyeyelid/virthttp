@@ -17,7 +17,8 @@ namespace http = beast::http;
 
 constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
 
-template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::request<Body, http::basic_fields<Allocator>>&& req) {
+template<class Body, class Allocator>
+rapidjson::StringBuffer getResult(http::request<Body, http::basic_fields<Allocator>> &&req) {
     auto path = TargetParser{bsv2stdsv(req.target())};
 
     rapidjson::Document json_res{};
@@ -26,9 +27,9 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
     json_res.AddMember("success", false, json_res.GetAllocator());
     json_res.AddMember("errors", "", json_res.GetAllocator());
     json_res.AddMember("messages", "", json_res.GetAllocator());
-    auto& jResults = json_res["results"].SetArray();
-    auto& jErrors = json_res["errors"].SetArray();
-    auto& jMessages = json_res["messages"].SetArray();
+    auto &jResults = json_res["results"].SetArray();
+    auto &jErrors = json_res["errors"].SetArray();
+    auto &jMessages = json_res["messages"].SetArray();
 
     auto error = [&](int code, std::string_view msg) -> void {
         json_res["success"] = false;
@@ -65,71 +66,73 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
             res_val.SetObject();
 
             switch (req.method()) {
-            case http::verb::patch: {
-                rapidjson::Document json_req{};
-                json_req.Parse(req.body().data());
-                if (json_req["status"] == 5 && dom.getInfo().state == 1) {
-                    try {
-                        dom.shutdown();
-                        res_val.AddMember("status", 5, json_res.GetAllocator());
-                        rapidjson::Value msg_val{};
-                        msg_val.SetObject();
-                        msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
+                case http::verb::patch: {
+                    rapidjson::Document json_req{};
+                    json_req.Parse(req.body().data());
+                    if (json_req["status"] == 5 && dom.getInfo().state == 1) {
+                        try {
+                            dom.shutdown();
+                            res_val.AddMember("status", 5, json_res.GetAllocator());
+                            rapidjson::Value msg_val{};
+                            msg_val.SetObject();
+                            msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
 
-                        jMessages.PushBack(msg_val, json_res.GetAllocator());
-                        jResults.PushBack(res_val, json_res.GetAllocator());
-                        json_res["success"] = true;
+                            jMessages.PushBack(msg_val, json_res.GetAllocator());
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
 
-                    } catch (std::exception& e) {
-                        error(200, "Could not shut down the VM");
+                        } catch (std::exception &e) {
+                            error(200, "Could not shut down the VM");
 
-                        logger.error("Cannot shut down this VM: ", substr);
-                        logger.debug(e.what());
+                            logger.error("Cannot shut down this VM: ", substr);
+                            logger.debug(e.what());
+                        }
+                    } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
+                        try {
+                            dom.resume();
+                            res_val.AddMember("status", 1, json_req.GetAllocator());
+                            rapidjson::Value msg_val{};
+                            msg_val.SetObject();
+                            msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
+                            jMessages.PushBack(msg_val, json_res.GetAllocator());
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
+                        } catch (std::exception &e) {
+                            error(202, "Could not start the VM");
+                            logger.error("Cannot start this VM: ", substr);
+                            logger.debug(e.what());
+                        }
+                    } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
+                        error(201, "Domain is not running");
+                    } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
+                        error(203, "Domain is already running");
+                    } else {
+                        error(204, "No actions specified");
                     }
-                } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
-                    try {
-                        dom.resume();
-                        res_val.AddMember("status", 1, json_req.GetAllocator());
-                        rapidjson::Value msg_val{};
-                        msg_val.SetObject();
-                        msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
-                        jMessages.PushBack(msg_val, json_res.GetAllocator());
-                        jResults.PushBack(res_val, json_res.GetAllocator());
-                        json_res["success"] = true;
-                    } catch (std::exception& e) {
-                        error(202, "Could not start the VM");
-                        logger.error("Cannot start this VM: ", substr);
-                        logger.debug(e.what());
-                    }
-                } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
-                    error(201, "Domain is not running");
-                } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
-                    error(203, "Domain is already running");
-                } else {
-                    error(204, "No actions specified");
                 }
-            } break;
-            case http::verb::get: {
-                const std::string name{dom.getName(), std::strlen(dom.getName())};
-                res_val.AddMember("name", name, json_res.GetAllocator());
-                res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
-                res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
-                //                            res_val.AddMember("os",
-                //                            dom.getOSType(),
-                //                            json_res.GetAllocator());
-                res_val.AddMember("ram", dom.getInfo().memory, json_res.GetAllocator());
-                res_val.AddMember("ram_max", dom.getInfo().maxMem, json_res.GetAllocator());
-                res_val.AddMember("cpu", dom.getInfo().nrVirtCpu, json_res.GetAllocator());
+                    break;
+                case http::verb::get: {
+                    const std::string name{dom.getName(), std::strlen(dom.getName())};
+                    res_val.AddMember("name", name, json_res.GetAllocator());
+                    res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
+                    res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
+                    //                            res_val.AddMember("os",
+                    //                            dom.getOSType(),
+                    //                            json_res.GetAllocator());
+                    res_val.AddMember("ram", dom.getInfo().memory, json_res.GetAllocator());
+                    res_val.AddMember("ram_max", dom.getInfo().maxMem, json_res.GetAllocator());
+                    res_val.AddMember("cpu", dom.getInfo().nrVirtCpu, json_res.GetAllocator());
 
-                jResults.PushBack(res_val, json_res.GetAllocator());
-                json_res["success"] = true;
-            } break;
-            default: {
-            }
+                    jResults.PushBack(res_val, json_res.GetAllocator());
+                    json_res["success"] = true;
+                }
+                    break;
+                default: {
+                }
             }
         } else {
             if (req.method() == http::verb::get) {
-                for (const auto& dom : conn.listAllDomains()) {
+                for (const auto &dom : conn.listAllDomains()) {
                     rapidjson::Value res_val{};
                     res_val.SetObject();
 

@@ -7,33 +7,42 @@
 #include <gsl/gsl>
 
 class Logger {
-  public:
-    template <typename... Ts> void raw(std::ostream& os, Ts... msg) {
+public:
+    template<typename... Ts>
+    void raw(std::ostream &os, Ts... msg) {
         (std::cout << ... << msg);
         std::cout << std::endl;
     }
 
-    template <typename... Ts> void warning(Ts... msg) {
+    template<typename... Ts>
+    void warning(Ts... msg) {
         if (!isQuiet)
             raw(std::cout, "WARN: ", msg...);
     }
-    template <typename... Ts> void error(Ts... msg) {
+
+    template<typename... Ts>
+    void error(Ts... msg) {
         if (!isQuiet)
             raw(std::cerr, "ERROR: ", msg...);
     }
-    template <typename... Ts> void info(Ts... msg) {
+
+    template<typename... Ts>
+    void info(Ts... msg) {
         if (!isQuiet)
             raw(std::cout, "INFO: ", msg...);
     }
-    template <typename... Ts> void debug(Ts... msg) {
+
+    template<typename... Ts>
+    void debug(Ts... msg) {
         if (isDebug && !isQuiet)
             raw(std::cout, "DEBUG: ", msg...);
     }
 
     void setQuiet(bool b) { isQuiet = b; }
+
     void setDebug(bool b) { isDebug = b; }
 
-  private:
+private:
     bool isQuiet = false;
     bool isDebug = false;
 };

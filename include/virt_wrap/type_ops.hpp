@@ -3,6 +3,8 @@
 //
 
 #pragma once
+
 #include <type_traits>
 
-template <typename E> constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }
+template<typename E>
+constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }

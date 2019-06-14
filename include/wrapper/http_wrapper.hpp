@@ -123,8 +123,9 @@ std::string path_cat(beast::string_view base, beast::string_view path) {
 // request. The type of the response object depends on the
 // contents of the request, so the interface requires the
 // caller to pass a generic lambda for receiving the response.
-template <class Body, class Allocator, class Send>
-void handle_request(beast::string_view doc_root, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
+template<class Body, class Allocator, class Send>
+void
+handle_request(beast::string_view doc_root, http::request<Body, http::basic_fields<Allocator>> &&req, Send &&send) {
     // Returns a bad request response
     const auto bad_request = [&](beast::string_view why) {
         http::response<http::string_body> res{http::status::bad_request, req.version()};
@@ -161,7 +162,8 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
     };
 
     // Make sure we can handle the method
-    if (req.method() != http::verb::get && req.method() != http::verb::patch && req.method() != http::verb::post && req.method() != http::verb::put &&
+    if (req.method() != http::verb::get && req.method() != http::verb::patch && req.method() != http::verb::post &&
+        req.method() != http::verb::put &&
         req.method() != http::verb::head)
         return send(bad_request("Unknown HTTP-method"));
 
@@ -224,18 +226,19 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
 //------------------------------------------------------------------------------
 
 // Report a failure
-void fail(beast::error_code ec, const char* what) { std::cerr << what << ": " << ec.message() << "\n"; }
+void fail(beast::error_code ec, const char *what) { std::cerr << what << ": " << ec.message() << "\n"; }
 
 // Handles an HTTP server connection
 class Session : public std::enable_shared_from_this<Session> {
     // This is the C++11 equivalent of a generic lambda.
     // The function object is used to send an HTTP message.
     struct send_lambda {
-        Session& self_;
+        Session &self_;
 
-        explicit send_lambda(Session& self) : self_(self) {}
+        explicit send_lambda(Session &self) : self_(self) {}
 
-        template <bool isRequest, class Body, class Fields> void operator()(http::message<isRequest, Body, Fields>&& msg) const {
+        template<bool isRequest, class Body, class Fields>
+        void operator()(http::message<isRequest, Body, Fields> &&msg) const {
             // The lifetime of the message has to extend
             // for the duration of the async operation so
             // we use a shared_ptr to manage it.
@@ -247,7 +250,8 @@ class Session : public std::enable_shared_from_this<Session> {
 
             // Write the response
             http::async_write(self_.socket_, *sp,
-                              net::bind_executor(self_.strand_, std::bind(&Session::on_write, self_.shared_from_this(), std::placeholders::_1,
+                              net::bind_executor(self_.strand_, std::bind(&Session::on_write, self_.shared_from_this(),
+                                                                          std::placeholders::_1,
                                                                           std::placeholders::_2, sp->need_eof())));
         }
     };
@@ -260,10 +264,10 @@ class Session : public std::enable_shared_from_this<Session> {
     std::shared_ptr<void> res_;
     send_lambda lambda_;
 
-  public:
+public:
     // Take ownership of the socket
-    explicit Session(tcp::socket socket, std::shared_ptr<std::string const> const& doc_root)
-        : socket_(std::move(socket)), strand_(socket_.get_executor()), doc_root_(doc_root), lambda_(*this) {}
+    explicit Session(tcp::socket socket, std::shared_ptr<std::string const> const &doc_root)
+            : socket_(std::move(socket)), strand_(socket_.get_executor()), doc_root_(doc_root), lambda_(*this) {}
 
     // Start the asynchronous operation
     void run() { do_read(); }
@@ -275,7 +279,9 @@ class Session : public std::enable_shared_from_this<Session> {
 
         // Read a request
         http::async_read(socket_, buffer_, req_,
-                         net::bind_executor(strand_, std::bind(&Session::on_read, shared_from_this(), std::placeholders::_1, std::placeholders::_2)));
+                         net::bind_executor(strand_,
+                                            std::bind(&Session::on_read, shared_from_this(), std::placeholders::_1,
+                                                      std::placeholders::_2)));
     }
 
     void on_read(beast::error_code ec, std::size_t bytes_transferred) {
@@ -328,9 +334,9 @@ class Listener : public std::enable_shared_from_this<Listener> {
     tcp::socket socket_;
     std::shared_ptr<const std::string> doc_root_;
 
-  public:
-    Listener(net::io_context& ioc, tcp::endpoint endpoint, const std::shared_ptr<const std::string>& doc_root)
-        : acceptor_(ioc), socket_(ioc), doc_root_(doc_root) {
+public:
+    Listener(net::io_context &ioc, tcp::endpoint endpoint, const std::shared_ptr<const std::string> &doc_root)
+            : acceptor_(ioc), socket_(ioc), doc_root_(doc_root) {
         beast::error_code ec;
 
         // Open the acceptor
@@ -369,7 +375,10 @@ class Listener : public std::enable_shared_from_this<Listener> {
         do_accept();
     }
 
-    void do_accept() { acceptor_.async_accept(socket_, std::bind(&Listener::on_accept, shared_from_this(), std::placeholders::_1)); }
+    void do_accept() {
+        acceptor_.async_accept(socket_, std::bind(&Listener::on_accept, shared_from_this(),
+                                                  std::placeholders::_1));
+    }
 
     void on_accept(beast::error_code ec) {
         if (ec)
