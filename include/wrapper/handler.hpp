@@ -130,7 +130,6 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                 for (const auto& dom : conn.listAllDomains()) {
                     rapidjson::Value res_val{};
                     res_val.SetObject();
-
                     const auto info = dom.getInfo();
                     const auto name = rapidjson::StringRef(dom.getName());
                     res_val.AddMember("name", name, json_res.GetAllocator());

@@ -72,13 +72,13 @@ class Domain {
         };
 
       public:
-        constexpr const char* operator[](State val) noexcept {
+        constexpr const char* operator[](State val) const noexcept {
             return states[to_integral(val)];
         }
-        constexpr const char* operator[](unsigned char val) noexcept {
+        constexpr const char* operator[](unsigned char val) const noexcept {
             return states[+val];
         }
-    } static States;
+    } constexpr static States{};
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
         SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain,
