@@ -10,9 +10,8 @@
 constexpr auto config_file_loc = "config.ini";
 
 class IniConfig {
-public:
-    std::string connDRIV, connTRANS, connUNAME, connHOST, connPORT, connPATH,
-            connEXTP, connURI, http_address, http_doc_root, http_auth_key, httpURI;
+  public:
+    std::string connDRIV, connTRANS, connUNAME, connHOST, connPORT, connPATH, connEXTP, connURI, http_address, http_doc_root, http_auth_key, httpURI;
 
     long http_port{}, http_threads{};
 
@@ -35,8 +34,7 @@ public:
         http_port = reader.GetInteger("http_server", "port", 8081);
         http_doc_root = reader.Get("http_server", "doc_root", ".");
         http_threads = reader.GetInteger("http_server", "threads", 1);
-        http_auth_key =
-                reader.Get("http_server", "auth-key", "123456789abcdefgh");
+        http_auth_key = reader.Get("http_server", "auth-key", "123456789abcdefgh");
 
         connDRIV = reader.Get("libvirtd", "driver", "qemu");
         connTRANS = reader.Get("libvirtd", "transport", "");
@@ -51,8 +49,7 @@ public:
 
     void buildConnURI() {
         connURI.clear();
-        connURI.reserve(
-                64); // Take some extra space, since we're over SSO anyway
+        connURI.reserve(64); // Take some extra space, since we're over SSO anyway
         connURI.append(connDRIV);
         if (!connTRANS.empty())
             connURI += '+' + connTRANS;

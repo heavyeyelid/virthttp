@@ -12,7 +12,7 @@
 
 using namespace std::literals;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     logger.setQuiet(false);
     logger.setDebug(true);
 
@@ -23,17 +23,14 @@ int main(int argc, char **argv) {
 
     const auto address = net::ip::make_address(iniConfig.http_address);
     const auto port = static_cast<unsigned short>(iniConfig.http_port);
-    const auto doc_root =
-            std::make_shared<std::string>(iniConfig.http_doc_root);
-    const auto threads =
-            std::max(1, gsl::narrow_cast<int>(iniConfig.http_threads));
+    const auto doc_root = std::make_shared<std::string>(iniConfig.http_doc_root);
+    const auto threads = std::max(1, gsl::narrow_cast<int>(iniConfig.http_threads));
 
     // The io_context is required for all I/O
     net::io_context ioc{threads};
 
     // Create and launch a listening port
-    std::make_shared<Listener>(ioc, tcp::endpoint{address, port}, doc_root)
-            ->run();
+    std::make_shared<Listener>(ioc, tcp::endpoint{address, port}, doc_root)->run();
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;

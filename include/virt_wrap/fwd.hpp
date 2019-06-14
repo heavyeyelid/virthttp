@@ -5,11 +5,11 @@
 #pragma once
 
 namespace virt {
-    class Connection;
+class Connection;
 
-    class Domain;
+class Domain;
 
-    class TypedParameter;
+class TypedParameter;
 
-    class TypedParams;
+class TypedParams;
 }
