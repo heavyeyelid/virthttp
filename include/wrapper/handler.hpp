@@ -131,16 +131,11 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                     rapidjson::Value res_val{};
                     res_val.SetObject();
                     const auto info = dom.getInfo();
-                    const auto name = dom.getName();
-                    res_val.AddMember("name", rapidjson::Value(name, json_res.GetAllocator()), json_res.GetAllocator());
+                    res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
                     res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
                     jResults.PushBack(res_val, json_res.GetAllocator());
                     json_res["success"] = true;
-
-                    logger.debug(name);
-                    logger.debug(dom.getUUIDString());
-                    logger.debug(static_cast<int>(info.state));
                 }
             }
         }
