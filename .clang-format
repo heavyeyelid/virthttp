@@ -7,7 +7,7 @@ Language: Cpp
 # Force pointers to the type for C++.
 DerivePointerAlignment: false
 PointerAlignment: Left
-ColumnLimit: 150
+ColomnLimit: 150
 IncludeCategories:
   - Regex:           '<[[:alnum:]._]+>'
     Priority:        -4
@@ -17,5 +17,16 @@ IncludeCategories:
     Priority:        -1
   - Regex:           '.*'
     Priority:        -2
+---
+Language: JavaScript
+# Use 100 columns for JS.
+ColumnLimit: 150
+---
+Language: Proto
+# Don't format .proto files.
+DisableFormat: true
+---
+Language: CSharp
+# Use 100 columns for C#.
+ColumnLimit: 150
 ...
-
