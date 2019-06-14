@@ -124,13 +124,10 @@ std::string path_cat(beast::string_view base, beast::string_view path) {
 // contents of the request, so the interface requires the
 // caller to pass a generic lambda for receiving the response.
 template <class Body, class Allocator, class Send>
-void handle_request(beast::string_view doc_root,
-                    http::request<Body, http::basic_fields<Allocator>>&& req,
-                    Send&& send) {
+void handle_request(beast::string_view doc_root, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
     // Returns a bad request response
     const auto bad_request = [&](beast::string_view why) {
-        http::response<http::string_body> res{http::status::bad_request,
-                                              req.version()};
+        http::response<http::string_body> res{http::status::bad_request, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
@@ -139,13 +136,11 @@ void handle_request(beast::string_view doc_root,
         return res;
     };
 
-    logger.info("Received from a Session: HTTP ",
-                boost::beast::http::to_string(req.method()), ' ', req.target());
+    logger.info("Received from a Session: HTTP ", boost::beast::http::to_string(req.method()), ' ', req.target());
 
     // Returns a not found response
     const auto not_found = [&](beast::string_view target) {
-        http::response<http::string_body> res{http::status::not_found,
-                                              req.version()};
+        http::response<http::string_body> res{http::status::not_found, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
@@ -156,8 +151,7 @@ void handle_request(beast::string_view doc_root,
 
     // Returns a server error response
     auto const server_error = [&req](beast::string_view what) {
-        http::response<http::string_body> res{
-            http::status::internal_server_error, req.version()};
+        http::response<http::string_body> res{http::status::internal_server_error, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
@@ -167,14 +161,12 @@ void handle_request(beast::string_view doc_root,
     };
 
     // Make sure we can handle the method
-    if (req.method() != http::verb::get && req.method() != http::verb::patch &&
-        req.method() != http::verb::post && req.method() != http::verb::put &&
+    if (req.method() != http::verb::get && req.method() != http::verb::patch && req.method() != http::verb::post && req.method() != http::verb::put &&
         req.method() != http::verb::head)
         return send(bad_request("Unknown HTTP-method"));
 
     // Request path must be absolute and not contain "..".
-    if (req.target().empty() || req.target()[0] != '/' ||
-        req.target().find("..") != beast::string_view::npos)
+    if (req.target().empty() || req.target()[0] != '/' || req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
     std::size_t size = 0;
@@ -232,9 +224,7 @@ void handle_request(beast::string_view doc_root,
 //------------------------------------------------------------------------------
 
 // Report a failure
-void fail(beast::error_code ec, const char* what) {
-    std::cerr << what << ": " << ec.message() << "\n";
-}
+void fail(beast::error_code ec, const char* what) { std::cerr << what << ": " << ec.message() << "\n"; }
 
 // Handles an HTTP server connection
 class Session : public std::enable_shared_from_this<Session> {
@@ -245,26 +235,20 @@ class Session : public std::enable_shared_from_this<Session> {
 
         explicit send_lambda(Session& self) : self_(self) {}
 
-        template <bool isRequest, class Body, class Fields>
-        void operator()(http::message<isRequest, Body, Fields>&& msg) const {
+        template <bool isRequest, class Body, class Fields> void operator()(http::message<isRequest, Body, Fields>&& msg) const {
             // The lifetime of the message has to extend
             // for the duration of the async operation so
             // we use a shared_ptr to manage it.
-            auto sp = std::make_shared<http::message<isRequest, Body, Fields>>(
-                std::move(msg));
+            auto sp = std::make_shared<http::message<isRequest, Body, Fields>>(std::move(msg));
 
             // Store a type-erased version of the shared
             // pointer in the class to keep it alive.
             self_.res_ = sp;
 
             // Write the response
-            http::async_write(
-                self_.socket_, *sp,
-                net::bind_executor(
-                    self_.strand_,
-                    std::bind(&Session::on_write, self_.shared_from_this(),
-                              std::placeholders::_1, std::placeholders::_2,
-                              sp->need_eof())));
+            http::async_write(self_.socket_, *sp,
+                              net::bind_executor(self_.strand_, std::bind(&Session::on_write, self_.shared_from_this(), std::placeholders::_1,
+                                                                          std::placeholders::_2, sp->need_eof())));
         }
     };
 
@@ -278,10 +262,8 @@ class Session : public std::enable_shared_from_this<Session> {
 
   public:
     // Take ownership of the socket
-    explicit Session(tcp::socket socket,
-                     std::shared_ptr<std::string const> const& doc_root)
-        : socket_(std::move(socket)), strand_(socket_.get_executor()),
-          doc_root_(doc_root), lambda_(*this) {}
+    explicit Session(tcp::socket socket, std::shared_ptr<std::string const> const& doc_root)
+        : socket_(std::move(socket)), strand_(socket_.get_executor()), doc_root_(doc_root), lambda_(*this) {}
 
     // Start the asynchronous operation
     void run() { do_read(); }
@@ -292,12 +274,8 @@ class Session : public std::enable_shared_from_this<Session> {
         req_ = {};
 
         // Read a request
-        http::async_read(
-            socket_, buffer_, req_,
-            net::bind_executor(strand_,
-                               std::bind(&Session::on_read, shared_from_this(),
-                                         std::placeholders::_1,
-                                         std::placeholders::_2)));
+        http::async_read(socket_, buffer_, req_,
+                         net::bind_executor(strand_, std::bind(&Session::on_read, shared_from_this(), std::placeholders::_1, std::placeholders::_2)));
     }
 
     void on_read(beast::error_code ec, std::size_t bytes_transferred) {
@@ -314,8 +292,7 @@ class Session : public std::enable_shared_from_this<Session> {
         handle_request(*doc_root_, std::move(req_), lambda_);
     }
 
-    void on_write(beast::error_code ec, std::size_t bytes_transferred,
-                  bool close) {
+    void on_write(beast::error_code ec, std::size_t bytes_transferred, bool close) {
         boost::ignore_unused(bytes_transferred);
 
         if (ec)
@@ -352,8 +329,7 @@ class Listener : public std::enable_shared_from_this<Listener> {
     std::shared_ptr<const std::string> doc_root_;
 
   public:
-    Listener(net::io_context& ioc, tcp::endpoint endpoint,
-             const std::shared_ptr<const std::string>& doc_root)
+    Listener(net::io_context& ioc, tcp::endpoint endpoint, const std::shared_ptr<const std::string>& doc_root)
         : acceptor_(ioc), socket_(ioc), doc_root_(doc_root) {
         beast::error_code ec;
 
@@ -393,11 +369,7 @@ class Listener : public std::enable_shared_from_this<Listener> {
         do_accept();
     }
 
-    void do_accept() {
-        acceptor_.async_accept(socket_, std::bind(&Listener::on_accept,
-                                                  shared_from_this(),
-                                                  std::placeholders::_1));
-    }
+    void do_accept() { acceptor_.async_accept(socket_, std::bind(&Listener::on_accept, shared_from_this(), std::placeholders::_1)); }
 
     void on_accept(beast::error_code ec) {
         if (ec)

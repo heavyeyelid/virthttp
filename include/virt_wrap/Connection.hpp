@@ -14,12 +14,12 @@ namespace virt {
 unsigned long getVersion();
 
 enum class CredentialType : int {
-    AUTHNAME = VIR_CRED_AUTHNAME,     // Identify to authorize as
-    CNONCE = VIR_CRED_CNONCE,         // Client supplies a nonce
-    ECHOPROMPT = VIR_CRED_ECHOPROMPT, // Challenge response
-    EXTERNAL = VIR_CRED_EXTERNAL, // Externally managed credential More may be
-                                  // added - expect the unexpected
-    LANGUAGE = VIR_CRED_LANGUAGE, // RFC 1766 languages, comma separated
+    AUTHNAME = VIR_CRED_AUTHNAME,         // Identify to authorize as
+    CNONCE = VIR_CRED_CNONCE,             // Client supplies a nonce
+    ECHOPROMPT = VIR_CRED_ECHOPROMPT,     // Challenge response
+    EXTERNAL = VIR_CRED_EXTERNAL,         // Externally managed credential More may be
+                                          // added - expect the unexpected
+    LANGUAGE = VIR_CRED_LANGUAGE,         // RFC 1766 languages, comma separated
     NOECHOPROMPT = VIR_CRED_NOECHOPROMPT, // Challenge response
     PASSPHRASE = VIR_CRED_PASSPHRASE,     // Passphrase secret
     REALM = VIR_CRED_REALM,               // Authentication realm
@@ -40,8 +40,7 @@ using ConnectAuthCallback = bool (*)(gsl::span<ConnectCredential>);
 
 template <typename Callback = ConnectAuthCallback> class ConnectionAuth {
   public:
-    template <typename Container>
-    inline ConnectionAuth(Container c, Callback callback);
+    template <typename Container> inline ConnectionAuth(Container c, Callback callback);
 
     inline ConnectionAuth(const ConnectionAuth&) = default;
     inline ConnectionAuth(ConnectionAuth&&) noexcept = default;
@@ -59,9 +58,8 @@ class Connection {
 
   public:
     enum class Flags : unsigned {
-        RO = VIR_CONNECT_RO, /* A readonly connection */
-        NO_ALIASES =
-            VIR_CONNECT_NO_ALIASES, /* Don't try to resolve URI aliases */
+        RO = VIR_CONNECT_RO,                 /* A readonly connection */
+        NO_ALIASES = VIR_CONNECT_NO_ALIASES, /* Don't try to resolve URI aliases */
     };
     struct List {
         struct Domains {
@@ -100,22 +98,19 @@ class Connection {
                 RUNNING = VIR_CONNECT_LIST_DOMAINS_RUNNING,
                 SHUTOFF = VIR_CONNECT_LIST_DOMAINS_SHUTOFF,
                 TRANSIENT = VIR_CONNECT_LIST_DOMAINS_TRANSIENT,
-                NOWAIT =
-                    VIR_CONNECT_GET_ALL_DOMAINS_STATS_NOWAIT, // report
-                                                              // statistics that
-                                                              // can be obtained
-                                                              // immediately
-                                                              // without any
-                                                              // blocking
-                BACKING =
-                    VIR_CONNECT_GET_ALL_DOMAINS_STATS_BACKING, // include
-                                                               // backing chain
-                                                               // for block
-                                                               // stats
-                ENFORCE_STATS =
-                    VIR_CONNECT_GET_ALL_DOMAINS_STATS_ENFORCE_STATS, // enforce
-                                                                     // requested
-                                                                     // stats
+                NOWAIT = VIR_CONNECT_GET_ALL_DOMAINS_STATS_NOWAIT,               // report
+                                                                                 // statistics that
+                                                                                 // can be obtained
+                                                                                 // immediately
+                                                                                 // without any
+                                                                                 // blocking
+                BACKING = VIR_CONNECT_GET_ALL_DOMAINS_STATS_BACKING,             // include
+                                                                                 // backing chain
+                                                                                 // for block
+                                                                                 // stats
+                ENFORCE_STATS = VIR_CONNECT_GET_ALL_DOMAINS_STATS_ENFORCE_STATS, // enforce
+                                                                                 // requested
+                                                                                 // stats
             };
         };
     };
@@ -123,8 +118,7 @@ class Connection {
     inline Connection(gsl::czstring<> name, bool rd_only = false) noexcept;
 
     template <typename Callback = virConnectAuthCallbackPtr>
-    inline Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth,
-                      Flags flags) noexcept;
+    inline Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, Flags flags) noexcept;
     inline Connection(const Connection& conn) noexcept = delete;
     constexpr Connection(Connection&& conn) noexcept = default;
     inline Connection& operator=(const Connection& conn) noexcept = delete;
@@ -134,9 +128,7 @@ class Connection {
 
     void ref();
 
-    template <typename Data>
-    void registerCloseCallback(void (*cb)(Data&),
-                               std::unique_ptr<Data> data = nullptr);
+    template <typename Data> void registerCloseCallback(void (*cb)(Data&), std::unique_ptr<Data> data = nullptr);
     void registerCloseCallback(void (*cb)());
 
     template <typename Data> void unregisterCloseCallback(void (*cb)(Data&));
@@ -166,13 +158,9 @@ class Connection {
     auto listDomains() const -> std::vector<int>;
     template <typename StrT> auto listDefinedDomains() const = delete;
 
-    auto listAllDomains(
-        List::Domains::Flags flags = List::Domains::Flags::DEFAULT) const
-        -> std::vector<Domain>;
+    auto listAllDomains(List::Domains::Flags flags = List::Domains::Flags::DEFAULT) const -> std::vector<Domain>;
 
-    auto getAllDomainStats(Domain::Stats::Types stats,
-                           Connection::GetAllDomains::Stats::Flags flags)
-        -> std::vector<Domain::Stats::Record>;
+    auto getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags) -> std::vector<Domain::Stats::Record>;
 
     Domain domainLookupByID(int) const noexcept;
     Domain domainLookupByName(gsl::czstring<>) const noexcept;
@@ -182,17 +170,11 @@ class Connection {
     auto nodeGetFreeMemory() const;
     auto nodeGetCellsFreeMemory() const;
 
-    constexpr explicit operator bool() const noexcept {
-        return underlying != nullptr;
-    }
+    constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
 };
 
-constexpr inline Connection::Flags operator|(Connection::Flags lhs,
-                                             Connection::Flags rhs) noexcept;
-constexpr inline Connection::List::Domains::Flags
-operator|(Connection::List::Domains::Flags lhs,
-          Connection::List::Domains::Flags rhs) noexcept;
-constexpr inline Connection::GetAllDomains::Stats::Flags
-operator|(Connection::GetAllDomains::Stats::Flags lhs,
-          Connection::GetAllDomains::Stats::Flags rhs) noexcept;
+constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
+constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Domains::Flags lhs, Connection::List::Domains::Flags rhs) noexcept;
+constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
+                                                                   Connection::GetAllDomains::Stats::Flags rhs) noexcept;
 }

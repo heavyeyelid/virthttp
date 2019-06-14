@@ -13,9 +13,7 @@ class AdminConnection {
     virAdmConnectPtr underlying = nullptr;
 
   public:
-    inline AdminConnection(gsl::czstring<> name, Connection::Flags flags) {
-        underlying = virAdmConnectOpen(name, to_integral(flags));
-    }
+    inline AdminConnection(gsl::czstring<> name, Connection::Flags flags) { underlying = virAdmConnectOpen(name, to_integral(flags)); }
 
     ~AdminConnection() { virAdmConnectClose(underlying); }
 

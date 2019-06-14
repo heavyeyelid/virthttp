@@ -5,9 +5,7 @@
 #include <algorithm>
 #include <type_traits>
 
-template <typename E> constexpr inline decltype(auto) to_integral(E e) {
-    return static_cast<typename std::underlying_type<E>::type>(e);
-}
+template <typename E> constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }
 
 constexpr auto pow10(std::size_t n) {
     auto ret = 1u;
@@ -23,8 +21,7 @@ constexpr unsigned strntou(const char* str, std::size_t len) {
     return ret;
 }
 
-template <typename Container, typename T>
-unsigned reverse_search(const Container& c, const T& e) {
+template <typename Container, typename T> unsigned reverse_search(const Container& c, const T& e) {
     const auto it = std::find(c.begin(), c.end(), e);
     return static_cast<unsigned>(std::distance(c.begin(), it));
 }

@@ -38,5 +38,4 @@ class Logger {
     bool isDebug = false;
 };
 
-inline Logger
-    logger{}; // default ctor and dtor doesn't generate any code out of main
+inline Logger logger{}; // default ctor and dtor doesn't generate any code out of main

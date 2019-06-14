@@ -21,9 +21,8 @@ class TypedParameter {
   public:
     explicit TypedParameter(const virTypedParameter&);
     TypedParameter(const virTypedParameter&, no_name_tag);
-    using ValueType =
-        std::variant<int, unsigned, long long, unsigned long long, double, bool,
-                     std::string>; // warning: 3x heavier
+    using ValueType = std::variant<int, unsigned, long long, unsigned long long, double, bool,
+                                   std::string>; // warning: 3x heavier
     std::string name{};
     ValueType val;
 };
