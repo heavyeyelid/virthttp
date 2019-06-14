@@ -87,20 +87,18 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                         logger.debug(e.what());
                     }
                 } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
-                    try {
-                        dom.resume();
-                        res_val.AddMember("status", 1, json_req.GetAllocator());
-                        rapidjson::Value msg_val{};
-                        msg_val.SetObject();
-                        msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
-                        jMessages.PushBack(msg_val, json_res.GetAllocator());
-                        jResults.PushBack(res_val, json_res.GetAllocator());
-                        json_res["success"] = true;
-                    } catch (std::exception& e) {
-                        error(202, "Could not start the VM");
+                    if(!dom.resume()){
                         logger.error("Cannot start this VM: ", substr);
-                        logger.debug(e.what());
+                        return error(202, "Could not start the VM");
                     }
+                    dom.resume();
+                    res_val.AddMember("status", 1, json_req.GetAllocator());
+                    rapidjson::Value msg_val{};
+                    msg_val.SetObject();
+                    msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
+                    jMessages.PushBack(msg_val, json_res.GetAllocator());
+                    jResults.PushBack(res_val, json_res.GetAllocator());
+                    json_res["success"] = true;
                 } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
                     error(201, "Domain is not running");
                 } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
@@ -133,16 +131,17 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                     rapidjson::Value res_val{};
                     res_val.SetObject();
 
+                    const auto info = dom.getInfo();
                     const auto name = rapidjson::StringRef(dom.getName());
                     res_val.AddMember("name", name, json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
-                    res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
+                    res_val.AddMember("status", info.state, json_res.GetAllocator());
                     jResults.PushBack(res_val, json_res.GetAllocator());
                     json_res["success"] = true;
 
                     logger.debug(name);
                     logger.debug(dom.getUUIDString());
-                    logger.debug(static_cast<int>(dom.getInfo().state));
+                    logger.debug(static_cast<int>(info.state));
                 }
             }
         }

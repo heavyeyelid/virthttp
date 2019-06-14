@@ -72,7 +72,7 @@ void Domain::rename(gsl::czstring<> name) { virDomainRename(underlying, name, 0)
 
 void Domain::reset() { virDomainReset(underlying, 0); }
 
-void Domain::resume() { virDomainResume(underlying); }
+bool Domain::resume() { return virDomainResume(underlying) == 0; }
 
 void Domain::setAutoStart(bool as) { virDomainSetAutostart(underlying, as ? 1 : 0); }
 

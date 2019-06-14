@@ -110,7 +110,7 @@ class Domain {
 
     void reset();
 
-    void resume();
+    bool resume();
 
     void setAutoStart(bool);
 
