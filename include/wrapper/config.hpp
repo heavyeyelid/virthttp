@@ -71,7 +71,7 @@ class IniConfig {
         httpURI += http_address + ":" + std::to_string(http_port);
     }
 
-    std::string getConnURI() { return connURI; }
+    const std::string& getConnURI() { return connURI; }
 
-    std::string getHttpURI() { return httpURI; }
+    const std::string& getHttpURI() { return httpURI; }
 };
