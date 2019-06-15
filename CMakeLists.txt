@@ -27,9 +27,12 @@ if (Boost_FOUND AND LibVirt_FOUND)
             thirdparty/ctre/include
             include)
 
-    add_compile_options("-O1")
-    add_compile_options ("-mtune=native")
-    add_compile_options ("-g")
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_compile_options("-O3")
+        add_compile_options ("-mtune=native")
+        add_compile_options ("-g")
+    endif()
+
     add_executable (HE_debug
             main.cpp
             include/logger.hpp
