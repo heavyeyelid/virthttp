@@ -108,16 +108,15 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                 }
             } break;
             case http::verb::get: {
-                const std::string name{dom.getName(), std::strlen(dom.getName())};
-                res_val.AddMember("name", name, json_res.GetAllocator());
+                const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
+                const auto os_type = dom.getOSType();
+                res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                 res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
-                res_val.AddMember("status", dom.getInfo().state, json_res.GetAllocator());
-                //                            res_val.AddMember("os",
-                //                            dom.getOSType(),
-                //                            json_res.GetAllocator());
-                res_val.AddMember("ram", dom.getInfo().memory, json_res.GetAllocator());
-                res_val.AddMember("ram_max", dom.getInfo().maxMem, json_res.GetAllocator());
-                res_val.AddMember("cpu", dom.getInfo().nrVirtCpu, json_res.GetAllocator());
+                res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
+                res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator()));
+                res_val.AddMember("ram", memory, json_res.GetAllocator());
+                res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
+                res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
 
                 jResults.PushBack(res_val, json_res.GetAllocator());
                 json_res["success"] = true;
