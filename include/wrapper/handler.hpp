@@ -69,25 +69,20 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
                 if (json_req["status"] == 5 && dom.getInfo().state == 1) {
-                    try {
-                        dom.shutdown();
-                        res_val.AddMember("status", 5, json_res.GetAllocator());
-                        rapidjson::Value msg_val{};
-                        msg_val.SetObject();
-                        msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
-
-                        jMessages.PushBack(msg_val, json_res.GetAllocator());
-                        jResults.PushBack(res_val, json_res.GetAllocator());
-                        json_res["success"] = true;
-
-                    } catch (std::exception& e) {
-                        error(200, "Could not shut down the VM");
-
+                    if (!dom.shutdown()) {
                         logger.error("Cannot shut down this VM: ", substr);
-                        logger.debug(e.what());
+                        return error(200, "Could not shut down the VM");
                     }
+                    res_val.AddMember("status", 5, json_res.GetAllocator());
+                    rapidjson::Value msg_val{};
+                    msg_val.SetObject();
+                    msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
+
+                    jMessages.PushBack(msg_val, json_res.GetAllocator());
+                    jResults.PushBack(res_val, json_res.GetAllocator());
+                    json_res["success"] = true;
                 } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
-                    if(!dom.resume()){
+                    if (!dom.resume()) {
                         logger.error("Cannot start this VM: ", substr);
                         return error(202, "Could not start the VM");
                     }

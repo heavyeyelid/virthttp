@@ -60,24 +60,12 @@ class Domain {
                                              guest power management */
     };
     class States {
-        constexpr static std::array states = {
-            "No State",
-            "Running",
-            "Blocked",
-            "Paused",
-            "Shutdown",
-            "Shutoff",
-            "Crashed",
-            "Power Management Suspended"
-        };
+        constexpr static std::array states = {"No State", "Running", "Blocked", "Paused",
+                                              "Shutdown", "Shutoff", "Crashed", "Power Management Suspended"};
 
       public:
-        constexpr const char* operator[](State val) const noexcept {
-            return states[to_integral(val)];
-        }
-        constexpr const char* operator[](unsigned char val) const noexcept {
-            return states[+val];
-        }
+        constexpr const char* operator[](State val) const noexcept { return states[to_integral(val)]; }
+        constexpr const char* operator[](unsigned char val) const noexcept { return states[+val]; }
     } constexpr static States{};
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
@@ -130,11 +118,12 @@ class Domain {
 
     void reset();
 
-    bool resume();
+    bool resume() noexcept;
 
     void setAutoStart(bool);
 
-    void shutdown(ShutdownFlags flags = ShutdownFlags::DEFAULT);
+    bool shutdown() noexcept;
+    bool shutdown(ShutdownFlags flags) noexcept;
 
     void suspend();
 

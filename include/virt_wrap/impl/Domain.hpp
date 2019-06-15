@@ -72,11 +72,13 @@ void Domain::rename(gsl::czstring<> name) { virDomainRename(underlying, name, 0)
 
 void Domain::reset() { virDomainReset(underlying, 0); }
 
-bool Domain::resume() { return virDomainResume(underlying) == 0; }
+bool Domain::resume() noexcept { return virDomainResume(underlying) == 0; }
 
 void Domain::setAutoStart(bool as) { virDomainSetAutostart(underlying, as ? 1 : 0); }
 
-void Domain::shutdown(Domain::ShutdownFlags flags) { virDomainShutdownFlags(underlying, to_integral(flags)); }
+bool Domain::shutdown() noexcept { return virDomainShutdown(underlying) == 0; }
+
+bool Domain::shutdown(Domain::ShutdownFlags flags) noexcept { return virDomainShutdownFlags(underlying, to_integral(flags)) == 0; }
 
 void Domain::suspend() { virDomainSuspend(underlying); }
 
