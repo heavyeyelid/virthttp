@@ -76,7 +76,7 @@ class Domain {
         KEEP_NVRAM = VIR_DOMAIN_UNDEFINE_KEEP_NVRAM,                 /* Keep nvram file */
     };
 
-    inline explicit Domain(virDomainPtr ptr) noexcept;
+    inline explicit Domain(virDomainPtr ptr = nullptr) noexcept;
 
     Domain(const Domain&) = delete;
 

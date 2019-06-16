@@ -17,8 +17,8 @@ namespace http = beast::http;
 
 constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
 
-template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::request<Body, http::basic_fields<Allocator>>&& req) {
-    auto path = TargetParser{bsv2stdsv(req.target())};
+template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http::request<Body, http::basic_fields<Allocator>>&& req) {
+    //    auto target = TargetParser{bsv2stdsv(req.target())};
 
     rapidjson::Document json_res{};
     json_res.SetObject();
@@ -52,13 +52,36 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
             logger.error("Failed to open connection to ", iniConfig.getConnURI());
             return error(10, "Failed to open connection to LibVirtD");
         }
-        if (req.target().starts_with("/libvirt/domains/by-name")) {
-            logger.debug("Getting domain information by name");
-            const std::string substr{req.target().substr(25)};
-            virt::Domain dom = conn.domainLookupByName(substr.c_str());
-            if (!dom) {
-                logger.error("Cannot find VM with name: ", substr);
-                return error(100, "Cannot find VM with a such name");
+
+        std::string dom_str{};
+        enum class SortType { by_name, by_uuid, none } sort_type = SortType::none;
+        if (req.target().starts_with("/libvirt/domains/by-uuid")) {
+            dom_str = std::string{req.target().substr(25)};
+            sort_type = SortType::by_uuid;
+        } else if (req.target().starts_with("/libvirt/domains/by-name")) {
+            dom_str = std::string{req.target().substr(25)};
+            sort_type = SortType::by_name;
+        } else if (!req.target().substr(17).empty()) {
+            dom_str = std::string{req.target().substr(17)};
+            sort_type = SortType::by_name;
+        }
+
+        if (sort_type != SortType::none) {
+            virt::Domain dom{};
+            if (sort_type == SortType::by_name) {
+                logger.debug("Getting domain information by name");
+                dom = conn.domainLookupByName(dom_str.c_str());
+                if (!dom) {
+                    logger.error("Cannot find VM with name: ", dom_str);
+                    return error(100, "Cannot find VM with a such name");
+                }
+            } else if (sort_type == SortType::by_uuid) {
+                logger.debug("Getting domain information by uuid");
+                dom = conn.domainLookupByUUIDString(dom_str.c_str());
+                if (!dom) {
+                    logger.error("Cannot find VM with UUID: ", dom_str);
+                    return error(100, "Cannot find VM with a such UUID");
+                }
             }
 
             rapidjson::Value res_val{};
@@ -70,7 +93,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                 json_req.Parse(req.body().data());
                 if (json_req["status"] == 5 && dom.getInfo().state == 1) {
                     if (!dom.shutdown()) {
-                        logger.error("Cannot shut down this VM: ", substr);
+                        logger.error("Cannot shut down this VM: ", dom_str);
                         return error(200, "Could not shut down the VM");
                     }
                     res_val.AddMember("status", 5, json_res.GetAllocator());
@@ -83,7 +106,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer getResult(http::r
                     json_res["success"] = true;
                 } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
                     if (!dom.resume()) {
-                        logger.error("Cannot start this VM: ", substr);
+                        logger.error("Cannot start this VM: ", dom_str);
                         return error(202, "Could not start the VM");
                     }
                     dom.resume();
