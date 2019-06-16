@@ -61,7 +61,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         } else if (req.target().starts_with("/libvirt/domains/by-name")) {
             dom_str = std::string{req.target().substr(25)};
             sort_type = SortType::by_name;
-        } else if (!req.target().substr(17).empty()) {
+        } else if (!req.target().substr(16).empty() && !req.target().substr(17).empty()) {
             dom_str = std::string{req.target().substr(17)};
             sort_type = SortType::by_name;
         }
@@ -144,6 +144,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
             }
         } else {
             if (req.method() == http::verb::get) {
+                logger.debug("Listing all domains");
                 for (const auto& dom : conn.listAllDomains()) {
                     rapidjson::Value res_val{};
                     res_val.SetObject();
