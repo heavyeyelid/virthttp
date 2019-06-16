@@ -172,7 +172,7 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
     std::size_t size = 0;
     std::string json_string{};
 
-    auto buffer = getResult(std::move(req));
+    auto buffer = handle_json(std::move(req));
 
     size = buffer.GetSize();
     json_string = buffer.GetString();
