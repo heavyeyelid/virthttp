@@ -67,80 +67,134 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         }
 
         if (sort_type != SortType::none) {
-            virt::Domain dom{};
+            rapidjson::Value res_val{};
+            res_val.SetObject();
             if (sort_type == SortType::by_name) {
                 logger.debug("Getting domain information by name");
-                dom = conn.domainLookupByName(dom_str.c_str());
+                virt::Domain dom = conn.domainLookupByName(dom_str.c_str());
                 if (!dom) {
                     logger.error("Cannot find VM with name: ", dom_str);
                     return error(100, "Cannot find VM with a such name");
+                } else {
+                    switch (req.method()) {
+                    case http::verb::patch: {
+                        rapidjson::Document json_req{};
+                        json_req.Parse(req.body().data());
+                        if (json_req["status"] == 5 && dom.getInfo().state == 1) {
+                            if (!dom.shutdown()) {
+                                logger.error("Cannot shut down this VM: ", dom_str);
+                                return error(200, "Could not shut down the VM");
+                            }
+                            res_val.AddMember("status", 5, json_res.GetAllocator());
+                            rapidjson::Value msg_val{};
+                            msg_val.SetObject();
+                            msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
+
+                            jMessages.PushBack(msg_val, json_res.GetAllocator());
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
+                        } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
+                            if (!dom.resume()) {
+                                logger.error("Cannot start this VM: ", dom_str);
+                                return error(202, "Could not start the VM");
+                            }
+                            dom.resume();
+                            res_val.AddMember("status", 1, json_req.GetAllocator());
+                            rapidjson::Value msg_val{};
+                            msg_val.SetObject();
+                            msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
+                            jMessages.PushBack(msg_val, json_res.GetAllocator());
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
+                        } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
+                            error(201, "Domain is not running");
+                        } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
+                            error(203, "Domain is already running");
+                        } else {
+                            error(204, "No actions specified");
+                        }
+                    } break;
+                    case http::verb::get: {
+                        const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
+                        const auto os_type = dom.getOSType();
+                        res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
+                        res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
+                        res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
+                        res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
+                        res_val.AddMember("ram", memory, json_res.GetAllocator());
+                        res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
+                        res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
+
+                        jResults.PushBack(res_val, json_res.GetAllocator());
+                        json_res["success"] = true;
+                    } break;
+                    default: {
+                    }
+                    }
                 }
             } else if (sort_type == SortType::by_uuid) {
                 logger.debug("Getting domain information by uuid");
-                dom = conn.domainLookupByUUIDString(dom_str.c_str());
+                virt::Domain dom = conn.domainLookupByUUIDString(dom_str.c_str());
                 if (!dom) {
                     logger.error("Cannot find VM with UUID: ", dom_str);
                     return error(100, "Cannot find VM with a such UUID");
-                }
-            }
-
-            rapidjson::Value res_val{};
-            res_val.SetObject();
-
-            switch (req.method()) {
-            case http::verb::patch: {
-                rapidjson::Document json_req{};
-                json_req.Parse(req.body().data());
-                if (json_req["status"] == 5 && dom.getInfo().state == 1) {
-                    if (!dom.shutdown()) {
-                        logger.error("Cannot shut down this VM: ", dom_str);
-                        return error(200, "Could not shut down the VM");
-                    }
-                    res_val.AddMember("status", 5, json_res.GetAllocator());
-                    rapidjson::Value msg_val{};
-                    msg_val.SetObject();
-                    msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
-
-                    jMessages.PushBack(msg_val, json_res.GetAllocator());
-                    jResults.PushBack(res_val, json_res.GetAllocator());
-                    json_res["success"] = true;
-                } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
-                    if (!dom.resume()) {
-                        logger.error("Cannot start this VM: ", dom_str);
-                        return error(202, "Could not start the VM");
-                    }
-                    dom.resume();
-                    res_val.AddMember("status", 1, json_req.GetAllocator());
-                    rapidjson::Value msg_val{};
-                    msg_val.SetObject();
-                    msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
-                    jMessages.PushBack(msg_val, json_res.GetAllocator());
-                    jResults.PushBack(res_val, json_res.GetAllocator());
-                    json_res["success"] = true;
-                } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
-                    error(201, "Domain is not running");
-                } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
-                    error(203, "Domain is already running");
                 } else {
-                    error(204, "No actions specified");
-                }
-            } break;
-            case http::verb::get: {
-                const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
-                const auto os_type = dom.getOSType();
-                res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-                res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
-                res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
-                res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
-                res_val.AddMember("ram", memory, json_res.GetAllocator());
-                res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
-                res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
+                    switch (req.method()) {
+                    case http::verb::patch: {
+                        rapidjson::Document json_req{};
+                        json_req.Parse(req.body().data());
+                        if (json_req["status"] == 5 && dom.getInfo().state == 1) {
+                            if (!dom.shutdown()) {
+                                logger.error("Cannot shut down this VM: ", dom_str);
+                                return error(200, "Could not shut down the VM");
+                            }
+                            res_val.AddMember("status", 5, json_res.GetAllocator());
+                            rapidjson::Value msg_val{};
+                            msg_val.SetObject();
+                            msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
 
-                jResults.PushBack(res_val, json_res.GetAllocator());
-                json_res["success"] = true;
-            } break;
-            default: {
-            }
+                            jMessages.PushBack(msg_val, json_res.GetAllocator());
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
+                        } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
+                            if (!dom.resume()) {
+                                logger.error("Cannot start this VM: ", dom_str);
+                                return error(202, "Could not start the VM");
+                            }
+                            dom.resume();
+                            res_val.AddMember("status", 1, json_req.GetAllocator());
+                            rapidjson::Value msg_val{};
+                            msg_val.SetObject();
+                            msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
+                            jMessages.PushBack(msg_val, json_res.GetAllocator());
+                            jResults.PushBack(res_val, json_res.GetAllocator());
+                            json_res["success"] = true;
+                        } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
+                            error(201, "Domain is not running");
+                        } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
+                            error(203, "Domain is already running");
+                        } else {
+                            error(204, "No actions specified");
+                        }
+                    } break;
+                    case http::verb::get: {
+                        const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
+                        const auto os_type = dom.getOSType();
+                        res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
+                        res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
+                        res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
+                        res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
+                        res_val.AddMember("ram", memory, json_res.GetAllocator());
+                        res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
+                        res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
+
+                        jResults.PushBack(res_val, json_res.GetAllocator());
+                        json_res["success"] = true;
+                    } break;
+                    default: {
+                    }
+                    }
+                }
             }
         } else {
             if (req.method() == http::verb::get) {
