@@ -12,9 +12,17 @@
 #include "Connection.hpp"
 
 namespace virt {
-inline Domain::Domain(virDomainPtr ptr) noexcept : underlying(ptr) {}
+constexpr inline Domain::Domain(virDomainPtr ptr) noexcept : underlying(ptr) {}
+inline Domain& Domain::operator=(Domain&& d) noexcept {
+    this->~Domain();
+    underlying = d.underlying;
+    return *this;
+}
 
-inline Domain::~Domain() noexcept { virDomainFree(underlying); }
+inline Domain::~Domain() noexcept {
+    if (*this)
+        virDomainFree(underlying);
+}
 
 constexpr inline Domain::operator bool() const noexcept { return underlying != nullptr; }
 
