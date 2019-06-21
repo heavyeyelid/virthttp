@@ -81,7 +81,7 @@ void Connection::ref() {
 }
 
 template <typename Data> void Connection::registerCloseCallback(void (*cb)(Data&), std::unique_ptr<Data> data) {
-    virConnectRegisterCloseCallback(underlying, reinterpret_cast<virConnectCloseFunc>(cb), &data, &std::unique_ptr<Data>::get_deleter());
+    virConnectRegisterCloseCallback(underlying, reinterpret_cast<virConnectCloseFunc>(cb), data.release(), &data.get_deleter());
 }
 
 void Connection::registerCloseCallback(void (*cb)()) {
@@ -220,15 +220,41 @@ virNodeInfo Connection::nodeGetInfo() const {
     return ret;
 }
 
-auto Connection::nodeGetFreeMemory() const { return virNodeGetFreeMemory(underlying); }
+unsigned long long Connection::nodeGetFreeMemory() const { return virNodeGetFreeMemory(underlying); }
 
-auto Connection::nodeGetCellsFreeMemory() const {
+std::vector<unsigned long long> Connection::nodeGetCellsFreeMemory() const {
     std::vector<unsigned long long> ret{};
     ret.resize(nodeGetInfo().nodes);
     const int res = virNodeGetCellsFreeMemory(underlying, ret.data(), 0, gsl::narrow_cast<int>(ret.size()));
     if (res < 0)
         throw std::runtime_error{"virNodeGetCellsFreeMemory"};
     return ret;
+}
+
+auto Connection::listAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const noexcept {
+    using RetType = std::optional<std::unique_ptr<Network[], void (*)(Network*)>>;
+    auto flags = 0u;
+    flags |= active ? (*active ? VIR_CONNECT_LIST_NETWORKS_ACTIVE : VIR_CONNECT_LIST_NETWORKS_INACTIVE) : 0u;
+    flags |= persistent ? (*persistent ? VIR_CONNECT_LIST_NETWORKS_PERSISTENT : VIR_CONNECT_LIST_NETWORKS_TRANSIENT ) : 0u;
+    flags |= autostart ? (*autostart ? VIR_CONNECT_LIST_NETWORKS_AUTOSTART : VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART ) : 0u;
+    Network* lease_arr;
+    auto res = virConnectListAllNetworks(underlying, reinterpret_cast<virNetworkPtr**>(&lease_arr), flags);
+    if (res == -1)
+        return RetType{std::nullopt};
+    return std::optional{std::unique_ptr<Network[], void (*)(Network*)>(lease_arr, [](auto arr) {
+        auto it = arr;
+        while(it++)
+            it->~Network();
+        freeany(arr);
+    })};
+}
+
+inline auto Connection::listDefinedNetworksNames() const noexcept {
+    return virt::meta::light::wrap_oparm_owning_fill_freeble_arr(underlying, virConnectNumOfDefinedNetworks, virConnectListDefinedNetworks);
+}
+
+auto Connection::listNetworksNames() const noexcept {
+    return virt::meta::light::wrap_oparm_owning_fill_freeble_arr(underlying, virConnectNumOfNetworks, virConnectListNetworks);
 }
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept {

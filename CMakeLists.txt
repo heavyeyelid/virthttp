@@ -38,15 +38,19 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/logger.hpp
             include/wrapper/http_wrapper.hpp
             include/utils.hpp
-            include/virt_wrap/Connection.hpp
-            include/virt_wrap/TypesParam.hpp
-            include/virt_wrap/type_ops.hpp
             include/virt_wrap/AdminConnection.hpp
-            include/virt_wrap/utility.hpp
+            include/virt_wrap/Connection.hpp
             include/virt_wrap/Domain.hpp
+            include/virt_wrap/TypesParam.hpp
+            include/virt_wrap/decls.hpp
             include/virt_wrap/fwd.hpp
+            include/virt_wrap/tfe.hpp
+            include/virt_wrap/type_ops.hpp
+            include/virt_wrap/utility.hpp
+            include/virt_wrap/Network.hpp
             include/virt_wrap/impl/Connection.hpp
             include/virt_wrap/impl/Domain.hpp
+            include/virt_wrap/impl/Network.hpp
             include/virt_wrap/impl/TypedParams.hpp
             include/wrapper/config.hpp
             include/wrapper/handler.hpp
@@ -54,7 +58,8 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/logger.hpp
             include/fwd.hpp
             include/urlparser.hpp
-            include/flatmap.hpp)
+            include/flatmap.hpp
+            )
 
     target_link_libraries (HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
     if (WIN32)

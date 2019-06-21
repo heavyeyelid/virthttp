@@ -9,6 +9,8 @@ class Connection;
 
 class Domain;
 
+class Network;
+
 class TypedParameter;
 
 class TypedParams;
