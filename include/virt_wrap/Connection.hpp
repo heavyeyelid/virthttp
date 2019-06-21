@@ -2,6 +2,8 @@
 
 #include <cstring>
 #include <exception>
+#include <optional>
+#include <vector>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
 #include "type_ops.hpp"
@@ -54,6 +56,7 @@ template <typename Callback = ConnectAuthCallback> class ConnectionAuth {
 
 class Connection {
     friend Domain;
+    friend Network;
 
     virConnectPtr underlying = nullptr;
 
@@ -116,6 +119,10 @@ class Connection {
         };
     };
 
+  private:
+    constexpr explicit Connection(virConnectPtr p) : underlying(p) {}
+
+  public:
     inline Connection(gsl::czstring<> name, bool rd_only = false) noexcept;
 
     template <typename Callback = virConnectAuthCallbackPtr>
@@ -183,11 +190,23 @@ class Connection {
 
     virNodeInfo nodeGetInfo() const;
 
-    auto nodeGetFreeMemory() const;
+    unsigned long long nodeGetFreeMemory() const;
 
-    auto nodeGetCellsFreeMemory() const;
+    std::vector<unsigned long long> nodeGetCellsFreeMemory() const;
 
     constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
+
+    // int virConnectListAllNetworks(virConnectPtr conn, virNetworkPtr ** nets, unsigned int flags)
+    // int virConnectListDefinedNetworks(virConnectPtr conn, char ** const names, int maxnames)
+    // int virConnectListNetworks(virConnectPtr conn, char ** const names, int maxnames)
+
+    auto listAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt, std::optional<bool> autostart = std::nullopt) const noexcept;
+    inline auto listDefinedNetworksNames() const noexcept;
+    inline auto listNetworksNames() const noexcept;
+    //std::vector<Network> extractAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const;
+    //std::vector<std::string> extractDefinedNetworksNames const;
+    //std::vector<std::string> extractNetworksNames() const;
+
 };
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;

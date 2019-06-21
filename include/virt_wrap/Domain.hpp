@@ -64,8 +64,8 @@ class Domain {
                                               "Shutdown", "Shutoff", "Crashed", "Power Management Suspended"};
 
       public:
-        constexpr const char* operator[](State val) const noexcept { return states[to_integral(val)]; }
-        constexpr const char* operator[](unsigned char val) const noexcept { return states[+val]; }
+        [[nodiscard]] constexpr const char* operator[](State val) const noexcept { return states[to_integral(val)]; }
+        [[nodiscard]] constexpr const char* operator[](unsigned char val) const noexcept { return states[+val]; }
     } constexpr static States{};
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
@@ -90,23 +90,23 @@ class Domain {
 
     constexpr inline explicit operator bool() const noexcept;
 
-    void create();
+    bool create() noexcept;
 
-    Info getInfo() const;
+    [[nodiscard]] Info getInfo() const noexcept;
 
-    gsl::czstring<> getName() const noexcept;
+    [[nodiscard]] gsl::czstring<> getName() const noexcept;
 
-    unsigned getID() const noexcept;
+    [[nodiscard]] unsigned getID() const noexcept;
 
-    unsigned char getUUID() const;
+    [[nodiscard]] auto getUUID() const;
 
-    bool isActive() const;
+    [[nodiscard]] bool isActive() const noexcept;
 
-    std::string getUUIDString() const noexcept;
+    [[nodiscard]] std::string getUUIDString() const noexcept;
 
-    auto getOSType() const;
+    [[nodiscard]] auto getOSType() const;
 
-    unsigned long getMaxMemory() const noexcept;
+    [[nodiscard]] unsigned long getMaxMemory() const noexcept;
 
     bool setMaxMemory(unsigned long);
 
@@ -131,9 +131,9 @@ class Domain {
 
     void undefine(UndefineFlags = UndefineFlags(0));
 
-    static Domain createXML(Connection&, gsl::czstring<> xml, CreateFlags flags = CreateFlags::NONE);
+    [[nodiscard]] static Domain createXML(Connection&, gsl::czstring<> xml, CreateFlags flags = CreateFlags::NONE);
 
-    static Domain defineXML();
+    // [[nodiscard]] static Domain defineXML();
 };
 
 class Domain::Stats::Record {
@@ -147,5 +147,5 @@ class Domain::Stats::Record {
   public:
 };
 
-constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
 } // namespace virt
