@@ -12,7 +12,6 @@ constexpr auto config_file_loc = "config.ini";
 class IniConfig {
   public:
     std::string connDRIV, connTRANS, connUNAME, connHOST, connPORT, connPATH, connEXTP, connURI, http_address, http_doc_root, http_auth_key, httpURI;
-
     long http_port{}, http_threads{};
 
     IniConfig() = default;
@@ -21,6 +20,10 @@ class IniConfig {
         auto iniFile = config_file_loc;
 
         INIReader reader(config_file_loc);
+
+        logger.setColored(reader.GetBoolean("wrapperd", "color", false));
+        logger.setQuiet(reader.GetBoolean("wrapperd", "quiet", false));
+        logger.setDebug(reader.GetBoolean("wrapperd", "debug", false));
 
         if (reader.ParseError() < 0) {
             logger.warning("Can't load config from ", iniFile);

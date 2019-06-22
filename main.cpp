@@ -13,13 +13,10 @@
 using namespace std::literals;
 
 int main(int argc, char** argv) {
-    logger.setQuiet(false);
-    logger.setDebug(true);
+    iniConfig.init();
 
     logger.info("libvirt server URI: ", iniConfig.getConnURI());
     logger.info("http server URI: ", iniConfig.getHttpURI());
-
-    iniConfig.init();
 
     const auto address = net::ip::make_address(iniConfig.http_address);
     const auto port = static_cast<unsigned short>(iniConfig.http_port);
