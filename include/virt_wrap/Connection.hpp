@@ -128,7 +128,7 @@ class Connection {
     template <typename Callback = virConnectAuthCallbackPtr>
     inline Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, Flags flags) noexcept;
 
-    inline Connection(const Connection& conn) noexcept = delete;
+    inline Connection(const Connection& conn) noexcept = default;
 
     constexpr Connection(Connection&& conn) noexcept = default;
 
