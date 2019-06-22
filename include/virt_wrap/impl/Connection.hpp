@@ -70,6 +70,13 @@ template <typename Callback> inline Connection::Connection(gsl::czstring<> name,
     underlying = virConnectOpenAuth(name, &c_auth, to_integral(flags));
 }
 
+inline Connection& Connection::operator=(Connection&& conn) noexcept {
+    this->~Connection();
+    underlying = conn.underlying;
+    conn.underlying = nullptr;
+    return *this;
+}
+
 inline Connection::~Connection() {
     if (underlying)
         virConnectClose(underlying);

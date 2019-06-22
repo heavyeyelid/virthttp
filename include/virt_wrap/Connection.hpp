@@ -123,7 +123,7 @@ class Connection {
     constexpr explicit Connection(virConnectPtr p) : underlying(p) {}
 
   public:
-    inline Connection(gsl::czstring<> name, bool rd_only = false) noexcept;
+    inline explicit Connection(gsl::czstring<> name, bool rd_only = false) noexcept;
 
     template <typename Callback = virConnectAuthCallbackPtr>
     inline Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, Flags flags) noexcept;
@@ -134,7 +134,7 @@ class Connection {
 
     inline Connection& operator=(const Connection& conn) noexcept = delete;
 
-    inline Connection& operator=(Connection&& conn) noexcept = default;
+    inline Connection& operator=(Connection&& conn) noexcept;
 
     inline ~Connection();
 

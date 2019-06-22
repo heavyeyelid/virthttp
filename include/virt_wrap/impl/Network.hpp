@@ -9,6 +9,19 @@
 #include "../utility.hpp"
 
 namespace virt {
+
+inline Network& Network::operator=(Network&& net) noexcept {
+    this->~Network();
+    underlying = net.underlying;
+    net.underlying = nullptr;
+    return *this;
+}
+
+inline Network::~Network() noexcept {
+    if (*this)
+        virNetworkFree(underlying);
+}
+
 [[nodiscard]] inline auto Network::getBridgeName() const noexcept {
     return std::unique_ptr<char[], void (*)(char*)>(virNetworkGetBridgeName(underlying), freeany<char[]>);
 }

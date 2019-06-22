@@ -25,13 +25,10 @@ class Network {
   public:
     constexpr Network() noexcept = default;
     Network(const Network&) = delete;
-    Network(Network&&) noexcept = default;
-    inline ~Network() noexcept { // 2Move
-        if (*this)
-            virNetworkFree(underlying);
-    }
+    constexpr Network(Network&&) noexcept = default;
+    inline ~Network() noexcept;
     Network& operator=(const Network&) = delete;
-    Network& operator=(Network&&) noexcept = default;
+    Network& operator=(Network&&) noexcept;
 
     constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
     [[nodiscard]] inline auto getBridgeName() const noexcept;
