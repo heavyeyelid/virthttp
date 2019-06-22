@@ -54,28 +54,28 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         }
 
         std::string dom_str{};
-        enum class SortType { by_name, by_uuid, none } sort_type = SortType::none;
+        enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
         if (req.target().starts_with("/libvirt/domains/by-uuid")) {
             dom_str = std::string{req.target().substr(25)};
-            sort_type = SortType::by_uuid;
+            search_key = SearchKey::by_uuid;
         } else if (req.target().starts_with("/libvirt/domains/by-name")) {
             dom_str = std::string{req.target().substr(25)};
-            sort_type = SortType::by_name;
+            search_key = SearchKey::by_name;
         } else if (!req.target().substr(16).empty() && !req.target().substr(17).empty()) {
             dom_str = std::string{req.target().substr(17)};
-            sort_type = SortType::by_name;
+            search_key = SearchKey::by_name;
         }
 
-        if (sort_type != SortType::none) {
+        if (search_key != SearchKey::none) {
             virt::Domain dom{};
-            if (sort_type == SortType::by_name) {
+            if (search_key == SearchKey::by_name) {
                 logger.debug("Getting domain by name");
                 dom = std::move(conn.domainLookupByName(dom_str.c_str()));
                 if (!dom) {
                     logger.error("Cannot find VM with name: ", dom_str);
                     return error(100, "Cannot find VM with a such name");
                 }
-            } else if (sort_type == SortType::by_uuid) {
+            } else if (search_key == SearchKey::by_uuid) {
                 logger.debug("Getting domain by uuid");
                 dom = std::move(conn.domainLookupByUUIDString(dom_str.c_str()));
                 if (!dom) {
