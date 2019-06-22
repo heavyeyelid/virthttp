@@ -16,6 +16,7 @@ constexpr inline Domain::Domain(virDomainPtr ptr) noexcept : underlying(ptr) {}
 inline Domain& Domain::operator=(Domain&& d) noexcept {
     this->~Domain();
     underlying = d.underlying;
+    d.underlying = nullptr;
     return *this;
 }
 
