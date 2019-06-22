@@ -239,29 +239,19 @@ std::vector<unsigned long long> Connection::nodeGetCellsFreeMemory() const {
 }
 
 auto Connection::listAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const noexcept {
-    using RetType = std::optional<std::unique_ptr<Network[], void (*)(Network*)>>;
     auto flags = 0u;
     flags |= active ? (*active ? VIR_CONNECT_LIST_NETWORKS_ACTIVE : VIR_CONNECT_LIST_NETWORKS_INACTIVE) : 0u;
-    flags |= persistent ? (*persistent ? VIR_CONNECT_LIST_NETWORKS_PERSISTENT : VIR_CONNECT_LIST_NETWORKS_TRANSIENT ) : 0u;
-    flags |= autostart ? (*autostart ? VIR_CONNECT_LIST_NETWORKS_AUTOSTART : VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART ) : 0u;
-    Network* lease_arr;
-    auto res = virConnectListAllNetworks(underlying, reinterpret_cast<virNetworkPtr**>(&lease_arr), flags);
-    if (res == -1)
-        return RetType{std::nullopt};
-    return std::optional{std::unique_ptr<Network[], void (*)(Network*)>(lease_arr, [](auto arr) {
-        auto it = arr;
-        while(it++)
-            it->~Network();
-        freeany(arr);
-    })};
+    flags |= persistent ? (*persistent ? VIR_CONNECT_LIST_NETWORKS_PERSISTENT : VIR_CONNECT_LIST_NETWORKS_TRANSIENT) : 0u;
+    flags |= autostart ? (*autostart ? VIR_CONNECT_LIST_NETWORKS_AUTOSTART : VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART) : 0u;
+    virt::meta::light::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, flags);
 }
 
 inline auto Connection::listDefinedNetworksNames() const noexcept {
-    return virt::meta::light::wrap_oparm_owning_fill_freeble_arr(underlying, virConnectNumOfDefinedNetworks, virConnectListDefinedNetworks);
+    return virt::meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfDefinedNetworks, virConnectListDefinedNetworks);
 }
 
 auto Connection::listNetworksNames() const noexcept {
-    return virt::meta::light::wrap_oparm_owning_fill_freeble_arr(underlying, virConnectNumOfNetworks, virConnectListNetworks);
+    return virt::meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfNetworks, virConnectListNetworks);
 }
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept {
