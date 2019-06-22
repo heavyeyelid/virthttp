@@ -15,7 +15,20 @@
 namespace beast = boost::beast;
 namespace http = beast::http;
 
+enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
+
 constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
+
+virt::Domain getDomain(const virt::Connection& conn, const std::string& dom_str) {
+    if (search_key == SearchKey::by_name) {
+        logger.debug("Getting domain by name");
+        return (conn.domainLookupByName(dom_str.c_str()));
+    } else if (search_key == SearchKey::by_uuid) {
+        logger.debug("Getting domain by uuid");
+        return conn.domainLookupByUUIDString(dom_str.c_str());
+    }
+    return virt::Domain{};
+}
 
 template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http::request<Body, http::basic_fields<Allocator>>&& req) {
     //    auto target = TargetParser{bsv2stdsv(req.target())};
@@ -54,43 +67,53 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         }
 
         std::string dom_str{};
-        enum class SortType { by_name, by_uuid, none } sort_type = SortType::none;
-        if (req.target().starts_with("/libvirt/domains/by-uuid")) {
+        if (req.target().starts_with("/libvirt/domains/by-uuid/")) {
             dom_str = std::string{req.target().substr(25)};
-            sort_type = SortType::by_uuid;
-        } else if (req.target().starts_with("/libvirt/domains/by-name")) {
+            search_key = SearchKey::by_uuid;
+        } else if (req.target().starts_with("/libvirt/domains/by-name/")) {
             dom_str = std::string{req.target().substr(25)};
-            sort_type = SortType::by_name;
+            search_key = SearchKey::by_name;
         } else if (!req.target().substr(16).empty() && !req.target().substr(17).empty()) {
             dom_str = std::string{req.target().substr(17)};
-            sort_type = SortType::by_name;
-        }
+            search_key = SearchKey::by_name;
+        } else
+            search_key = SearchKey::none;
 
-        rapidjson::Value res_val{};
-        res_val.SetObject();
-
-        if (sort_type != SortType::none) {
-            virt::Domain dom{};
-            if (sort_type == SortType::by_name) {
-                logger.debug("Getting domain by name");
-                dom = std::move(conn.domainLookupByName(dom_str.c_str()));
-                if (!dom) {
+        if (search_key != SearchKey::none) {
+            virt::Domain dom = getDomain(conn, dom_str);
+            if (!dom) {
+                if (search_key == SearchKey::by_name) {
                     logger.error("Cannot find VM with name: ", dom_str);
                     return error(100, "Cannot find VM with a such name");
-                }
-            } else if (sort_type == SortType::by_uuid) {
-                logger.debug("Getting domain by uuid");
-                dom = std::move(conn.domainLookupByUUIDString(dom_str.c_str()));
-                if (!dom) {
+                } else if (search_key == SearchKey::by_uuid) {
                     logger.error("Cannot find VM with UUID: ", dom_str);
-                    return error(100, "Cannot find VM with a such UUID");
+                    return error(101, "Cannot find VM with a such UUID");
                 }
             }
 
+            //            if (search_key == SearchKey::by_name) {
+            //                logger.debug("Getting domain by name");
+            //                dom = std::move(conn.domainLookupByName(dom_str.c_str()));
+            //                if (!dom) {
+            //                    logger.error("Cannot find VM with name: ", dom_str);
+            //                    return error(100, "Cannot find VM with a such name");
+            //                }
+            //            } else if (search_key == SearchKey::by_uuid) {
+            //                logger.debug("Getting domain by uuid");
+            //                dom = std::move(conn.domainLookupByUUIDString(dom_str.c_str()));
+            //                if (!dom) {
+            //                    logger.error("Cannot find VM with UUID: ", dom_str);
+            //                    return error(101, "Cannot find VM with a such UUID");
+            //                }
+            //            }
             switch (req.method()) {
             case http::verb::patch: {
+                rapidjson::Value res_val;
+                res_val.SetObject();
+
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
+
                 if (json_req["status"] == 5 && dom.getInfo().state == 1) {
                     if (!dom.shutdown()) {
                         logger.error("Cannot shut down this VM: ", dom_str);
@@ -126,6 +149,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 }
             } break;
             case http::verb::get: {
+                rapidjson::Value res_val;
+                res_val.SetObject();
                 const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
                 const auto os_type = dom.getOSType();
                 res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
@@ -146,6 +171,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
             if (req.method() == http::verb::get) {
                 logger.debug("Listing all domains");
                 for (const auto& dom : conn.listAllDomains()) {
+                    rapidjson::Value res_val;
+                    res_val.SetObject();
                     const auto info = dom.getInfo();
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
