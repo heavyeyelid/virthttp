@@ -39,20 +39,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         jErrors.PushBack(jErrorValue, json_res.GetAllocator());
     };
 
-    [&]() {
-        if (req["X-Auth-Key"] != iniConfig.http_auth_key) {
-            return error(1, "Bad X-Auth-Key");
-        }
-        if (!req.target().starts_with("/libvirt/domains")) {
-            return error(2, "Bad URL");
-        }
-        logger.debug("Opening connection to ", iniConfig.getConnURI());
-        virt::Connection conn{iniConfig.connURI.c_str()};
-        if (!conn) {
-            logger.error("Failed to open connection to ", iniConfig.getConnURI());
-            return error(10, "Failed to open connection to LibVirtD");
-        }
-
+    auto domains = [&](virt::Connection conn) -> void {
         enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
 
         std::string dom_str{};
@@ -160,6 +147,37 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 }
             }
         }
+    };
+
+    auto networks = [&](virt::Connection conn) -> void {
+        logger.debug("Listing all networks - WIP"); // WIP
+        /*for (const virt::Network& nw : conn.listAllNetworks()) {
+            rapidjson::Value nw_json;
+            nw_json.SetObject();
+            nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
+            nw_json.AddMember("active", nw.isActive(), json_res.GetAllocator());
+            nw_json.AddMember("uuid", nw.getUUIDString(), json_res.GetAllocator());
+            jResults.PushBack(nw_json, json_res.GetAllocator());
+            json_res["success"] = true;
+        }*/
+    };
+
+    [&]() {
+        if (req["X-Auth-Key"] != iniConfig.http_auth_key) {
+            return error(1, "Bad X-Auth-Key");
+        }
+        logger.debug("Opening connection to ", iniConfig.getConnURI());
+        virt::Connection conn{iniConfig.connURI.c_str()};
+        if (!conn) {
+            logger.error("Failed to open connection to ", iniConfig.getConnURI());
+            return error(10, "Failed to open connection to LibVirtD");
+        }
+        if (req.target().starts_with("/libvirt/domains"))
+            domains(std::move(conn));
+        else if (req.target().starts_with("/libvirt/networks"))
+            networks(std::move(conn));
+        else
+            return error(2, "Bad URL");
     }();
 
     rapidjson::StringBuffer buffer;
