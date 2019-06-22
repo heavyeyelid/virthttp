@@ -46,15 +46,13 @@ class Logger {
     }
 
     void setQuiet(bool b) { isQuiet = b; }
-
     void setDebug(bool b) { isDebug = b; }
-
     void setColored(bool b) { isColored = b; }
 
   private:
     bool isQuiet = false;
     bool isDebug = false;
-    bool isColored = true;
+    bool isColored = false;
 };
 
 inline Logger logger{}; // default ctor and dtor doesn't generate any code out of main
