@@ -65,8 +65,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         } else if (!req.target().substr(16).empty() && !req.target().substr(17).empty()) {
             dom_str = std::string{req.target().substr(17)};
             search_key = SearchKey::by_name;
-        } else
-            search_key = SearchKey::none;
+        }
 
         if (search_key != SearchKey::none) {
             virt::Domain dom{};

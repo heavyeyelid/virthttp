@@ -15,6 +15,7 @@ using namespace std::literals;
 int main(int argc, char** argv) {
     logger.setQuiet(false);
     logger.setDebug(true);
+    logger.setColored(false);
 
     logger.info("libvirt server URI: ", iniConfig.getConnURI());
     logger.info("http server URI: ", iniConfig.getHttpURI());
