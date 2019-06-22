@@ -15,7 +15,20 @@
 namespace beast = boost::beast;
 namespace http = beast::http;
 
+enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
+
 constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
+
+virt::Domain getDomain(const virt::Connection& conn, const std::string& dom_str) {
+    if (search_key == SearchKey::by_name) {
+        logger.debug("Getting domain by name");
+        return (conn.domainLookupByName(dom_str.c_str()));
+    } else if (search_key == SearchKey::by_uuid) {
+        logger.debug("Getting domain by uuid");
+        return conn.domainLookupByUUIDString(dom_str.c_str());
+    }
+    return virt::Domain{};
+}
 
 template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http::request<Body, http::basic_fields<Allocator>>&& req) {
     //    auto target = TargetParser{bsv2stdsv(req.target())};
@@ -54,35 +67,45 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         }
 
         std::string dom_str{};
-        enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
-        if (req.target().starts_with("/libvirt/domains/by-uuid")) {
+        if (req.target().starts_with("/libvirt/domains/by-uuid/")) {
             dom_str = std::string{req.target().substr(25)};
             search_key = SearchKey::by_uuid;
-        } else if (req.target().starts_with("/libvirt/domains/by-name")) {
+        } else if (req.target().starts_with("/libvirt/domains/by-name/")) {
             dom_str = std::string{req.target().substr(25)};
             search_key = SearchKey::by_name;
         } else if (!req.target().substr(16).empty() && !req.target().substr(17).empty()) {
             dom_str = std::string{req.target().substr(17)};
             search_key = SearchKey::by_name;
-        }
+        } else
+            search_key = SearchKey::none;
 
         if (search_key != SearchKey::none) {
-            virt::Domain dom{};
-            if (search_key == SearchKey::by_name) {
-                logger.debug("Getting domain by name");
-                dom = std::move(conn.domainLookupByName(dom_str.c_str()));
-                if (!dom) {
+            virt::Domain dom = getDomain(conn, dom_str);
+            if (!dom) {
+                if (search_key == SearchKey::by_name) {
                     logger.error("Cannot find VM with name: ", dom_str);
                     return error(100, "Cannot find VM with a such name");
-                }
-            } else if (search_key == SearchKey::by_uuid) {
-                logger.debug("Getting domain by uuid");
-                dom = std::move(conn.domainLookupByUUIDString(dom_str.c_str()));
-                if (!dom) {
+                } else if (search_key == SearchKey::by_uuid) {
                     logger.error("Cannot find VM with UUID: ", dom_str);
                     return error(101, "Cannot find VM with a such UUID");
                 }
             }
+
+            //            if (search_key == SearchKey::by_name) {
+            //                logger.debug("Getting domain by name");
+            //                dom = std::move(conn.domainLookupByName(dom_str.c_str()));
+            //                if (!dom) {
+            //                    logger.error("Cannot find VM with name: ", dom_str);
+            //                    return error(100, "Cannot find VM with a such name");
+            //                }
+            //            } else if (search_key == SearchKey::by_uuid) {
+            //                logger.debug("Getting domain by uuid");
+            //                dom = std::move(conn.domainLookupByUUIDString(dom_str.c_str()));
+            //                if (!dom) {
+            //                    logger.error("Cannot find VM with UUID: ", dom_str);
+            //                    return error(101, "Cannot find VM with a such UUID");
+            //                }
+            //            }
             switch (req.method()) {
             case http::verb::patch: {
                 rapidjson::Value res_val;
