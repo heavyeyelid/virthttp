@@ -84,7 +84,7 @@ class Domain {
 
     Domain& operator=(const Domain&) = delete;
 
-    inline Domain& operator=(Domain&&) noexcept ;
+    inline Domain& operator=(Domain&&) noexcept;
 
     inline ~Domain() noexcept;
 
