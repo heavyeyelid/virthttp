@@ -66,9 +66,6 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
             sort_type = SortType::by_name;
         }
 
-        rapidjson::Value res_val{};
-        res_val.SetObject();
-
         if (sort_type != SortType::none) {
             virt::Domain dom{};
             if (sort_type == SortType::by_name) {
@@ -83,14 +80,17 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 dom = std::move(conn.domainLookupByUUIDString(dom_str.c_str()));
                 if (!dom) {
                     logger.error("Cannot find VM with UUID: ", dom_str);
-                    return error(100, "Cannot find VM with a such UUID");
+                    return error(101, "Cannot find VM with a such UUID");
                 }
             }
-
             switch (req.method()) {
             case http::verb::patch: {
+                rapidjson::Value res_val;
+                res_val.SetObject();
+
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
+
                 if (json_req["status"] == 5 && dom.getInfo().state == 1) {
                     if (!dom.shutdown()) {
                         logger.error("Cannot shut down this VM: ", dom_str);
@@ -126,6 +126,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 }
             } break;
             case http::verb::get: {
+                rapidjson::Value res_val;
+                res_val.SetObject();
                 const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
                 const auto os_type = dom.getOSType();
                 res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
@@ -146,6 +148,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
             if (req.method() == http::verb::get) {
                 logger.debug("Listing all domains");
                 for (const auto& dom : conn.listAllDomains()) {
+                    rapidjson::Value res_val;
+                    res_val.SetObject();
                     const auto info = dom.getInfo();
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
