@@ -16,3 +16,4 @@
 | 202        | Could not start the VM |
 | 203        | Domain is already running |
 | 204        | No actions specified |
+| 250        | Error occurred while getting networks |

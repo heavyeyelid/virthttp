@@ -106,11 +106,11 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     jResults.PushBack(res_val, json_res.GetAllocator());
                     json_res["success"] = true;
                 } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
-                    error(201, "Domain is not running");
+                    return error(201, "Domain is not running");
                 } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
-                    error(203, "Domain is already running");
+                    return error(203, "Domain is already running");
                 } else {
-                    error(204, "No actions specified");
+                    return error(204, "No actions specified");
                 }
             } break;
             case http::verb::get: {
@@ -156,20 +156,26 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
 
     auto networks = [&](virt::Connection conn) {
         logger.debug("Listing all networks - WIP"); // WIP
-        bool error = false;
         for (const auto& nw : conn.extractAllNetworks()) {
             TFE nwActive = nw.isActive();
-            if (nwActive.err())
-                error = true;
+            rapidjson::Value jsonActive;
+            if (!nwActive.err()) {
+                if (nwActive)
+                    jsonActive.SetBool(true);
+                else
+                    jsonActive.SetBool(false);
+            } else {
+                logger.error("Error occurred while getting networks");
+                return error(250, "Error occurred while getting networks");
+            }
             rapidjson::Value nw_json;
             nw_json.SetObject();
             nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-            //            nw_json.AddMember("nwActive", nwActive, json_res.GetAllocator());
+            nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
             nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
             jResults.PushBack(nw_json, json_res.GetAllocator());
         }
-        if (!error)
-            json_res["success"] = true;
+        json_res["success"] = true;
     };
 
     [&] {
