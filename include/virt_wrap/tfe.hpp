@@ -2,7 +2,7 @@
 
 // True False Error
 class TFE {
-    enum class Impl { t, f, e };
+    enum class Impl { t = 2, f = 1, e = 0 };
     Impl v;
 
   public:
