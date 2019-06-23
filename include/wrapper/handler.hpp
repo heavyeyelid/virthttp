@@ -142,7 +142,10 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
                     res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
-                    if (!target["name"].empty() && target["name"].compare(dom.getName()) == 0)
+                    if ((!target["name"].empty() && target["name"].compare(dom.getName()) == 0) ||
+                        (!target["uuid"].empty() && target["uuid"].compare(dom.getUUIDString()) == 0) ||
+                        (!target["status"].empty() && (target["status"].compare(virt::Domain::States[info.state]) == 0 ||
+                                                       target["status"].compare(std::to_string(info.state)) == 0)))
                         jResults.PushBack(res_val, json_res.GetAllocator());
                     json_res["success"] = true;
                 }
