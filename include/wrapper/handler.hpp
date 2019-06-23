@@ -145,7 +145,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     if ((!target["name"].empty() && target["name"].compare(dom.getName()) == 0) ||
                         (!target["uuid"].empty() && target["uuid"].compare(dom.getUUIDString()) == 0) ||
                         (!target["status"].empty() && (target["status"].compare(virt::Domain::States[info.state]) == 0 ||
-                                                       target["status"].compare(std::to_string(info.state)) == 0)))
+                                                       target["status"].compare(std::to_string(info.state)) == 0)) ||
+                        (target["name"].empty() && target["uuid"].empty() && target["status"].empty()))
                         jResults.PushBack(res_val, json_res.GetAllocator());
                     json_res["success"] = true;
                 }
