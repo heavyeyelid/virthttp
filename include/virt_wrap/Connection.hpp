@@ -200,6 +200,13 @@ class Connection {
     // int virConnectListDefinedNetworks(virConnectPtr conn, char ** const names, int maxnames)
     // int virConnectListNetworks(virConnectPtr conn, char ** const names, int maxnames)
 
+    /**
+     * (Light) List all networks
+     * @param active
+     * @param persistent
+     * @param autostart
+     * @return std:unique_ptr<Network[], ?>: A wrapped array of networks extended with begin() and end(), or {nullptr} in case of error
+     * */
     auto listAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt, std::optional<bool> autostart = std::nullopt) const noexcept;
     inline auto listDefinedNetworksNames() const noexcept;
     inline auto listNetworksNames() const noexcept;

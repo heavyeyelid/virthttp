@@ -243,7 +243,7 @@ auto Connection::listAllNetworks(std::optional<bool> active, std::optional<bool>
     flags |= active ? (*active ? VIR_CONNECT_LIST_NETWORKS_ACTIVE : VIR_CONNECT_LIST_NETWORKS_INACTIVE) : 0u;
     flags |= persistent ? (*persistent ? VIR_CONNECT_LIST_NETWORKS_PERSISTENT : VIR_CONNECT_LIST_NETWORKS_TRANSIENT) : 0u;
     flags |= autostart ? (*autostart ? VIR_CONNECT_LIST_NETWORKS_AUTOSTART : VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART) : 0u;
-    virt::meta::light::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, flags);
+    return virt::meta::light::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, flags);
 }
 
 inline auto Connection::listDefinedNetworksNames() const noexcept {

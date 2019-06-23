@@ -119,7 +119,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
                 const auto os_type = dom.getOSType();
                 res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-                res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
+                res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
                 res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
                 res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
                 res_val.AddMember("ram", memory, json_res.GetAllocator());
@@ -156,15 +156,15 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
 
     auto networks = [&](virt::Connection conn) -> void {
         logger.debug("Listing all networks - WIP"); // WIP
-        /*for (const virt::Network& nw : conn.listAllNetworks()) {
+        for (const virt::Network& nw : conn.listAllNetworks()) {
             rapidjson::Value nw_json;
             nw_json.SetObject();
             nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
             nw_json.AddMember("active", nw.isActive(), json_res.GetAllocator());
-            nw_json.AddMember("uuid", nw.getUUIDString(), json_res.GetAllocator());
+            nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
             jResults.PushBack(nw_json, json_res.GetAllocator());
             json_res["success"] = true;
-        }*/
+        }
     };
 
     [&]() {

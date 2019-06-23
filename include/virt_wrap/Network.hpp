@@ -41,7 +41,9 @@ class Network {
 
     [[nodiscard]] inline auto getUUID() const noexcept;
 
-    [[nodiscard]] inline auto getUUIDString() const noexcept;
+    [[nodiscard]] inline auto getUUIDString() const noexcept -> std::optional<std::array<char, VIR_UUID_STRING_BUFLEN>>;
+
+    [[nodiscard]] auto extractUUIDString() const -> std::string;
 
     [[nodiscard]] inline auto getXMLDesc(XMLFlags flags = XMLFlags::DEFAULT) const noexcept;
 

@@ -31,9 +31,7 @@ constexpr inline Domain::operator bool() const noexcept { return underlying != n
     return Domain{virDomainCreateXML(c.underlying, xml, to_integral(flags))};
 }
 
-bool inline Domain::create() noexcept {
-    return virDomainCreate(underlying) == 0;
-}
+bool inline Domain::create() noexcept { return virDomainCreate(underlying) == 0; }
 
 [[nodiscard]] inline Domain::Info Domain::getInfo() const noexcept {
     virDomainInfo info;
@@ -54,7 +52,12 @@ bool inline Domain::create() noexcept {
     return ret;
 }
 
-[[nodiscard]] std::string Domain::getUUIDString() const noexcept {
+[[nodiscard]] inline auto Domain::getUUIDString() const noexcept -> std::optional<std::array<char, VIR_UUID_STRING_BUFLEN>> {
+    std::array<char, VIR_UUID_STRING_BUFLEN> ret{};
+    return virDomainGetUUIDString(underlying, ret.data()) == 0 ? std::optional(ret) : std::nullopt;
+}
+
+[[nodiscard]] std::string Domain::extractUUIDString() const {
     std::string ret{};
     ret.resize(VIR_UUID_STRING_BUFLEN);
     virDomainGetUUIDString(underlying, ret.data());
@@ -63,7 +66,9 @@ bool inline Domain::create() noexcept {
     return ret;
 }
 
-[[nodiscard]] inline  auto Domain::getOSType() const { return std::unique_ptr<char[], void (*)(char*)>{virDomainGetOSType(underlying), freeany<char[]>}; }
+[[nodiscard]] inline auto Domain::getOSType() const {
+    return std::unique_ptr<char[], void (*)(char*)>{virDomainGetOSType(underlying), freeany<char[]>};
+}
 
 [[nodiscard]] inline unsigned long Domain::getMaxMemory() const noexcept { return virDomainGetMaxMemory(underlying); }
 

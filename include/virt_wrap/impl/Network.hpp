@@ -37,9 +37,19 @@ inline Network::~Network() noexcept {
     return virNetworkGetUUID(underlying, ret.data()) == 0 ? std::optional(ret) : std::nullopt;
 }
 
-[[nodiscard]] inline auto Network::getUUIDString() const noexcept {
+[[nodiscard]] inline auto Network::getUUIDString() const noexcept -> std::optional<std::array<char, VIR_UUID_STRING_BUFLEN>> {
     std::array<char, VIR_UUID_STRING_BUFLEN> ret{};
     return virNetworkGetUUIDString(underlying, ret.data()) == 0 ? std::optional(ret) : std::nullopt;
+}
+
+[[nodiscard]] auto Network::extractUUIDString() const -> std::string {
+    std::string ret{};
+    ret.resize(VIR_UUID_STRING_BUFLEN);
+    if(virNetworkGetUUIDString(underlying, ret.data()) != 0)
+        return {};
+    ret.resize(std::strlen(ret.data()));
+    ret.shrink_to_fit();
+    return ret;
 }
 
 [[nodiscard]] inline auto Network::getXMLDesc(Network::XMLFlags flags) const noexcept {

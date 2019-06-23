@@ -102,7 +102,9 @@ class Domain {
 
     [[nodiscard]] bool isActive() const noexcept;
 
-    [[nodiscard]] std::string getUUIDString() const noexcept;
+    [[nodiscard]] auto getUUIDString() const noexcept -> std::optional<std::array<char, VIR_UUID_STRING_BUFLEN>>;
+
+    [[nodiscard]] auto extractUUIDString() const -> std::string;
 
     [[nodiscard]] auto getOSType() const;
 
