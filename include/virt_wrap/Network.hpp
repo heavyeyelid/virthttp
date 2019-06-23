@@ -25,7 +25,7 @@ class Network {
   public:
     constexpr Network() noexcept = default;
     Network(const Network&) = delete;
-    constexpr Network(Network&&) noexcept = default;
+    constexpr Network(Network&&) noexcept;
     inline ~Network() noexcept;
     Network& operator=(const Network&) = delete;
     Network& operator=(Network&&) noexcept;

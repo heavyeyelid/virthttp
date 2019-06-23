@@ -80,7 +80,7 @@ class Domain {
 
     Domain(const Domain&) = delete;
 
-    constexpr inline Domain(Domain&&) noexcept = default;
+    constexpr inline Domain(Domain&&) noexcept;
 
     Domain& operator=(const Domain&) = delete;
 

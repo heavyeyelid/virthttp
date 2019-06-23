@@ -10,6 +10,10 @@
 
 namespace virt {
 
+constexpr inline Network::Network(Network&& net) noexcept : underlying(net.underlying) {
+    net.underlying = nullptr;
+}
+
 inline Network& Network::operator=(Network&& net) noexcept {
     this->~Network();
     underlying = net.underlying;

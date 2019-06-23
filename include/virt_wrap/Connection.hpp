@@ -130,7 +130,7 @@ class Connection {
 
     inline Connection(const Connection& conn) noexcept = default;
 
-    constexpr Connection(Connection&& conn) noexcept = default;
+    constexpr Connection(Connection&& conn) noexcept;
 
     inline Connection& operator=(const Connection& conn) noexcept = delete;
 
