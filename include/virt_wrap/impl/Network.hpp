@@ -78,9 +78,9 @@ inline Network::~Network() noexcept {
         return std::nullopt;
     std::vector<virNetworkDHCPLease> ret{};
     ret.reserve(res);
-    std::for_each(*lease_arr, *lease_arr + res, [&](virNetworkDHCPLease v) {
-        ret.push_back(v);
-        virNetworkDHCPLeaseFree(&v);
+    std::for_each(lease_arr, lease_arr + res, [&](virNetworkDHCPLeasePtr v) {
+        ret.push_back(*v);
+        virNetworkDHCPLeaseFree(v);
     });
     freeany(lease_arr);
     return ret;
