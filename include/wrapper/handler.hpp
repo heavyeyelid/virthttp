@@ -140,7 +140,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     res_val.SetObject();
                     const auto info = dom.getInfo();
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-                    res_val.AddMember("uuid", dom.getUUIDString(), json_res.GetAllocator());
+                    res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
                     res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
                     if ((!target["name"].empty() && target["name"].compare(dom.getName()) == 0) ||
                         (!target["uuid"].empty() && target["uuid"].compare(dom.extractUUIDString()) == 0) ||
@@ -148,23 +148,28 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                                                        target["status"].compare(std::to_string(info.state)) == 0)) ||
                         (target["name"].empty() && target["uuid"].empty() && target["status"].empty()))
                         jResults.PushBack(res_val, json_res.GetAllocator());
-                    json_res["success"] = true;
                 }
+                json_res["success"] = true;
             }
         }
     };
 
     auto networks = [&](virt::Connection conn) {
         logger.debug("Listing all networks - WIP"); // WIP
+        bool error = false;
         for (const auto& nw : conn.extractAllNetworks()) {
+            TFE nwActive = nw.isActive();
+            if (nwActive.err())
+                error = true;
             rapidjson::Value nw_json;
             nw_json.SetObject();
             nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-            nw_json.AddMember("active", nw.isActive(), json_res.GetAllocator());
+            //            nw_json.AddMember("nwActive", nwActive, json_res.GetAllocator());
             nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
             jResults.PushBack(nw_json, json_res.GetAllocator());
-            json_res["success"] = true;
         }
+        if (!error)
+            json_res["success"] = true;
     };
 
     [&] {

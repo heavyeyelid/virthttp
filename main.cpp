@@ -13,8 +13,7 @@
 using namespace std::literals;
 
 int main(int argc, char** argv) {
-    iniConfig.init();
-
+    iniConfig.init("config.ini");
     logger.info("libvirt server URI: ", iniConfig.getConnURI());
     logger.info("http server URI: ", iniConfig.getHttpURI());
 
