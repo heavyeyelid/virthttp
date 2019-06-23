@@ -43,7 +43,9 @@ int main(int argc, char** argv) {
 
 #include "virt_wrap/Connection.hpp"
 #include "virt_wrap/Domain.hpp"
+#include "virt_wrap/Network.hpp"
 #include "virt_wrap/TypesParam.hpp"
 #include "virt_wrap/impl/Connection.hpp"
 #include "virt_wrap/impl/Domain.hpp"
+#include "virt_wrap/impl/Network.hpp"
 #include "virt_wrap/impl/TypedParams.hpp"
