@@ -20,8 +20,6 @@ class Network {
   private:
     virNetworkPtr underlying = nullptr;
 
-    explicit Network(virNetworkPtr p) : underlying(p) {} // 2Move
-
   public:
     constexpr Network() noexcept = default;
     Network(const Network&) = delete;
@@ -29,6 +27,7 @@ class Network {
     inline ~Network() noexcept;
     Network& operator=(const Network&) = delete;
     Network& operator=(Network&&) noexcept;
+    constexpr explicit Network(virNetworkPtr p) : underlying(p) {}
 
     constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
     [[nodiscard]] inline auto getBridgeName() const noexcept;

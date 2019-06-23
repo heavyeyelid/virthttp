@@ -30,7 +30,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     auto& jErrors = json_res["errors"].SetArray();
     auto& jMessages = json_res["messages"].SetArray();
 
-    auto error = [&](int code, std::string_view msg) -> void {
+    auto error = [&](int code, std::string_view msg) {
         json_res["success"] = false;
         rapidjson::Value jErrorValue{};
         jErrorValue.SetObject();
@@ -39,7 +39,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         jErrors.PushBack(jErrorValue, json_res.GetAllocator());
     };
 
-    auto domains = [&](virt::Connection conn) -> void {
+    auto domains = [&](virt::Connection conn) {
         enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
 
         std::string dom_str{};
@@ -154,9 +154,9 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         }
     };
 
-    auto networks = [&](virt::Connection conn) -> void {
+    auto networks = [&](virt::Connection conn) {
         logger.debug("Listing all networks - WIP"); // WIP
-        for (const virt::Network& nw : conn.listAllNetworks()) {
+        for (const auto& nw : conn.extractAllNetworks()) {
             rapidjson::Value nw_json;
             nw_json.SetObject();
             nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
@@ -167,7 +167,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         }
     };
 
-    [&]() {
+    [&] {
         if (req["X-Auth-Key"] != iniConfig.http_auth_key) {
             return error(1, "Bad X-Auth-Key");
         }

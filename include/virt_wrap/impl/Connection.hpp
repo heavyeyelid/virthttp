@@ -70,9 +70,7 @@ template <typename Callback> inline Connection::Connection(gsl::czstring<> name,
     underlying = virConnectOpenAuth(name, &c_auth, to_integral(flags));
 }
 
-constexpr Connection::Connection(Connection&& conn) noexcept : underlying(conn.underlying) {
-    conn.underlying = nullptr;
-}
+constexpr Connection::Connection(Connection&& conn) noexcept : underlying(conn.underlying) { conn.underlying = nullptr; }
 
 inline Connection& Connection::operator=(Connection&& conn) noexcept {
     this->~Connection();
@@ -256,6 +254,14 @@ inline auto Connection::listDefinedNetworksNames() const noexcept {
 
 auto Connection::listNetworksNames() const noexcept {
     return virt::meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfNetworks, virConnectListNetworks);
+}
+
+std::vector<Network> Connection::extractAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const {
+    auto flags = 0u;
+    flags |= active ? (*active ? VIR_CONNECT_LIST_NETWORKS_ACTIVE : VIR_CONNECT_LIST_NETWORKS_INACTIVE) : 0u;
+    flags |= persistent ? (*persistent ? VIR_CONNECT_LIST_NETWORKS_PERSISTENT : VIR_CONNECT_LIST_NETWORKS_TRANSIENT) : 0u;
+    flags |= autostart ? (*autostart ? VIR_CONNECT_LIST_NETWORKS_AUTOSTART : VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART) : 0u;
+    return virt::meta::heavy::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, flags);
 }
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept {

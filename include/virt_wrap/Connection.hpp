@@ -207,13 +207,14 @@ class Connection {
      * @param autostart
      * @return std:unique_ptr<Network[], ?>: A wrapped array of networks extended with begin() and end(), or {nullptr} in case of error
      * */
-    auto listAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt, std::optional<bool> autostart = std::nullopt) const noexcept;
+    auto listAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
+                         std::optional<bool> autostart = std::nullopt) const noexcept;
     inline auto listDefinedNetworksNames() const noexcept;
     inline auto listNetworksNames() const noexcept;
-    //std::vector<Network> extractAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const;
-    //std::vector<std::string> extractDefinedNetworksNames const;
-    //std::vector<std::string> extractNetworksNames() const;
-
+    std::vector<Network> extractAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
+                                            std::optional<bool> autostart = std::nullopt) const;
+    // std::vector<std::string> extractDefinedNetworksNames const;
+    // std::vector<std::string> extractNetworksNames() const;
 };
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;

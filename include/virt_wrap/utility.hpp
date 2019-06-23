@@ -99,7 +99,23 @@ auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U,
     });
 }
 } // namespace light
-namespace heavy {} // namespace heavy
+namespace heavy {
+template <typename Wrap, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U, typename DataFRet, typename T, typename... DataFArgs>
+auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
+    T* ptr;
+    auto res = data_fcn(underlying, &ptr, data_f_args...);
+    if (res == -1) {
+        throw std::runtime_error{__func__};
+    }
+    std::vector<Wrap> ret;
+    ret.reserve(res);
+    auto it = ptr;
+    while (*it)
+        ret.emplace_back(*it++);
+    freeany(ptr);
+    return ret;
+}
+} // namespace heavy
 } // namespace virt::meta
 
 // From C++ Weekly - Ep 134 (Jason Turner) :
