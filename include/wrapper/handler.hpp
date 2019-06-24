@@ -20,6 +20,8 @@ constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {
 template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http::request<Body, http::basic_fields<Allocator>>&& req) {
     auto target = TargetParser{bsv2stdsv(req.target())};
 
+    enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
+
     rapidjson::Document json_res{};
     json_res.SetObject();
     json_res.AddMember("results", "", json_res.GetAllocator());
@@ -29,6 +31,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     auto& jResults = json_res["results"].SetArray();
     auto& jErrors = json_res["errors"].SetArray();
     auto& jMessages = json_res["messages"].SetArray();
+    std::string key_str{};
 
     auto error = [&](int code, std::string_view msg) {
         json_res["success"] = false;
@@ -39,35 +42,43 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         jErrors.PushBack(jErrorValue, json_res.GetAllocator());
     };
 
-    auto domains = [&](virt::Connection conn) {
-        enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
-
-        std::string dom_str{};
-        if (req.target().starts_with("/libvirt/domains/by-uuid/")) {
-            dom_str = target.getPath().substr(25);
+    auto getSearchKey = [&](std::string type) {
+        auto key_start = std::string{"/libvirt/" + type}.length();
+        if (target.getPath().substr(key_start, 8).compare("/by-uuid") == 0) {
             search_key = SearchKey::by_uuid;
-        } else if (req.target().starts_with("/libvirt/domains/by-name/")) {
-            dom_str = target.getPath().substr(25);
+            if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
+                return error(102, "No UUID specified");
+            else
+                key_str = target.getPath().substr(key_start + 9);
+        } else if (target.getPath().substr(key_start, 8).compare("/by-name") == 0) {
             search_key = SearchKey::by_name;
-        } else if (!target.getPath().substr(16).empty() && !target.getPath().substr(17).empty()) {
-            dom_str = target.getPath().substr(17);
+            if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
+                return error(103, "No name specified");
+            else
+                key_str = target.getPath().substr(key_start + 9);
+        } else if (!target.getPath().substr(key_start).empty() && !target.getPath().substr(key_start + 1).empty()) {
+            key_str = target.getPath().substr(key_start + 1);
             search_key = SearchKey::by_name;
         }
+    };
+
+    auto domains = [&](virt::Connection conn) {
+        getSearchKey("domains");
 
         if (search_key != SearchKey::none) {
             virt::Domain dom{};
             if (search_key == SearchKey::by_name) {
                 logger.debug("Getting domain by name");
-                dom = std::move(conn.domainLookupByName(dom_str.c_str()));
+                dom = std::move(conn.domainLookupByName(key_str.c_str()));
                 if (!dom) {
-                    logger.error("Cannot find VM with name: ", dom_str);
+                    logger.error("Cannot find VM with name: ", key_str);
                     return error(100, "Cannot find VM with a such name");
                 }
             } else if (search_key == SearchKey::by_uuid) {
                 logger.debug("Getting domain by uuid");
-                dom = std::move(conn.domainLookupByUUIDString(dom_str.c_str()));
+                dom = std::move(conn.domainLookupByUUIDString(key_str.c_str()));
                 if (!dom) {
-                    logger.error("Cannot find VM with UUID: ", dom_str);
+                    logger.error("Cannot find VM with UUID: ", key_str);
                     return error(101, "Cannot find VM with a such UUID");
                 }
             }
@@ -81,7 +92,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
 
                 if (json_req["status"] == 5 && dom.getInfo().state == 1) {
                     if (!dom.shutdown()) {
-                        logger.error("Cannot shut down this VM: ", dom_str);
+                        logger.error("Cannot shut down this VM: ", key_str);
                         return error(200, "Could not shut down the VM");
                     }
                     res_val.AddMember("status", 5, json_res.GetAllocator());
@@ -94,7 +105,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     json_res["success"] = true;
                 } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
                     if (!dom.resume()) {
-                        logger.error("Cannot start this VM: ", dom_str);
+                        logger.error("Cannot start this VM: ", key_str);
                         return error(202, "Could not start the VM");
                     }
                     dom.resume();
@@ -106,11 +117,11 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     jResults.PushBack(res_val, json_res.GetAllocator());
                     json_res["success"] = true;
                 } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
-                    error(201, "Domain is not running");
+                    return error(201, "Domain is not running");
                 } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
-                    error(203, "Domain is already running");
+                    return error(203, "Domain is already running");
                 } else {
-                    error(204, "No actions specified");
+                    return error(204, "No actions specified");
                 }
             } break;
             case http::verb::get: {
@@ -155,21 +166,43 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     };
 
     auto networks = [&](virt::Connection conn) {
-        logger.debug("Listing all networks - WIP"); // WIP
-        bool error = false;
-        for (const auto& nw : conn.extractAllNetworks()) {
-            TFE nwActive = nw.isActive();
-            if (nwActive.err())
-                error = true;
-            rapidjson::Value nw_json;
-            nw_json.SetObject();
-            nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-            //            nw_json.AddMember("nwActive", nwActive, json_res.GetAllocator());
-            nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
-            jResults.PushBack(nw_json, json_res.GetAllocator());
+        getSearchKey("networks");
+        switch (req.method()) {
+        case http::verb::get: {
+            if (search_key != SearchKey::none) {
+                virt::Network nw{};
+                if (search_key == SearchKey::by_name) {
+                    logger.debug("Network by name");
+                } else if (search_key == SearchKey::by_uuid) {
+                    logger.debug("Network by UUID");
+                }
+            } else {
+                logger.debug("Listing all networks - WIP"); // WIP
+                for (const auto& nw : conn.extractAllNetworks()) {
+                    TFE nwActive = nw.isActive();
+                    rapidjson::Value jsonActive;
+                    if (!nwActive.err()) {
+                        if (nwActive)
+                            jsonActive.SetBool(true);
+                        else
+                            jsonActive.SetBool(false);
+                    } else {
+                        logger.error("Error occurred while getting networks");
+                        return error(250, "Error occurred while getting networks");
+                    }
+                    rapidjson::Value nw_json;
+                    nw_json.SetObject();
+                    nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
+                    nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
+                    nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
+                    jResults.PushBack(nw_json, json_res.GetAllocator());
+                }
+                json_res["success"] = true;
+            }
+        } break;
+        default: {
         }
-        if (!error)
-            json_res["success"] = true;
+        }
     };
 
     [&] {
