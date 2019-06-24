@@ -223,6 +223,14 @@ Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noex
     return Domain{virDomainLookupByUUIDString(underlying, uuid_str)};
 }
 
+Network Connection::networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept { return Network{virNetworkLookupByUUID(underlying, uuid)}; }
+
+Network Connection::networkLookupByName(gsl::czstring<> name) const noexcept { return Network{virNetworkLookupByName(underlying, name)}; }
+
+Network Connection::networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept {
+    return Network{virNetworkLookupByUUIDString(underlying, uuid_str)};
+}
+
 virNodeInfo Connection::nodeGetInfo() const {
     virNodeInfo ret{};
     virNodeGetInfo(underlying, &ret);

@@ -196,10 +196,11 @@ class Connection {
 
     constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
 
-    // int virConnectListAllNetworks(virConnectPtr conn, virNetworkPtr ** nets, unsigned int flags)
-    // int virConnectListDefinedNetworks(virConnectPtr conn, char ** const names, int maxnames)
-    // int virConnectListNetworks(virConnectPtr conn, char ** const names, int maxnames)
+    Network networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept;
 
+    Network networkLookupByName(gsl::czstring<> name) const noexcept;
+
+    Network networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept;
     /**
      * (Light) List all networks
      * @param active
