@@ -100,13 +100,30 @@ auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U,
 }
 } // namespace light
 namespace heavy {
-template <typename Wrap, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U, typename DataFRet, typename T, typename... DataFArgs>
+template <typename Conv = void, typename U, typename CountFRet, typename DataFRet, typename T>
+auto wrap_oparm_owning_fill_freeable_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
+    using LocAlloc = NoallocWFree<T>;
+    std::vector<gsl::owner<T>, LocAlloc> ret{};
+    ret.resize(count_fcn(underlying));
+    if (!ret.empty()) {
+        const auto res = data_fcn(underlying, ret.data(), ret.size());
+        if (res != 0)
+            throw std::runtime_error{__func__};
+    }
+    if constexpr(std::is_same_v<void, Conv>)
+        return ret;
+    std::vector<Conv> tret{};
+    tret.reserve(ret.size());
+    std::move(ret.begin(), ret.end(), std::back_inserter(tret));
+    return tret;
+}
+
+template <typename Wrap, typename U, typename DataFRet, typename T, typename... DataFArgs>
 auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
     T* ptr;
     auto res = data_fcn(underlying, &ptr, data_f_args...);
-    if (res == -1) {
+    if (res == -1)
         throw std::runtime_error{__func__};
-    }
     std::vector<Wrap> ret;
     ret.reserve(res);
     auto it = ptr;

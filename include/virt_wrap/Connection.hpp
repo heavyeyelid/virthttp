@@ -158,11 +158,11 @@ class Connection {
 
     int getMaxVcpus(gsl::czstring<> type) const noexcept;
 
-    gsl::zstring<> getSysInfo(unsigned flags) const noexcept;
+    passive<gsl::zstring<>> getSysInfo(unsigned flags) const noexcept;
 
     gsl::czstring<> getType() const noexcept;
 
-    gsl::zstring<> getURI() const noexcept;
+    passive<gsl::zstring<>> getURI() const noexcept;
 
     inline bool isAlive() const noexcept;
 
@@ -213,8 +213,8 @@ class Connection {
     inline auto listNetworksNames() const noexcept;
     std::vector<Network> extractAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
                                             std::optional<bool> autostart = std::nullopt) const;
-    // std::vector<std::string> extractDefinedNetworksNames const;
-    // std::vector<std::string> extractNetworksNames() const;
+    std::vector<std::string> extractDefinedNetworksNames() const;
+    std::vector<std::string> extractNetworksNames() const;
 };
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;

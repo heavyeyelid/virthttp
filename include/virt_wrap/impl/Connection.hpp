@@ -126,11 +126,11 @@ unsigned long Connection::getLibVersion() const {
 
 int Connection::getMaxVcpus(gsl::czstring<> type) const noexcept { return virConnectGetMaxVcpus(underlying, type); }
 
-gsl::zstring<> Connection::getSysInfo(unsigned flags) const noexcept { return virConnectGetSysinfo(underlying, flags); }
+passive<gsl::zstring<>> Connection::getSysInfo(unsigned flags) const noexcept { return virConnectGetSysinfo(underlying, flags); }
 
 gsl::czstring<> Connection::getType() const noexcept { return virConnectGetType(underlying); }
 
-gsl::zstring<> Connection::getURI() const noexcept { return virConnectGetURI(underlying); }
+passive<gsl::zstring<>> Connection::getURI() const noexcept { return virConnectGetURI(underlying); }
 
 inline bool Connection::isAlive() const noexcept { return virConnectIsAlive(underlying) > 0; }
 
@@ -254,6 +254,14 @@ inline auto Connection::listDefinedNetworksNames() const noexcept {
 
 auto Connection::listNetworksNames() const noexcept {
     return virt::meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfNetworks, virConnectListNetworks);
+}
+
+auto Connection::extractDefinedNetworksNames() const -> std::vector<std::string> {
+    return virt::meta::heavy::wrap_oparm_owning_fill_freeable_arr<std::string>(underlying, virConnectNumOfDefinedNetworks, virConnectListDefinedNetworks);
+}
+
+auto Connection::extractNetworksNames() const -> std::vector<std::string> {
+    return virt::meta::heavy::wrap_oparm_owning_fill_freeable_arr<std::string>(underlying, virConnectNumOfNetworks, virConnectListNetworks);
 }
 
 std::vector<Network> Connection::extractAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const {
