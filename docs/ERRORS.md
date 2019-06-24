@@ -11,6 +11,8 @@
 | 10         | Failed to open connection to LibVirtD |
 | 100        | Cannot find VM with a such name |
 | 101        | Cannot find VM with a such UUID |
+| 102        | No UUID specified |
+| 103        | No name specified |
 | 200        | Could not shut down the VM |
 | 201        | Domain is not running |
 | 202        | Could not start the VM |
