@@ -55,7 +55,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virtxml/capabilities.hpp
             include/virtxml/generic.hpp
             include/virtxml/xmlspan.hpp
-            include/virtxml/xmlstr.hpp
+            include/virtxml/xmlval.hpp
             include/wrapper/config.hpp
             include/wrapper/handler.hpp
             include/virt_wrap.hpp
@@ -63,7 +63,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/fwd.hpp
             include/urlparser.hpp
             include/flatmap.hpp
-            )
+            include/virtxml/virtxml.hpp)
 
     target_link_libraries (HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
     if (WIN32)
