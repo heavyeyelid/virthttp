@@ -9,6 +9,7 @@
 
 namespace virtxml {
 using namespace rapidxml_ns;
+inline namespace {
 
 struct DriverCapabilities {
   public:
@@ -44,14 +45,30 @@ struct DriverCapabilities {
 #endif
             };
 
+            struct Topology; // TODO
+
+            struct SecModel : public Node {
+#if 1 /* With functions */
+                String model() const noexcept { return String{node->first_node("model")}; }
+                Integral doi() const noexcept { return Integral{node->first_node("doi")}; }
+#else /* With paramexpr */
+                using model(this s) = String{s.node->first_node("model")};
+                using doi(this s) = Integral{s.node->first_node("doi")};
+#endif
+            };
+
 #if 1 /* With functions */
             String arch() const noexcept { return String{node->first_node("arch")}; }
             // Optional<String> model() const noexcept; // autogen from https://github.com/wiedi/libvirt/blob/master/src/cpu/cpu_map.xml
             FeatureList feature_list() const noexcept { return FeatureList{node}; }
+            Optional<MigrationFeatures> migration_features() const noexcept { return MigrationFeatures{node->first_node("migration_features")}; }
+            Optional<SecModel> secmodel() const noexcept { return SecModel{node->first_node("secmodel")}; }
 #else /* With paramexpr */
             using arch(this s) = String{s.node->first_node("arch")};
             using model(this s) = /* autogen + TMP magic */;
             using feature_list(this s) = FeatureList{s.node};
+            using migration_features(this s) = MigrationFeatures{s.node->first_node("migration_features")};
+            using secmodel(this s) = SecModel{s.node->first_node("migration_features")};
 #endif
         };
 
@@ -106,6 +123,7 @@ struct DriverCapabilities {
   private:
     xml_document<> doc{};
 };
+} // namespace
 } // namespace virtxml
 
 #if 1 /* With functions */

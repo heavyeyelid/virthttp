@@ -6,13 +6,13 @@
 namespace virtxml {
 using namespace rapidxml_ns;
 
-struct String {
-    template <typename T> constexpr explicit String(T* item) : item(item) {}
+struct Value {
+    constexpr Value(xml_base<>* item) : item(item) {}
 
 #if 1 /* With functions */
 
     constexpr explicit operator bool() const noexcept { return item != nullptr; }
-    inline explicit operator std::string_view() const noexcept { return {item->value(), item->value_size()}; }
+
 
 #else /* With paramexpr */
 
@@ -21,7 +21,15 @@ struct String {
 
 #endif
 
-  private:
+  protected:
     xml_base<>* item;
+};
+
+struct String : public Value {
+    inline explicit operator std::string_view() const noexcept { return {item->value(), item->value_size()}; }
+};
+
+struct Integral : public Value  {
+    inline explicit operator int() const noexcept { return std::atoi(item->value()); }
 };
 } // namespace virtxml
