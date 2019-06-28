@@ -52,6 +52,10 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/impl/Domain.hpp
             include/virt_wrap/impl/Network.hpp
             include/virt_wrap/impl/TypedParams.hpp
+            include/virtxml/capabilities.hpp
+            include/virtxml/generic.hpp
+            include/virtxml/xmlspan.hpp
+            include/virtxml/xmlstr.hpp
             include/wrapper/config.hpp
             include/wrapper/handler.hpp
             include/virt_wrap.hpp
