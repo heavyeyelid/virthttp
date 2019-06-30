@@ -56,14 +56,45 @@ struct DriverCapabilities {
             };
 
             struct Topology : public Node {
+                struct Cell : public Node {
+                    struct Cpu : public Node {
+#if 1 /* With functions */
+                        Integral id() const noexcept { return Integral{node->first_attribute("id")}; }
+#else /* With paramexpr */
+                        using id(this s) = Integral{node->first_attribute("id")};
+#endif
+                    };
+                    struct Cpus : public NamedSpan<Cpu> {
+#if 1 /* With functions */
+                        Integral num() const noexcept { return Integral{node->first_attribute("num")}; }
+#else /* With paramexpr */
+                        using num(this s) = Integral{node->first_attribute("num")};
+#endif
+                    };
+#if 1 /* With functions */
+                    Integral id() const noexcept { return Integral{node->first_attribute("id")}; }
+#else /* With paramexpr */
+                    using id(this s) = Integral{node->first_attribute("id")};
+#endif
+                };
+                struct Cells : public NamedSpan<Cell> {
+                    using NamedSpan::NamedSpan;
+#if 1 /* With functions */
+                    Integral num() const noexcept { return Integral{node->first_attribute("num")}; }
+#else /* With paramexpr */
+                    using num(this s) = Integral{node->first_attribute("num")};
+#endif
+                };
 #if 1 /* With functions */
                 Optional<Integral> sockets() const noexcept { return Integral{node->first_attribute("sockets")}; }
                 Optional<Integral> cores() const noexcept { return Integral{node->first_attribute("cores")}; }
                 Optional<Integral> threads() const noexcept { return Integral{node->first_attribute("threads")}; }
+                Cells cells() const noexcept { return Cells{"cell", node->first_node("cells")}; }
 #else /* With paramexpr */
                 using sockets(this s) = Integral{node->first_attribute("sockets")};
                 using cores(this s) = Integral{node->first_attribute("cores")};
                 using threads(this s) = Integral{node->first_attribute("threads")};
+                using cells(this s) = Cells{"cell", s.node->first_node("cells")};
 #endif
             };
 
@@ -80,17 +111,19 @@ struct DriverCapabilities {
 #if 1 /* With functions */
             String arch() const noexcept { return String{node->first_node("arch")}; }
             Optional<String> vendor() const noexcept { return String{node->first_node("vendor")}; }
-            Optional<String> model() const noexcept {}
+            // Optional<String> model() const noexcept;
             FeatureList feature_list() const noexcept { return FeatureList{node}; }
             Optional<MigrationFeatures> migration_features() const noexcept { return MigrationFeatures{node->first_node("migration_features")}; }
             Optional<SecModel> secmodel() const noexcept { return SecModel{node->first_node("secmodel")}; }
+            Topology topology() const noexcept { return Topology{node->first_node("topology")}; }
 #else /* With paramexpr */
             using arch(this s) = String{s.node->first_node("arch")};
             using arch(this s) = String{s.node->first_node("vendor")};
             using model(this s) = Node{s.node->first_node("model")};
             using feature_list(this s) = FeatureList{s.node};
             using migration_features(this s) = MigrationFeatures{s.node->first_node("migration_features")};
-            using secmodel(this s) = SecModel{s.node->first_node("migration_features")};
+            using secmodel(this s) = SecModel{s.node->first_node("secmodel")};
+            using topology(this s) = Topology{s.node->first_node("topology")};
 #endif
         };
 

@@ -51,7 +51,7 @@ template <typename C, typename T> class NamedSpanIt {
 
 } // namespace impl
 
-template <typename C, typename T = char> class NamedSpan : Node {
+template <typename C, typename T = char> class NamedSpan : public Node {
   protected:
     gsl::czstring<> name;
 
