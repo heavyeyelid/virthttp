@@ -57,6 +57,7 @@ template <typename Callback = ConnectAuthCallback> class ConnectionAuth {
 class Connection {
     friend Domain;
     friend Network;
+    friend NodeDevice;
 
     virConnectPtr underlying = nullptr;
 
@@ -88,6 +89,27 @@ class Connection {
 
                 HAS_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_HAS_SNAPSHOT,
                 NO_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_NO_SNAPSHOT,
+            };
+        };
+        struct Devices {
+            enum class Flags : unsigned {
+                DEFAULT = 0,
+                SYSTEM = VIR_CONNECT_LIST_NODE_DEVICES_CAP_SYSTEM,
+                PCI_DEV = VIR_CONNECT_LIST_NODE_DEVICES_CAP_PCI_DEV,
+                USB_DEV = VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_DEV,
+                USB_IFACE = VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_INTERFACE,
+                NETWORK = VIR_CONNECT_LIST_NODE_DEVICES_CAP_NET,
+                SCSI_HOST = VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_HOST,
+                SCSI_TARGET = VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_TARGET,
+                SCSI_DEV = VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI,
+                STORAGE = VIR_CONNECT_LIST_NODE_DEVICES_CAP_STORAGE,
+                FC_HOST = VIR_CONNECT_LIST_NODE_DEVICES_CAP_FC_HOST,
+                VPORTS = VIR_CONNECT_LIST_NODE_DEVICES_CAP_VPORTS,
+                SCSI_GENERIC = VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_GENERIC,
+                DRM = VIR_CONNECT_LIST_NODE_DEVICES_CAP_DRM,
+                MEDIATED_CAPABLE = VIR_CONNECT_LIST_NODE_DEVICES_CAP_MDEV_TYPES,
+                MEDIATED = VIR_CONNECT_LIST_NODE_DEVICES_CAP_MDEV,
+                CCW = VIR_CONNECT_LIST_NODE_DEVICES_CAP_CCW_DEV,
             };
         };
     };
@@ -216,6 +238,13 @@ class Connection {
                                             std::optional<bool> autostart = std::nullopt) const;
     std::vector<std::string> extractDefinedNetworksNames() const;
     std::vector<std::string> extractNetworksNames() const;
+
+    auto listAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const noexcept;
+    std::vector<NodeDevice> extractAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const;
+
+    NodeDevice deviceLookupByName(gsl::czstring<> name) const noexcept;
+
+    NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;
 };
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
@@ -224,4 +253,6 @@ constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Do
 
 constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
                                                                    Connection::GetAllDomains::Stats::Flags rhs) noexcept;
+
+constexpr inline Connection::List::Devices::Flags operator|(Connection::List::Devices::Flags lhs, Connection::List::Devices::Flags rhs) noexcept;
 }

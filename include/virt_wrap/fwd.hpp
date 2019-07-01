@@ -11,6 +11,8 @@ class Domain;
 
 class Network;
 
+class NodeDevice;
+
 class TypedParameter;
 
 class TypedParams;

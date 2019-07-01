@@ -223,7 +223,9 @@ Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noex
     return Domain{virDomainLookupByUUIDString(underlying, uuid_str)};
 }
 
-Network Connection::networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept { return Network{virNetworkLookupByUUID(underlying, uuid)}; }
+Network Connection::networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
+    return Network{virNetworkLookupByUUID(underlying, uuid)};
+}
 
 Network Connection::networkLookupByName(gsl::czstring<> name) const noexcept { return Network{virNetworkLookupByName(underlying, name)}; }
 
@@ -265,7 +267,8 @@ auto Connection::listNetworksNames() const noexcept {
 }
 
 auto Connection::extractDefinedNetworksNames() const -> std::vector<std::string> {
-    return virt::meta::heavy::wrap_oparm_owning_fill_freeable_arr<std::string>(underlying, virConnectNumOfDefinedNetworks, virConnectListDefinedNetworks);
+    return virt::meta::heavy::wrap_oparm_owning_fill_freeable_arr<std::string>(underlying, virConnectNumOfDefinedNetworks,
+                                                                               virConnectListDefinedNetworks);
 }
 
 auto Connection::extractNetworksNames() const -> std::vector<std::string> {
@@ -280,6 +283,19 @@ std::vector<Network> Connection::extractAllNetworks(std::optional<bool> active, 
     return virt::meta::heavy::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, flags);
 }
 
+auto Connection::listAllDevices(List::Devices::Flags flags) const noexcept {
+    return meta::light::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));
+}
+std::vector<NodeDevice> Connection::extractAllDevices(List::Devices::Flags flags) const {
+    return meta::heavy::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));
+}
+
+NodeDevice Connection::deviceLookupByName(gsl::czstring<> name) const noexcept { return NodeDevice{virNodeDeviceLookupByName(underlying, name)}; }
+
+NodeDevice Connection::deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept {
+    return NodeDevice{virNodeDeviceLookupSCSIHostByWWN(underlying, wwnn, wwpn, 0)};
+}
+
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept {
     return Connection::Flags(to_integral(lhs) | to_integral(rhs));
 }
@@ -291,5 +307,9 @@ constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Do
 constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
                                                                    Connection::GetAllDomains::Stats::Flags rhs) noexcept {
     return Connection::GetAllDomains::Stats::Flags(to_integral(lhs) | to_integral(rhs));
+}
+
+constexpr inline Connection::List::Devices::Flags operator|(Connection::List::Devices::Flags lhs, Connection::List::Devices::Flags rhs) noexcept {
+    return Connection::List::Devices::Flags{to_integral(lhs) | to_integral(rhs)};
 }
 }

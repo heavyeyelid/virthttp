@@ -52,6 +52,18 @@ template <typename T, typename D> struct UniqueFalseTerminatedSpan : public std:
 namespace virt::meta {
 namespace light {
 template <typename U, typename CountFRet, typename DataFRet, typename T>
+auto wrap_oparm_owning_fill_static_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
+    using RetType = std::optional<std::vector<T>>;
+    std::vector<T> ret{};
+    ret.resize(count_fcn(underlying));
+    if (!ret.empty()) {
+        const auto res = data_fcn(underlying, ret.data(), ret.size());
+        if (res != 0)
+            return RetType{std::nullopt};
+    }
+    return RetType{ret};
+}
+template <typename U, typename CountFRet, typename DataFRet, typename T>
 auto wrap_oparm_owning_fill_freeable_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
     using LocAlloc = NoallocWFree<T>;
     using RetType = std::optional<std::vector<T, LocAlloc>>;
@@ -101,6 +113,22 @@ auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U,
 } // namespace light
 namespace heavy {
 template <typename Conv = void, typename U, typename CountFRet, typename DataFRet, typename T>
+auto wrap_oparm_owning_fill_static_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
+    std::vector<gsl::owner<T>> ret{};
+    ret.resize(count_fcn(underlying));
+    if (!ret.empty()) {
+        const auto res = data_fcn(underlying, ret.data(), ret.size());
+        if (res != 0)
+            throw std::runtime_error{__func__};
+    }
+    if constexpr (std::is_same_v<void, Conv>)
+        return ret;
+    std::vector<Conv> tret{};
+    tret.reserve(ret.size());
+    std::move(ret.begin(), ret.end(), std::back_inserter(tret));
+    return tret;
+}
+template <typename Conv = void, typename U, typename CountFRet, typename DataFRet, typename T>
 auto wrap_oparm_owning_fill_freeable_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
     using LocAlloc = NoallocWFree<T>;
     std::vector<gsl::owner<T>, LocAlloc> ret{};
@@ -110,7 +138,7 @@ auto wrap_oparm_owning_fill_freeable_arr(U underlying, CountFRet (*count_fcn)(U)
         if (res != 0)
             throw std::runtime_error{__func__};
     }
-    if constexpr(std::is_same_v<void, Conv>)
+    if constexpr (std::is_same_v<void, Conv>)
         return ret;
     std::vector<Conv> tret{};
     tret.reserve(ret.size());

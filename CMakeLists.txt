@@ -63,7 +63,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/fwd.hpp
             include/urlparser.hpp
             include/flatmap.hpp
-            include/virtxml/virtxml.hpp)
+            include/virtxml/virtxml.hpp include/virt_wrap/NodeDevice.hpp include/virt_wrap/impl/NodeDevice.hpp)
 
     target_link_libraries (HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
     if (WIN32)
