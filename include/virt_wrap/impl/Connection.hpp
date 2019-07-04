@@ -290,6 +290,18 @@ std::vector<NodeDevice> Connection::extractAllDevices(List::Devices::Flags flags
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));
 }
 
+auto Connection::listDevicesNames(const std::string& capability) const noexcept {
+    return meta::light::wrap_oparm_owning_fill_freeable_arr(
+        underlying, [=](auto u) { return virNodeNumOfDevices(u, capability.data(), 0); },
+        [=](auto u, auto ptr, auto max) { return virNodeListDevices(u, capability.data(), ptr, max, 0); });
+}
+
+std::vector<std::string> Connection::extractDevicesNames(const std::string& capability) const {
+    return meta::heavy::wrap_oparm_owning_fill_freeable_arr(
+        underlying, [=](auto u) { return virNodeNumOfDevices(u, capability.data(), 0); },
+        [=](auto u, auto ptr, auto max) { return virNodeListDevices(u, capability.data(), ptr, max, 0); });
+}
+
 NodeDevice Connection::deviceLookupByName(gsl::czstring<> name) const noexcept { return NodeDevice{virNodeDeviceLookupByName(underlying, name)}; }
 
 NodeDevice Connection::deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept {

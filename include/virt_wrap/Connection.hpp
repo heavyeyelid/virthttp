@@ -242,6 +242,9 @@ class Connection {
     auto listAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const noexcept;
     std::vector<NodeDevice> extractAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const;
 
+    auto listDevicesNames(const std::string& capability) const noexcept;
+    std::vector<std::string> extractDevicesNames(const std::string& capability) const;
+
     NodeDevice deviceLookupByName(gsl::czstring<> name) const noexcept;
 
     NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;

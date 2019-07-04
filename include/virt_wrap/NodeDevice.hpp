@@ -4,7 +4,6 @@
 #include <libvirt/libvirt.h>
 
 namespace tmp {
-int virConnectListAllNodeDevices(virConnectPtr conn, virNodeDevicePtr** devices, unsigned int flags);
 /*
 int	virConnectNodeDeviceEventDeregisterAny	(virConnectPtr conn,
                                                   int callbackID);
@@ -28,11 +27,6 @@ int	virConnectNodeDeviceEventRegisterAny	(virConnectPtr conn,
                                                 virFreeCallback freecb);
                                                 */
 
-virNodeDevicePtr virNodeDeviceLookupByName(virConnectPtr conn, const char* name);
-virNodeDevicePtr virNodeDeviceLookupSCSIHostByWWN(virConnectPtr conn, const char* wwnn, const char* wwpn, unsigned int flags);
-
-int virNodeListDevices(virConnectPtr conn, const char* cap, char** const names, int maxnames, unsigned int flags);
-int virNodeNumOfDevices(virConnectPtr conn, const char* cap, unsigned int flags);
 } // namespace tmp
 
 namespace virt {
