@@ -9,6 +9,10 @@ DerivePointerAlignment: false
 PointerAlignment: Left
 ColumnLimit: 150
 IncludeCategories:
+  - Regex:           '<[[:alnum:]_]+>'
+    Priority:        -6
+  - Regex:           '<[[:alnum:]\/]+>'
+    Priority:        -5
   - Regex:           '<[[:alnum:]._]+>'
     Priority:        -4
   - Regex:           '<[[:alnum:].\/]+>'
