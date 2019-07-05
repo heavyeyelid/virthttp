@@ -90,9 +90,9 @@ class TargetParser {
             return std::nullopt;
         if(val.empty())
             return true;
-        if(val == "yes" || val == "true")
+        if(val == "1" || val == "yes" || val == "true")
             return true;
-        if(val == "no" || val == "false")
+        if(val == "0" || val == "no" || val == "false")
             return false;
         return std::nullopt;
     }
