@@ -64,7 +64,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     };
 
     auto domains = [&](virt::Connection conn) {
-        if(!getSearchKey("domains"))
+        if (!getSearchKey("domains"))
             return;
 
         if (search_key != SearchKey::none) {
@@ -148,6 +148,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         } else {
             if (req.method() == http::verb::get) {
                 logger.debug("Listing all domains");
+                const auto [tag_name, tag_uuid, tag_status] = std::make_tuple(target["name"], target["uuid"], target["status"]);
                 for (const auto& dom : conn.listAllDomains()) {
                     rapidjson::Value res_val;
                     res_val.SetObject();
@@ -155,12 +156,14 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
                     res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
-                    if ((!target["name"].empty() && target["name"].compare(dom.getName()) == 0) ||
-                        (!target["uuid"].empty() && target["uuid"].compare(dom.extractUUIDString()) == 0) ||
-                        (!target["status"].empty() && (target["status"].compare(virt::Domain::States[info.state]) == 0 ||
-                                                       target["status"].compare(std::to_string(info.state)) == 0)) ||
-                        (target["name"].empty() && target["uuid"].empty() && target["status"].empty()))
-                        jResults.PushBack(res_val, json_res.GetAllocator());
+                    if (!tag_name.empty() && tag_name != dom.getName())
+                        continue;
+                    if (!tag_uuid.empty() && tag_uuid != dom.extractUUIDString())
+                        continue;
+                    if (!tag_status.empty() ||
+                        (tag_status != virt::Domain::States[info.state] && tag_status != std::to_string(info.state)))
+                        continue;
+                    jResults.PushBack(res_val, json_res.GetAllocator());
                 }
                 json_res["success"] = true;
             }
@@ -168,7 +171,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     };
 
     auto networks = [&](virt::Connection conn) {
-        if(!getSearchKey("networks"))
+        if (!getSearchKey("networks"))
             return;
         switch (req.method()) {
         case http::verb::get: {
