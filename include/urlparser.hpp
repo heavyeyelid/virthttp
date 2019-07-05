@@ -83,6 +83,19 @@ class TargetParser {
             return it->second;
         return {};
     }
+
+    constexpr std::optional<bool> getBool(std::string_view key) const noexcept {
+        const auto val = (*this)[key];
+        if(val.data() == nullptr)
+            return std::nullopt;
+        if(val.empty())
+            return true;
+        if(val == "yes" || val == "true")
+            return true;
+        if(val == "no" || val == "false")
+            return false;
+        return std::nullopt;
+    }
 };
 
 class URLParser : public TargetParser {

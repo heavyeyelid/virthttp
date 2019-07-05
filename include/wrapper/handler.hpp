@@ -148,7 +148,41 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         } else {
             if (req.method() == http::verb::get) {
                 logger.debug("Listing all domains");
-                const auto [tag_name, tag_uuid, tag_status] = std::make_tuple(target["name"], target["uuid"], target["status"]);
+
+                auto flags = virt::Connection::List::Domains::Flags::DEFAULT;
+                if (auto activity = target.getBool("active"); activity)
+                    flags |= *activity ? virt::Connection::List::Domains::Flags::ACTIVE : virt::Connection::List::Domains::Flags::INACTIVE;
+                if (auto persistence = target.getBool("persistent"); persistence)
+                    flags |= *persistence ? virt::Connection::List::Domains::Flags::PERSISTENT : virt::Connection::List::Domains::Flags::TRANSIENT;
+                if (auto savemgmt = target.getBool("managed_save"); savemgmt)
+                    flags |= *savemgmt ? virt::Connection::List::Domains::Flags::MANAGEDSAVE : virt::Connection::List::Domains::Flags::NO_MANAGEDSAVE;
+                if (auto autostart = target.getBool("autostart"); autostart)
+                    flags |= *autostart ? virt::Connection::List::Domains::Flags::AUTOSTART : virt::Connection::List::Domains::Flags::NO_AUTOSTART;
+                if (auto snapshot = target.getBool("has_snapshot"); snapshot)
+                    flags |= *snapshot ? virt::Connection::List::Domains::Flags::HAS_SNAPSHOT : virt::Connection::List::Domains::Flags::NO_SNAPSHOT;
+
+                auto [tag_name, tag_uuid, tag_status] = std::make_tuple(target["name"], target["uuid"], target["status"]);
+                if (!tag_status.empty()) {
+                    const auto status = (!std::all_of(tag_status.cbegin(), tag_status.cend(), [&](auto c) { return std::isdigit(c); }))
+                                            ? virt::Domain::State(std::stol(std::string{tag_status}))
+                                            : virt::Domain::States[tag_status];
+                    switch (status) {
+                    case virt::Domain::State::RUNNING:
+                        flags |= virt::Connection::List::Domains::Flags::RUNNING;
+                        tag_status = {};
+                        break;
+                    case virt::Domain::State::PAUSED:
+                        flags |= virt::Connection::List::Domains::Flags::PAUSED;
+                        tag_status = {};
+                        break;
+                    case virt::Domain::State::SHUTOFF:
+                        flags |= virt::Connection::List::Domains::Flags::SHUTOFF;
+                        tag_status = {};
+                        break;
+                    default:
+                        flags |= virt::Connection::List::Domains::Flags::OTHER;
+                    }
+                }
                 for (const auto& dom : conn.listAllDomains()) {
                     rapidjson::Value res_val;
                     res_val.SetObject();
@@ -160,8 +194,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                         continue;
                     if (!tag_uuid.empty() && tag_uuid != dom.extractUUIDString())
                         continue;
-                    if (!tag_status.empty() ||
-                        (tag_status != virt::Domain::States[info.state] && tag_status != std::to_string(info.state)))
+                    if (!tag_status.empty() && (tag_status != virt::Domain::States[info.state] && tag_status != std::to_string(info.state)))
                         continue;
                     jResults.PushBack(res_val, json_res.GetAllocator());
                 }

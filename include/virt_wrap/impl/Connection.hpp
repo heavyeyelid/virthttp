@@ -315,7 +315,9 @@ constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::
 constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Domains::Flags lhs, Connection::List::Domains::Flags rhs) noexcept {
     return Connection::List::Domains::Flags(to_integral(lhs) | to_integral(rhs));
 }
-
+constexpr inline Connection::List::Domains::Flags& operator|=(Connection::List::Domains::Flags& lhs, Connection::List::Domains::Flags rhs) noexcept {
+    return lhs = lhs | rhs;
+}
 constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
                                                                    Connection::GetAllDomains::Stats::Flags rhs) noexcept {
     return Connection::GetAllDomains::Stats::Flags(to_integral(lhs) | to_integral(rhs));

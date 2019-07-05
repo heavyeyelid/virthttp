@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 #include <gsl/gsl>
+#include "../cexpr_algs.hpp"
 #include <libvirt/libvirt-domain.h>
 #include "fwd.hpp"
 
@@ -56,8 +57,7 @@ class Domain {
         SHUTDOWN = VIR_DOMAIN_SHUTDOWN,       /* the domain is being shut down */
         SHUTOFF = VIR_DOMAIN_SHUTOFF,         /* the domain is shut off */
         CRASHED = VIR_DOMAIN_CRASHED,         /* the domain is crashed */
-        PMSUSPENDED = VIR_DOMAIN_PMSUSPENDED, /* the domain is suspended by
-                                             guest power management */
+        PMSUSPENDED = VIR_DOMAIN_PMSUSPENDED, /* the domain is suspended by guest power management */
     };
     class States {
         constexpr static std::array states = {"No State", "Running", "Blocked", "Paused",
@@ -66,12 +66,14 @@ class Domain {
       public:
         [[nodiscard]] constexpr const char* operator[](State val) const noexcept { return states[to_integral(val)]; }
         [[nodiscard]] constexpr const char* operator[](unsigned char val) const noexcept { return states[+val]; }
+        [[nodiscard]] constexpr State operator[](std::string_view sv) const noexcept {
+            const auto res = cexpr::find(states.cbegin(), states.cend(), sv);
+            return State(std::distance(states.cbegin(), res));
+        }
     } constexpr static States{};
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
-        SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain,
-                                                                    then also remove any
-                                                                    snapshot metadata */
+        SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain, then also remove any snapshot metadata */
         NVRAM = VIR_DOMAIN_UNDEFINE_NVRAM,                           /* Also remove any nvram file */
         KEEP_NVRAM = VIR_DOMAIN_UNDEFINE_KEEP_NVRAM,                 /* Keep nvram file */
     };

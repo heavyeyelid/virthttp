@@ -118,25 +118,19 @@ class Connection {
             enum class Flags : unsigned {
                 ACTIVE = VIR_CONNECT_GET_ALL_DOMAINS_STATS_ACTIVE,
                 INACTIVE = VIR_CONNECT_GET_ALL_DOMAINS_STATS_INACTIVE,
-                OTHER = VIR_CONNECT_GET_ALL_DOMAINS_STATS_OTHER,
-                PAUSED = VIR_CONNECT_GET_ALL_DOMAINS_STATS_PAUSED,
+
                 PERSISTENT = VIR_CONNECT_LIST_DOMAINS_PERSISTENT,
-                RUNNING = VIR_CONNECT_LIST_DOMAINS_RUNNING,
-                SHUTOFF = VIR_CONNECT_LIST_DOMAINS_SHUTOFF,
                 TRANSIENT = VIR_CONNECT_LIST_DOMAINS_TRANSIENT,
-                NOWAIT = VIR_CONNECT_GET_ALL_DOMAINS_STATS_NOWAIT,               // report
-                                                                                 // statistics that
-                                                                                 // can be obtained
-                                                                                 // immediately
-                                                                                 // without any
+
+                RUNNING = VIR_CONNECT_LIST_DOMAINS_RUNNING,
+                PAUSED = VIR_CONNECT_GET_ALL_DOMAINS_STATS_PAUSED,
+                SHUTOFF = VIR_CONNECT_LIST_DOMAINS_SHUTOFF,
+                OTHER = VIR_CONNECT_GET_ALL_DOMAINS_STATS_OTHER,
+
+                NOWAIT = VIR_CONNECT_GET_ALL_DOMAINS_STATS_NOWAIT,               // report statistics that can be obtained immediately without any
                                                                                  // blocking
-                BACKING = VIR_CONNECT_GET_ALL_DOMAINS_STATS_BACKING,             // include
-                                                                                 // backing chain
-                                                                                 // for block
-                                                                                 // stats
-                ENFORCE_STATS = VIR_CONNECT_GET_ALL_DOMAINS_STATS_ENFORCE_STATS, // enforce
-                // requested
-                // stats
+                BACKING = VIR_CONNECT_GET_ALL_DOMAINS_STATS_BACKING,             // include backing chain for block stats
+                ENFORCE_STATS = VIR_CONNECT_GET_ALL_DOMAINS_STATS_ENFORCE_STATS, // enforce requested stats
             };
         };
     };
@@ -253,6 +247,7 @@ class Connection {
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
 
 constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Domains::Flags lhs, Connection::List::Domains::Flags rhs) noexcept;
+constexpr inline Connection::List::Domains::Flags& operator|=(Connection::List::Domains::Flags& lhs, Connection::List::Domains::Flags rhs) noexcept;
 
 constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
                                                                    Connection::GetAllDomains::Stats::Flags rhs) noexcept;
