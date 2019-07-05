@@ -47,23 +47,25 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         if (target.getPath().substr(key_start, 8).compare("/by-uuid") == 0) {
             search_key = SearchKey::by_uuid;
             if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
-                return error(102, "No UUID specified");
+                return error(102, "No UUID specified"), false;
             else
                 key_str = target.getPath().substr(key_start + 9);
         } else if (target.getPath().substr(key_start, 8).compare("/by-name") == 0) {
             search_key = SearchKey::by_name;
             if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
-                return error(103, "No name specified");
+                return error(103, "No name specified"), false;
             else
                 key_str = target.getPath().substr(key_start + 9);
         } else if (!target.getPath().substr(key_start).empty() && !target.getPath().substr(key_start + 1).empty()) {
             key_str = target.getPath().substr(key_start + 1);
             search_key = SearchKey::by_name;
         }
+        return true;
     };
 
     auto domains = [&](virt::Connection conn) {
-        getSearchKey("domains");
+        if(!getSearchKey("domains"))
+            return;
 
         if (search_key != SearchKey::none) {
             virt::Domain dom{};
@@ -166,7 +168,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     };
 
     auto networks = [&](virt::Connection conn) {
-        getSearchKey("networks");
+        if(!getSearchKey("networks"))
+            return;
         switch (req.method()) {
         case http::verb::get: {
             if (search_key != SearchKey::none) {
