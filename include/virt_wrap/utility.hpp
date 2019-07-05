@@ -49,17 +49,18 @@ template <class C, class R> struct function_traits<R(C::*)> : public function_tr
 // functor
 template <class F> struct function_traits {
   private:
-    using call_type = function_traits<decltype(&F::type::operator())>;
+    using call_type = function_traits<decltype(&F::operator())>;
 
   public:
     using return_type = typename call_type::return_type;
 
     static constexpr std::size_t arity = call_type::arity - 1;
 
-    template <std::size_t N> struct argument {
+    template <std::size_t N> struct Arg {
         static_assert(N < arity, "error: invalid parameter index.");
-        using type = typename call_type::template argument<N + 1>::type;
+        using type = typename call_type::template Arg<N + 1>::type;
     };
+    template <std::size_t N> using Arg_t = typename Arg<N>::type;
 };
 
 template <class F> struct function_traits<F&> : public function_traits<F> {};
@@ -119,8 +120,7 @@ auto wrap_oparm_owning_fill_static_arr(U underlying, CountFRet (*count_fcn)(U), 
     }
     return RetType{ret};
 }
-template <typename U, typename CF, typename DF>
-auto wrap_oparm_owning_fill_freeable_arr(U underlying, CF count_fcn, DF data_fcn) {
+template <typename U, typename CF, typename DF> auto wrap_oparm_owning_fill_freeable_arr(U underlying, CF count_fcn, DF data_fcn) {
     using CountFTraits = ext::function_traits<CF>;
     static_assert(CountFTraits::arity == 1, "Counting function requires one argument");
     static_assert(std::is_same_v<typename CountFTraits::template Arg_t<0>, U>, "Counting function requires the underlying ptr as argument");

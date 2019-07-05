@@ -292,14 +292,14 @@ std::vector<NodeDevice> Connection::extractAllDevices(List::Devices::Flags flags
 
 auto Connection::listDevicesNames(const std::string& capability) const noexcept {
     return meta::light::wrap_oparm_owning_fill_freeable_arr(
-        underlying, [=](auto u) { return virNodeNumOfDevices(u, capability.data(), 0); },
-        [=](auto u, auto ptr, auto max) { return virNodeListDevices(u, capability.data(), ptr, max, 0); });
+        underlying, [=](decltype(underlying) u) { return virNodeNumOfDevices(u, capability.data(), 0); },
+        [=](decltype(underlying) u, char** ptr, int max) { return virNodeListDevices(u, capability.data(), ptr, max, 0); });
 }
 
 std::vector<std::string> Connection::extractDevicesNames(const std::string& capability) const {
-    return meta::heavy::wrap_oparm_owning_fill_freeable_arr(
-        underlying, [=](auto u) { return virNodeNumOfDevices(u, capability.data(), 0); },
-        [=](auto u, auto ptr, auto max) { return virNodeListDevices(u, capability.data(), ptr, max, 0); });
+    return meta::heavy::wrap_oparm_owning_fill_freeable_arr<std::string>(
+        underlying, [=](decltype(underlying) u) { return virNodeNumOfDevices(u, capability.data(), 0); },
+        [=](decltype(underlying) u, char** ptr, int max) { return virNodeListDevices(u, capability.data(), ptr, max, 0); });
 }
 
 NodeDevice Connection::deviceLookupByName(gsl::czstring<> name) const noexcept { return NodeDevice{virNodeDeviceLookupByName(underlying, name)}; }
