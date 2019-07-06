@@ -58,6 +58,7 @@ class Domain {
         SHUTOFF = VIR_DOMAIN_SHUTOFF,         /* the domain is shut off */
         CRASHED = VIR_DOMAIN_CRASHED,         /* the domain is crashed */
         PMSUSPENDED = VIR_DOMAIN_PMSUSPENDED, /* the domain is suspended by guest power management */
+        ENUM_END
     };
     class States {
         constexpr static std::array states = {"No State", "Running", "Blocked", "Paused",
@@ -118,9 +119,9 @@ class Domain {
 
     void reboot(ShutdownFlags flags = ShutdownFlags::DEFAULT);
 
-    void rename(gsl::czstring<>);
-
     void reset();
+
+    bool rename(gsl::czstring<>);
 
     bool resume() noexcept;
 

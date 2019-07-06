@@ -35,7 +35,6 @@ if (Boost_FOUND AND LibVirt_FOUND)
 
     add_executable (HE_debug
             main.cpp
-            include/logger.hpp
             include/wrapper/http_wrapper.hpp
             include/utils.hpp
             include/virt_wrap/AdminConnection.hpp
@@ -48,22 +47,27 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/type_ops.hpp
             include/virt_wrap/utility.hpp
             include/virt_wrap/Network.hpp
+            include/virt_wrap/NodeDevice.hpp
             include/virt_wrap/impl/Connection.hpp
             include/virt_wrap/impl/Domain.hpp
             include/virt_wrap/impl/Network.hpp
             include/virt_wrap/impl/TypedParams.hpp
+            include/virt_wrap/impl/NodeDevice.hpp
             include/virtxml/capabilities.hpp
             include/virtxml/generic.hpp
+            include/virtxml/virtxml.hpp
             include/virtxml/xmlspan.hpp
             include/virtxml/xmlval.hpp
+            include/wrapper/actions_table.hpp
             include/wrapper/config.hpp
             include/wrapper/handler.hpp
             include/virt_wrap.hpp
             include/logger.hpp
             include/fwd.hpp
-            include/urlparser.hpp
+            include/cexpr_algs.hpp
             include/flatmap.hpp
-            include/virtxml/virtxml.hpp include/virt_wrap/NodeDevice.hpp include/virt_wrap/impl/NodeDevice.hpp include/cexpr_algs.hpp)
+            include/json_utils.hpp
+            include/urlparser.hpp)
 
     target_link_libraries (HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
     if (WIN32)

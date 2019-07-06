@@ -82,7 +82,7 @@ inline bool Domain::setMemory(unsigned long mem) { return virDomainSetMemory(und
 
 inline void Domain::reboot(Domain::ShutdownFlags flags) { virDomainReboot(underlying, to_integral(flags)); }
 
-inline void Domain::rename(gsl::czstring<> name) { virDomainRename(underlying, name, 0); }
+inline bool Domain::rename(gsl::czstring<> name) { return virDomainRename(underlying, name, 0) == 0; }
 
 inline void Domain::reset() { virDomainReset(underlying, 0); }
 

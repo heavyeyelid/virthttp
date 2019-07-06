@@ -6,8 +6,10 @@
 
 #include <boost/beast/http/message.hpp>
 #include <rapidjson/document.h>
-
 #include "virt_wrap.hpp"
+
+#include "actions_table.hpp"
+#include "json_utils.hpp"
 #include "fwd.hpp"
 #include "logger.hpp"
 #include "urlparser.hpp"
@@ -22,25 +24,11 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
 
     enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
 
-    rapidjson::Document json_res{};
-    json_res.SetObject();
-    json_res.AddMember("results", "", json_res.GetAllocator());
-    json_res.AddMember("success", false, json_res.GetAllocator());
-    json_res.AddMember("errors", "", json_res.GetAllocator());
-    json_res.AddMember("messages", "", json_res.GetAllocator());
-    auto& jResults = json_res["results"].SetArray();
-    auto& jErrors = json_res["errors"].SetArray();
-    auto& jMessages = json_res["messages"].SetArray();
+    JsonRes json_res{};
+
     std::string key_str{};
 
-    auto error = [&](int code, std::string_view msg) {
-        json_res["success"] = false;
-        rapidjson::Value jErrorValue{};
-        jErrorValue.SetObject();
-        jErrorValue.AddMember("code", code, json_res.GetAllocator());
-        jErrorValue.AddMember("message", rapidjson::StringRef(msg.data(), msg.length()), json_res.GetAllocator());
-        jErrors.PushBack(jErrorValue, json_res.GetAllocator());
-    };
+    auto error = [&](auto... args) { return json_res.error(args...); };
 
     auto getSearchKey = [&](std::string type) {
         auto key_start = std::string{"/libvirt/" + type}.length();
@@ -86,44 +74,37 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
             }
             switch (req.method()) {
             case http::verb::patch: {
-                rapidjson::Value res_val;
-                res_val.SetObject();
-
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
+                if (!json_req.IsArray())
+                    return error(298, "PATCH data has to be an array of actions");
 
-                if (json_req["status"] == 5 && dom.getInfo().state == 1) {
-                    if (!dom.shutdown()) {
-                        logger.error("Cannot shut down this VM: ", key_str);
-                        return error(200, "Could not shut down the VM");
-                    }
-                    res_val.AddMember("status", 5, json_res.GetAllocator());
-                    rapidjson::Value msg_val{};
-                    msg_val.SetObject();
-                    msg_val.AddMember("shutdown", "Domain is shutting down", json_res.GetAllocator());
+                std::vector<ActionOutcome> outcomes{};
+                outcomes.reserve(json_req.Size());
+                for (const auto& action : json_req.GetArray()) {
+                    const auto curr_idx = outcomes.size();
+                    const auto& action_obj = *action.MemberBegin();
+                    const auto& [action_name, action_val] = action_obj;
 
-                    jMessages.PushBack(msg_val, json_res.GetAllocator());
-                    jResults.PushBack(res_val, json_res.GetAllocator());
-                    json_res["success"] = true;
-                } else if (json_req["status"] == 1 && dom.getInfo().state == 5) {
-                    if (!dom.resume()) {
-                        logger.error("Cannot start this VM: ", key_str);
-                        return error(202, "Could not start the VM");
+                    if ([&]() noexcept {
+                            const auto it = json_req.FindMember("depends");
+                            if (it == json_req.MemberEnd())
+                                return true;
+
+                            const auto& json_deps = it->value;
+                            if (!json_deps.IsArray())
+                                return error(0, "Syntax error"), outcomes.push_back(ActionOutcome::FAILURE), false;
+
+                            const auto deps_arr = json_deps.GetArray();
+                            return std::all_of(deps_arr.begin(), deps_arr.end(), [&](const auto& dep) {
+                                if (!dep.IsInt() || dep.GetInt() >= curr_idx || outcomes[dep.GetInt()] != ActionOutcome::SUCCESS)
+                                    return outcomes.push_back(ActionOutcome::SKIPPED), false;
+                                return true;
+                            });
+                        }()) {
+                        const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
+                        outcomes.push_back(hdl ? hdl(action_val, json_res, dom, key_str) : (error(123, "Unknown action"), ActionOutcome::FAILURE));
                     }
-                    dom.resume();
-                    res_val.AddMember("status", 1, json_req.GetAllocator());
-                    rapidjson::Value msg_val{};
-                    msg_val.SetObject();
-                    msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
-                    jMessages.PushBack(msg_val, json_res.GetAllocator());
-                    jResults.PushBack(res_val, json_res.GetAllocator());
-                    json_res["success"] = true;
-                } else if (json_req["status"] == 5 && dom.getInfo().state == 5) {
-                    return error(201, "Domain is not running");
-                } else if (json_req["status"] == 1 && dom.getInfo().state == 1) {
-                    return error(203, "Domain is already running");
-                } else {
-                    return error(204, "No actions specified");
                 }
             } break;
             case http::verb::get: {
@@ -139,7 +120,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
                 res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
 
-                jResults.PushBack(res_val, json_res.GetAllocator());
+                json_res.result(res_val);
                 json_res["success"] = true;
             } break;
             default: {
@@ -196,7 +177,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                         continue;
                     if (!tag_status.empty() && (tag_status != virt::Domain::States[info.state] && tag_status != std::to_string(info.state)))
                         continue;
-                    jResults.PushBack(res_val, json_res.GetAllocator());
+                    json_res.result(res_val);
                 }
                 json_res["success"] = true;
             }
@@ -234,7 +215,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
                     nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
-                    jResults.PushBack(nw_json, json_res.GetAllocator());
+                    json_res.result(nw_json);
                 }
                 json_res["success"] = true;
             }
@@ -245,9 +226,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     };
 
     [&] {
-        if (req["X-Auth-Key"] != iniConfig.http_auth_key) {
+        if (req["X-Auth-Key"] != iniConfig.http_auth_key)
             return error(1, "Bad X-Auth-Key");
-        }
         logger.debug("Opening connection to ", iniConfig.getConnURI());
         virt::Connection conn{iniConfig.connURI.c_str()};
         if (!conn) {

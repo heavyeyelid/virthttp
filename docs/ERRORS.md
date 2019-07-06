@@ -2,8 +2,11 @@
 ## Handler
 | Error code | Description |
 | ---------- | ----------- |
+| 0          | Syntax error |
 | 1          | Bad X-Auth-Key |
 | 2          | Bad URL |
+| 122        | Bad action |
+| 123        | Unknown action |
 
 ## libvirtd communication
 | Error code | Description |
@@ -17,5 +20,8 @@
 | 201        | Domain is not running |
 | 202        | Could not start the VM |
 | 203        | Domain is already running |
-| 204        | No actions specified |
+| 204        | No status actions specified |
+| 205        | Renaming failed |
 | 250        | Error occurred while getting networks |
+| 298        | PATCH data has to be an array of actions |
+| 299        | Invalid domain state value |
