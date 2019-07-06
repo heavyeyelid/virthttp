@@ -22,6 +22,9 @@
 | 203        | Domain is already running |
 | 204        | No status actions specified |
 | 205        | Renaming failed |
+| 206        | Setting available memory failed |
+| 207        | Setting maximum available memory failed |
+| 208        | Setting autostart policy failed |
 | 250        | Error occurred while getting networks |
 | 298        | PATCH data has to be an array of actions |
 | 299        | Invalid domain state value |

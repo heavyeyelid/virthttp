@@ -125,7 +125,7 @@ class Domain {
 
     bool resume() noexcept;
 
-    void setAutoStart(bool);
+    bool setAutoStart(bool);
 
     bool shutdown() noexcept;
     bool shutdown(ShutdownFlags flags) noexcept;

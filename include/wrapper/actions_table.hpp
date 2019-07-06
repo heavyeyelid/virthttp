@@ -8,8 +8,8 @@ enum class ActionOutcome { SUCCESS, FAILURE, SKIPPED };
 class DomainActionsTable {
   private:
     using ActionHdl = ActionOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str);
-    constexpr static std::array<std::string_view, 3> keys = {"state", "name"};
-    constexpr static std::array<ActionHdl, 2> fcns = {
+    constexpr static std::array<std::string_view, 5> keys = {"state", "name", "memory", "max_memory", "autostart"};
+    constexpr static std::array<ActionHdl, 5> fcns = {
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
 
@@ -57,11 +57,38 @@ class DomainActionsTable {
             return ActionOutcome::SUCCESS;
         },
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
-          auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
             if (!val.IsString())
                 return error(0, "Syntax error");
-            if(!dom.rename(val.GetString()))
+            if (!dom.rename(val.GetString()))
                 return error(205, "Renaming failed");
+            json_res["success"] = true;
+            return ActionOutcome::SUCCESS;
+        },
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+            if (!val.IsInt())
+                return error(0, "Syntax error");
+            if (!dom.setMemory(val.GetInt()))
+                return error(206, "Setting available memory failed");
+            json_res["success"] = true;
+            return ActionOutcome::SUCCESS;
+        },
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+            if (!val.IsInt())
+                return error(0, "Syntax error");
+            if (!dom.setMaxMemory(val.GetInt()))
+                return error(207, "Setting maximum available memory failed");
+            json_res["success"] = true;
+            return ActionOutcome::SUCCESS;
+        },
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+            if (!val.IsBool())
+                return error(0, "Syntax error");
+            if (!dom.setAutoStart(val.GetBool()))
+                return error(208, "Setting autostart policy failed");
             json_res["success"] = true;
             return ActionOutcome::SUCCESS;
         },

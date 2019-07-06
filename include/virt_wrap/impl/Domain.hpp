@@ -88,7 +88,7 @@ inline void Domain::reset() { virDomainReset(underlying, 0); }
 
 inline bool Domain::resume() noexcept { return virDomainResume(underlying) == 0; }
 
-inline void Domain::setAutoStart(bool as) { virDomainSetAutostart(underlying, as ? 1 : 0); }
+inline bool Domain::setAutoStart(bool as) { return virDomainSetAutostart(underlying, as ? 1 : 0) == 0; }
 
 inline bool Domain::shutdown() noexcept { return virDomainShutdown(underlying) == 0; }
 
