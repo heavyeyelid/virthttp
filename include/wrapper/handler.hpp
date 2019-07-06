@@ -183,7 +183,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                         flags |= virt::Connection::List::Domains::Flags::OTHER;
                     }
                 }
-                for (const auto& dom : conn.listAllDomains()) {
+                for (const auto& dom : conn.listAllDomains(flags)) {
                     rapidjson::Value res_val;
                     res_val.SetObject();
                     const auto info = dom.getInfo();
