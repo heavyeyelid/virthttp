@@ -103,3 +103,19 @@ class DomainActionsTable {
         return fcns[idx];
     }
 } constexpr static const domain_actions_table;
+
+class DomainQueryTable {
+private:
+    using ActionHdl = ActionOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, const virt::Domain& dom, const std::string& key_str);
+    constexpr static std::array<std::string_view, 0> keys = {};
+    constexpr static std::array<ActionHdl, 0> fcns = {};
+
+public:
+    constexpr ActionHdl operator[](std::string_view sv) const {
+        const auto it = cexpr::find(keys.begin(), keys.end(), sv);
+        if (it == keys.end())
+            return nullptr;
+        const auto idx = std::distance(keys.begin(), it);
+        return fcns[idx];
+    }
+} constexpr static const domain_query_table;
