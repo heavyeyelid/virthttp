@@ -15,6 +15,28 @@ template <typename T> inline void freeany(T ptr) {
     std::free(ptr);
 }
 
+class alignas(alignof(char*)) UniqueZstring {
+    gsl::owner<char*> ptr{};
+
+  public:
+    constexpr UniqueZstring() noexcept = default;
+    constexpr explicit UniqueZstring(gsl::owner<char*> ptr) : ptr(ptr) {}
+    constexpr explicit UniqueZstring(const UniqueZstring&) noexcept = delete;
+    inline UniqueZstring(UniqueZstring&& uz) noexcept : ptr(uz.ptr) { uz.ptr = nullptr; };
+    inline ~UniqueZstring() noexcept { std::free(ptr); }
+
+    constexpr UniqueZstring& operator=(const UniqueZstring&) noexcept = delete;
+    inline UniqueZstring& operator=(UniqueZstring&& uz) noexcept {
+        this->~UniqueZstring();
+        ptr = uz.ptr;
+        uz.ptr = nullptr;
+        return *this;
+    };
+
+    constexpr inline explicit operator const char*() const noexcept { return ptr; }
+    constexpr inline explicit operator char*() noexcept { return ptr; }
+};
+
 namespace ext {
 /* Function traits: */
 // https://functionalcpp.wordpress.com/2013/08/05/function-traits/
@@ -135,15 +157,46 @@ template <typename U, typename CF, typename DF> auto wrap_oparm_owning_fill_free
     using T = std::remove_pointer_t<typename DataFTraits::template Arg_t<1>>;
 
     using LocAlloc = NoallocWFree<T>;
-    using RetType = std::optional<std::vector<T, LocAlloc>>;
-    std::vector<gsl::owner<T>, LocAlloc> ret{};
-    ret.resize(count_fcn(underlying));
-    if (!ret.empty()) {
-        const auto res = data_fcn(underlying, ret.data(), ret.size());
+    using RetType = std::optional<std::vector<gsl::owner<T>, LocAlloc>>;
+    RetType ret{};
+    auto& vec = ret.emplace();
+    vec.resize(count_fcn(underlying));
+    if (!vec.empty()) {
+        const auto res = data_fcn(underlying, vec.data(), vec.size());
         if (res != 0)
             return RetType{std::nullopt};
     }
-    return RetType{ret};
+    return ret;
+}
+
+template <typename Conv = void, typename U, typename CF, typename DF>
+auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF data_fcn) {
+    using CountFTraits = ext::function_traits<CF>;
+    static_assert(CountFTraits::arity == 1, "Counting function requires one argument");
+    static_assert(std::is_same_v<typename CountFTraits::template Arg_t<0>, U>, "Counting function requires the underlying ptr as argument");
+    using CountFRet = typename CountFTraits::return_type;
+
+    using DataFTraits = ext::function_traits<DF>;
+    static_assert(DataFTraits::arity == 3, "Data function requires three arguments");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<0>, U>, "Data function requires the underlying ptr as first argument");
+    static_assert(std::is_pointer_v<typename DataFTraits::template Arg_t<0>>, "Data function requires a pointer to the array as second argument");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<2>, CountFRet>,
+                  "Data function requires counting function return type as third argument");
+    using DedT = std::remove_pointer_t<typename DataFTraits::template Arg_t<1>>;
+    if constexpr (!std::is_same_v<Conv, void>)
+        static_assert(sizeof(DedT) == sizeof(Conv) && alignof(DedT) == alignof(Conv), "Conversion type must have the same size as the source");
+    using T = std::conditional_t<std::is_same_v<Conv, void>, DedT, Conv>;
+
+    using RetType = std::optional<std::vector<T>>;
+    RetType ret{};
+    auto& vec = ret.emplace();
+    vec.resize(count_fcn(underlying));
+    if (!vec.empty()) {
+        const auto res = data_fcn(underlying, reinterpret_cast<DedT*>(vec.data()), vec.size()); // C++2a: std::bit_cast
+        if (res != 0)
+            return RetType{std::nullopt};
+    }
+    return ret;
 }
 
 template <typename Wrap, typename U, typename DataFRet, typename T, typename... DataFArgs>
@@ -185,11 +238,9 @@ template <typename Conv = void, typename U, typename CountFRet, typename DataFRe
 auto wrap_oparm_owning_fill_static_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
     std::vector<gsl::owner<T>> ret{};
     ret.resize(count_fcn(underlying));
-    if (!ret.empty()) {
-        const auto res = data_fcn(underlying, ret.data(), ret.size());
-        if (res != 0)
-            throw std::runtime_error{__func__};
-    }
+    const auto res = data_fcn(underlying, ret.data(), ret.size());
+    if (res != 0)
+        throw std::runtime_error{__func__};
     if constexpr (std::is_same_v<void, Conv>)
         return ret;
     std::vector<Conv> tret{};
@@ -215,11 +266,38 @@ auto wrap_oparm_owning_fill_freeable_arr(U underlying, CF count_fcn, DF data_fcn
     using LocAlloc = NoallocWFree<T>;
     std::vector<gsl::owner<T>, LocAlloc> ret{};
     ret.resize(count_fcn(underlying));
-    if (!ret.empty()) {
-        const auto res = data_fcn(underlying, ret.data(), ret.size());
-        if (res != 0)
-            throw std::runtime_error{__func__};
-    }
+    const auto res = data_fcn(underlying, ret.data(), ret.size());
+    if (res != 0)
+        throw std::runtime_error{__func__};
+    if constexpr (std::is_same_v<void, Conv>)
+        return ret;
+    std::vector<Conv> tret{};
+    tret.reserve(ret.size());
+    std::move(ret.begin(), ret.end(), std::back_inserter(tret));
+    return tret;
+}
+
+template <typename Conv = void, typename U, typename CF, typename DF>
+auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF data_fcn) {
+    using CountFTraits = ext::function_traits<CF>;
+    static_assert(CountFTraits::arity == 1, "Counting function requires one argument");
+    static_assert(std::is_same_v<typename CountFTraits::template Arg_t<0>, U>, "Counting function requires the underlying ptr as argument");
+    using CountFRet = typename CountFTraits::return_type;
+
+    using DataFTraits = ext::function_traits<DF>;
+    static_assert(DataFTraits::arity == 3, "Data function requires three arguments");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<0>, U>, "Data function requires the underlying ptr as first argument");
+    static_assert(std::is_pointer_v<typename DataFTraits::template Arg_t<0>>, "Data function requires a pointer to the array as second argument");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<2>, CountFRet>,
+                  "Data function requires counting function return type as third argument");
+    using DedT = std::remove_pointer_t<typename DataFTraits::template Arg_t<1>>;
+    using T = std::conditional_t<(sizeof(DedT) == sizeof(Conv) && alignof(DedT) == alignof(Conv)), Conv, DedT>;
+
+    std::vector<T> ret{};
+    ret.resize(count_fcn(underlying));
+    const auto res = data_fcn(underlying, reinterpret_cast<DedT*>(ret.data()), ret.size()); // C++2a: std::bit_cast
+    if (res != 0)
+        throw std::runtime_error{__func__};
     if constexpr (std::is_same_v<void, Conv>)
         return ret;
     std::vector<Conv> tret{};

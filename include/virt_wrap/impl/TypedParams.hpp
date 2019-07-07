@@ -13,32 +13,32 @@ namespace virt {
 TypedParameter::TypedParameter(const virTypedParameter& from, virt::TypedParameter::no_name_tag) {
     switch (from.type) {
     case VIR_TYPED_PARAM_INT:
-        val.emplace<int>(from.value.i);
+        second.emplace<int>(from.value.i);
         break;
     case VIR_TYPED_PARAM_UINT:
-        val.emplace<unsigned>(from.value.ui);
+        second.emplace<unsigned>(from.value.ui);
         break;
     case VIR_TYPED_PARAM_LLONG:
-        val.emplace<long long>(from.value.l);
+        second.emplace<long long>(from.value.l);
         break;
     case VIR_TYPED_PARAM_ULLONG:
-        val.emplace<unsigned long long>(from.value.ul);
+        second.emplace<unsigned long long>(from.value.ul);
         break;
     case VIR_TYPED_PARAM_DOUBLE:
-        val.emplace<double>(from.value.d);
+        second.emplace<double>(from.value.d);
         break;
     case VIR_TYPED_PARAM_BOOLEAN:
-        val.emplace<bool>(from.value.b);
+        second.emplace<bool>(from.value.b);
         break;
     case VIR_TYPED_PARAM_STRING:
-        val.emplace<std::string>(from.value.s);
+        second.emplace<std::string>(from.value.s);
         break;
     default:
         throw std::runtime_error{"Non-standard type-parameter"};
     }
 }
 
-TypedParameter::TypedParameter(const virTypedParameter& from) : TypedParameter(from, no_name_tag{}) { name = from.field; }
+TypedParameter::TypedParameter(const virTypedParameter& from) : TypedParameter(from, no_name_tag{}) { first = +from.field; }
 
 inline TypedParams::~TypedParams() noexcept {
     if (underlying)
@@ -60,23 +60,23 @@ void TypedParams::add(gsl::czstring<> name, bool b) { virTypedParamsAddBoolean(&
 void TypedParams::add(gsl::czstring<> name, gsl::czstring<> czs) { virTypedParamsAddString(&underlying, &size, &capacity, name, czs); }
 
 void TypedParams::add(const TypedParameter& tp) {
-    const auto name = tp.name.data();
+    const auto name = tp.first.data();
     std::visit(
         Visitor{// I hate when I can't just lift a member overload set
-                // //C++2aTODO change captures to [=, this]
+                // //C++2a: TODO change captures to [=, this]
                 [&, this](int v) { add(name, v); }, [&, this](unsigned v) { add(name, v); }, [&, this](long long v) { add(name, v); },
                 [&, this](unsigned long long v) { add(name, v); }, [&, this](double v) { add(name, v); }, [&, this](bool v) { add(name, v); },
                 [&, this](std::string v) { add(name, v.c_str()); }},
-        tp.val);
+        tp.second);
 }
 
 template <typename T> T TypedParams::get(gsl::czstring<> name) const {
     const auto it = std::find_if(underlying, underlying + size, [&](const virTypedParameter& tp) { return std::strcmp(name, tp.field) == 0; });
-    return std::get<T>(TypedParameter{it, TypedParameter::no_name_tag{}}.val);
+    return std::get<T>(TypedParameter{it, TypedParameter::no_name_tag{}}.second);
 }
 
 template <typename T> T& TypedParams::get(gsl::czstring<> name) {
     auto it = std::find_if(underlying, underlying + size, [&](const virTypedParameter& tp) { return std::strcmp(name, tp.field) == 0; });
-    return std::get<T>(TypedParameter{it, TypedParameter::no_name_tag{}}.val);
+    return std::get<T>(TypedParameter{it, TypedParameter::no_name_tag{}}.second);
 }
 }
