@@ -209,8 +209,8 @@ auto wrap_opram_owning_set_autodestroyable_arr(U underlying, DataFRet (*data_fcn
         return {nullptr, nullptr};
     return {lease_arr, [](auto arr) {
                 auto it = arr;
-                while (it++)
-                    it->~Wrap();
+                while (it)
+                    (it++)->~Wrap();
                 freeany(arr);
             }};
 }
