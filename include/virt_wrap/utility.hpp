@@ -227,8 +227,8 @@ auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U,
         return RetType{nullptr, nullptr};
     return RetType(lease_arr, [](Wrap* arr) {
         auto it = arr;
-        while (it++)
-            dtroy(it);
+        while (it)
+            dtroy(it++);
         freeany(arr);
     });
 }
