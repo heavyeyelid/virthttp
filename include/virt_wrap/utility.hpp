@@ -8,6 +8,14 @@
 #include <cstdlib>
 #include <type_traits>
 
+#ifdef __GNUC__
+#define UNREACHABLE __builtin_unreachable()
+#elif _MSC_VER
+#define UNREACHABLE __assume(0)
+#else
+#define UNREACHABLE
+#endif
+
 template <typename T> using passive = T;
 
 template <typename T> inline void freeany(T ptr) {
@@ -220,6 +228,7 @@ auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U,
     if constexpr (dtroy == std::destroy_at<Wrap>) {
         return wrap_opram_owning_set_autodestroyable_arr<Wrap>(underlying, data_fcn, data_f_args...);
     }
+
     using RetType = UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)>;
     Wrap* lease_arr;
     auto res = data_fcn(underlying, reinterpret_cast<T**>(&lease_arr), data_f_args...);
@@ -306,13 +315,14 @@ auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF d
     return tret;
 }
 
-template <typename Wrap, typename U, typename DataFRet, typename T, typename... DataFArgs>
+template <typename Wrap = void, typename U, typename DataFRet, typename T, typename... DataFArgs>
 auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
     T* ptr;
     auto res = data_fcn(underlying, &ptr, data_f_args...);
     if (res == -1)
         throw std::runtime_error{__func__};
-    std::vector<Wrap> ret;
+    using ValueType = std::conditional_t<std::is_void_v<Wrap>, T, Wrap>;
+    std::vector<ValueType> ret;
     ret.reserve(res);
     auto it = ptr;
     while (*it)

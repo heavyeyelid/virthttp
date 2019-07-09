@@ -6,11 +6,13 @@
 
 #include <filesystem>
 #include <stdexcept>
+#include <variant>
 #include <vector>
 #include <gsl/gsl>
 #include "../cexpr_algs.hpp"
 #include <libvirt/libvirt-domain.h>
 #include "fwd.hpp"
+#include "tfe.hpp"
 #include "utility.hpp"
 
 namespace tmp {
@@ -101,38 +103,18 @@ int virDomainGetCPUStats(virDomainPtr domain, virTypedParameterPtr params, unsig
 
 int virDomainGetGuestVcpus(virDomainPtr domain, virTypedParameterPtr* params, unsigned int* nparams, unsigned int flags);
 
-int virDomainGetIOThreadInfo(virDomainPtr dom, virDomainIOThreadInfoPtr** info, unsigned int flags); //
-
 int virDomainGetInterfaceParameters(virDomainPtr domain, const char* device, virTypedParameterPtr params, int* nparams, unsigned int flags);
-
-int virDomainGetJobInfo(virDomainPtr domain, virDomainJobInfoPtr info);
 
 int virDomainGetJobStats(virDomainPtr domain, int* type, virTypedParameterPtr* params, int* nparams, unsigned int flags);
 int virDomainGetLaunchSecurityInfo(virDomainPtr domain, virTypedParameterPtr* params, int* nparams, unsigned int flags);
 
-int virDomainGetMaxVcpus(virDomainPtr domain);
-
 int virDomainGetMemoryParameters(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
-
-char* virDomainGetMetadata(virDomainPtr domain, int type, const char* uri, unsigned int flags);
 
 int virDomainGetNumaParameters(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
 int virDomainGetPerfEvents(virDomainPtr domain, virTypedParameterPtr* params, int* nparams, unsigned int flags);
 int virDomainGetSchedulerParameters(virDomainPtr domain, virTypedParameterPtr params, int* nparams);
 int virDomainGetSchedulerParametersFlags(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
 
-char* virDomainGetSchedulerType(virDomainPtr domain, int* nparams);
-int virDomainGetSecurityLabel(virDomainPtr domain, virSecurityLabelPtr seclabel);
-int virDomainGetSecurityLabelList(virDomainPtr domain, virSecurityLabelPtr* seclabels);
-int virDomainGetState(virDomainPtr domain, int* state, int* reason, unsigned int flags);
-int virDomainGetTime(virDomainPtr dom, long long* seconds, unsigned int* nseconds, unsigned int flags);
-int virDomainGetVcpuPinInfo(virDomainPtr domain, int ncpumaps, unsigned char* cpumaps, int maplen, unsigned int flags);
-int virDomainGetVcpus(virDomainPtr domain, virVcpuInfoPtr info, int maxinfo, unsigned char* cpumaps, int maplen);
-int virDomainGetVcpusFlags(virDomainPtr domain, unsigned int flags);
-char* virDomainGetXMLDesc(virDomainPtr domain, unsigned int flags);
-int virDomainHasManagedSaveImage(virDomainPtr dom, unsigned int flags);
-void virDomainIOThreadInfoFree(virDomainIOThreadInfoPtr info);
-int virDomainInjectNMI(virDomainPtr domain, unsigned int flags);
 int virDomainInterfaceAddresses(virDomainPtr dom, virDomainInterfacePtr** ifaces, unsigned int source, unsigned int flags);
 void virDomainInterfaceFree(virDomainInterfacePtr iface);
 int virDomainInterfaceStats(virDomainPtr dom, const char* device, virDomainInterfaceStatsPtr stats, size_t size);
@@ -263,6 +245,14 @@ class Domain {
         /* Additionally, these flags may be bitwise-OR'd in.  */
         FORCE = VIR_DOMAIN_DEVICE_MODIFY_FORCE, /* Forcibly modify device (ex. force eject a cdrom) */
     };
+    enum class JobType {
+        NONE = VIR_DOMAIN_JOB_NONE,           /* No job is active */
+        BOUNDED = VIR_DOMAIN_JOB_BOUNDED,     /* Job with a finite completion time */
+        UNBOUNDED = VIR_DOMAIN_JOB_UNBOUNDED, /* Job without a finite completion time */
+        COMPLETED = VIR_DOMAIN_JOB_COMPLETED, /* Job has finished, but isn't cleaned up */
+        FAILED = VIR_DOMAIN_JOB_FAILED,       /* Job hit error, but isn't cleaned up */
+        CANCELLED = VIR_DOMAIN_JOB_CANCELLED, /* Job was aborted, but isn't cleaned up */
+    };
     enum class ShutdownFlags {
         DEFAULT = VIR_DOMAIN_REBOOT_DEFAULT,               /* hypervisor choice */
         ACPI_POWER_BTN = VIR_DOMAIN_REBOOT_ACPI_POWER_BTN, /* Send ACPI event */
@@ -271,12 +261,95 @@ class Domain {
         SIGNAL = VIR_DOMAIN_REBOOT_SIGNAL,                 /* Send a signal */
         PARAVIRT = VIR_DOMAIN_REBOOT_PARAVIRT,             /* Use paravirt guest control */
     };
+    struct StateReasons {
+        enum class NoState {
+            UNKNOWN = VIR_DOMAIN_NOSTATE_UNKNOWN, /* the reason is unknown */
+        };
+        enum class Running {
+            UNKNOWN = VIR_DOMAIN_RUNNING_UNKNOWN,                       /* the reason is unknown */
+            BOOTED = VIR_DOMAIN_RUNNING_BOOTED,                         /* normal startup from boot */
+            MIGRATED = VIR_DOMAIN_RUNNING_MIGRATED,                     /* migrated from another host */
+            RESTORED = VIR_DOMAIN_RUNNING_RESTORED,                     /* restored from a state file */
+            FROM_SNAPSHOT = VIR_DOMAIN_RUNNING_FROM_SNAPSHOT,           /* restored from snapshot */
+            UNPAUSED = VIR_DOMAIN_RUNNING_UNPAUSED,                     /* returned from paused state */
+            MIGRATION_CANCELED = VIR_DOMAIN_RUNNING_MIGRATION_CANCELED, /* returned from migration */
+            SAVE_CANCELED = VIR_DOMAIN_RUNNING_SAVE_CANCELED,           /* returned from failed save process */
+            WAKEUP = VIR_DOMAIN_RUNNING_WAKEUP,                         /* returned from pmsuspended due to wakeup event */
+            CRASHED = VIR_DOMAIN_RUNNING_CRASHED,                       /* resumed from crashed */
+            POSTCOPY = VIR_DOMAIN_RUNNING_POSTCOPY,                     /* running in post-copy migration mode */
+        };
+        enum class Blocked {
+            UNKNOWN = VIR_DOMAIN_BLOCKED_UNKNOWN, /* the reason is unknown */
+        };
+        enum class Paused {
+            UNKNOWN = VIR_DOMAIN_PAUSED_UNKNOWN,                 /* the reason is unknown */
+            USER = VIR_DOMAIN_PAUSED_USER,                       /* paused on user request */
+            MIGRATION = VIR_DOMAIN_PAUSED_MIGRATION,             /* paused for offline migration */
+            SAVE = VIR_DOMAIN_PAUSED_SAVE,                       /* paused for save */
+            DUMP = VIR_DOMAIN_PAUSED_DUMP,                       /* paused for offline core dump */
+            IOERROR = VIR_DOMAIN_PAUSED_IOERROR,                 /* paused due to a disk I/O error */
+            WATCHDOG = VIR_DOMAIN_PAUSED_WATCHDOG,               /* paused due to a watchdog event */
+            FROM_SNAPSHOT = VIR_DOMAIN_PAUSED_FROM_SNAPSHOT,     /* paused after restoring from snapshot */
+            SHUTTING_DOWN = VIR_DOMAIN_PAUSED_SHUTTING_DOWN,     /* paused during shutdown process */
+            SNAPSHOT = VIR_DOMAIN_PAUSED_SNAPSHOT,               /* paused while creating a snapshot */
+            CRASHED = VIR_DOMAIN_PAUSED_CRASHED,                 /* paused due to a guest crash */
+            STARTING_UP = VIR_DOMAIN_PAUSED_STARTING_UP,         /* the domain is being started */
+            POSTCOPY = VIR_DOMAIN_PAUSED_POSTCOPY,               /* paused for post-copy migration */
+            POSTCOPY_FAILED = VIR_DOMAIN_PAUSED_POSTCOPY_FAILED, /* paused after failed post-copy */
+        };
+        enum class Shutdown {
+            UNKNOWN = VIR_DOMAIN_SHUTDOWN_UNKNOWN, /* the reason is unknown */
+            USER = VIR_DOMAIN_SHUTDOWN_USER,       /* shutting down on user request */
+        };
+        enum class Shutoff {
+            UNKNOWN = VIR_DOMAIN_SHUTOFF_UNKNOWN,             /* the reason is unknown */
+            SHUTDOWN = VIR_DOMAIN_SHUTOFF_SHUTDOWN,           /* normal shutdown */
+            DESTROYED = VIR_DOMAIN_SHUTOFF_DESTROYED,         /* forced poweroff */
+            CRASHED = VIR_DOMAIN_SHUTOFF_CRASHED,             /* domain crashed */
+            MIGRATED = VIR_DOMAIN_SHUTOFF_MIGRATED,           /* migrated to another host */
+            SAVED = VIR_DOMAIN_SHUTOFF_SAVED,                 /* saved to a file */
+            FAILED = VIR_DOMAIN_SHUTOFF_FAILED,               /* domain failed to start */
+            FROM_SNAPSHOT = VIR_DOMAIN_SHUTOFF_FROM_SNAPSHOT, /* restored from a snapshot which was taken while domain was shutoff */
+            DAEMON = VIR_DOMAIN_SHUTOFF_DAEMON,               /* daemon decides to kill domain during reconnection processing */
+        };
+        enum class Crashed {
+            UNKNOWN = VIR_DOMAIN_CRASHED_UNKNOWN,   /* crashed for unknown reason */
+            PANICKED = VIR_DOMAIN_CRASHED_PANICKED, /* domain panicked */
+        };
+        enum class PMSuspended {
+            UNKNOWN = VIR_DOMAIN_PMSUSPENDED_UNKNOWN, /* the reason is unknown */
+        };
+    };
+    struct StateWReason;
+    enum class MetadataType {
+        DESCRIPTION = VIR_DOMAIN_METADATA_DESCRIPTION, /* Operate on <description> */
+        TITLE = VIR_DOMAIN_METADATA_TITLE,             /* Operate on <title> */
+        ELEMENT = VIR_DOMAIN_METADATA_ELEMENT,         /* Operate on <metadata> */
+    };
     enum class ModificationImpactFlags {
         CURRENT = VIR_DOMAIN_AFFECT_CURRENT, /* Affect current domain state.  */
         LIVE = VIR_DOMAIN_AFFECT_LIVE,       /* Affect running domain state.  */
         CONFIG = VIR_DOMAIN_AFFECT_CONFIG,   /* Affect persistent domain state.  */
     };
-    enum class State {
+    enum class VCpuFlags {
+        /* See ModificationImpactFlags for these flags.  */
+        CURRENT = VIR_DOMAIN_VCPU_CURRENT,
+        LIVE = VIR_DOMAIN_VCPU_LIVE,
+        CONFIG = VIR_DOMAIN_VCPU_CONFIG,
+
+        /* Additionally, these flags may be bitwise-OR'd in.  */
+        MAXIMUM = VIR_DOMAIN_VCPU_MAXIMUM,           /* Max rather than current count */
+        GUEST = VIR_DOMAIN_VCPU_GUEST,               /* Modify state of the cpu in the guest */
+        HOTPLUGGABLE = VIR_DOMAIN_VCPU_HOTPLUGGABLE, /* Make vcpus added hot(un)pluggable */
+    };
+    enum class XmlFlags {
+        DEFAULT = 0,
+        SECURE = VIR_DOMAIN_XML_SECURE,         /* dump security sensitive information too */
+        INACTIVE = VIR_DOMAIN_XML_INACTIVE,     /* dump inactive domain information */
+        UPDATE_CPU = VIR_DOMAIN_XML_UPDATE_CPU, /* update guest CPU requirements according to host CPU */
+        MIGRATABLE = VIR_DOMAIN_XML_MIGRATABLE, /* dump XML suitable for migration */
+    };
+    enum class State : int {
         NOSTATE = VIR_DOMAIN_NOSTATE,         /* no state */
         RUNNING = VIR_DOMAIN_RUNNING,         /* the domain is running */
         BLOCKED = VIR_DOMAIN_BLOCKED,         /* the domain is blocked on resource */
@@ -287,8 +360,15 @@ class Domain {
         PMSUSPENDED = VIR_DOMAIN_PMSUSPENDED, /* the domain is suspended by guest power management */
         ENUM_END
     };
-    struct alignas(alignof(virDomainDiskError)) DiskError;
+    struct DiskError;
     struct FSInfo;
+    struct JobInfo;
+    struct light {
+        struct IOThreadInfo;
+    };
+    struct heavy {
+        struct IOThreadInfo;
+    };
     class States {
         constexpr static std::array states = {"No State", "Running", "Blocked", "Paused",
                                               "Shutdown", "Shutoff", "Crashed", "Power Management Suspended"};
@@ -368,7 +448,8 @@ class Domain {
 
     [[nodiscard]] std::vector<DiskError> extractDiskErrors() const;
 
-    // [[nodiscard]] int getEmulatorPinInfo(unsigned char* cpumap, int maplen, unsigned int flags); // TODO figure out the intended way of using this
+    // [[nodiscard]] int getEmulatorPinInfo(unsigned char* cpumap, int maplen, unsigned int flags); // TODO figure out the intended way of using
+    // this
 
     [[nodiscard]] auto getFSInfo() const noexcept;
 
@@ -378,11 +459,39 @@ class Domain {
 
     [[nodiscard]] std::string extractHostname() const noexcept;
 
+    [[nodiscard]] unsigned getID() const noexcept;
+
+    [[nodiscard]] auto getIOThreadInfo(ModificationImpactFlags flags) const noexcept;
+
+    [[nodiscard]] auto extractIOThreadInfo(ModificationImpactFlags flags) const -> std::vector<heavy::IOThreadInfo>;
+
     [[nodiscard]] Info getInfo() const noexcept;
+
+    [[nodiscard]] std::optional<JobInfo> getJobInfo() const noexcept;
+
+    [[nodiscard]] int getMaxVcpus() const noexcept;
+
+    [[nodiscard]] UniqueZstring getMetadata(MetadataType type, gsl::czstring<> ns,
+                                            ModificationImpactFlags flags = ModificationImpactFlags::CURRENT) const noexcept;
+
+    [[nodiscard]] std::string extractMetadata(MetadataType type, gsl::czstring<> ns,
+                                              ModificationImpactFlags flags = ModificationImpactFlags::CURRENT) const;
 
     [[nodiscard]] gsl::czstring<> getName() const noexcept;
 
-    [[nodiscard]] unsigned getID() const noexcept;
+    [[nodiscard]] int getNumVcpus(VCpuFlags flags) const noexcept;
+
+    [[nodiscard]] auto getSchedulerType() const noexcept -> std::pair<UniqueZstring, int>;
+
+    [[nodiscard]] auto getSecurityLabel() const noexcept -> std::unique_ptr<virSecurityLabel>;
+
+    [[nodiscard]] auto getSecurityLabelList() const noexcept;
+
+    [[nodiscard]] auto extractSecurityLabelList() const -> std::vector<virSecurityLabel>;
+
+    [[nodiscard]] auto getState() const noexcept -> StateWReason;
+
+    [[nodiscard]] auto getTime() const noexcept;
 
     [[nodiscard]] auto getUUID() const;
 
@@ -395,6 +504,16 @@ class Domain {
     [[nodiscard]] auto getOSType() const;
 
     [[nodiscard]] unsigned long getMaxMemory() const noexcept;
+
+    [[nodiscard]] auto getVcpuPinInfo(VCpuFlags flags) -> std::optional<std::vector<unsigned char>>;
+
+    [[nodiscard]] auto getVcpus() const noexcept;
+
+    [[nodiscard]] gsl::czstring<> getXMLDesc(XmlFlags flags = XmlFlags::DEFAULT) const noexcept;
+
+    [[nodiscard]] TFE hasManagedSaveImage() const noexcept;
+
+    bool injectNMI() noexcept;
 
     bool setMaxMemory(unsigned long);
 
@@ -435,6 +554,11 @@ class Domain::Stats::Record {
   public:
 };
 
+class Domain::StateWReason : public std::variant<StateReasons::NoState, StateReasons::Running, StateReasons::Blocked, StateReasons::Paused,
+                                                 StateReasons::Shutdown, StateReasons::Shutoff, StateReasons::Crashed, StateReasons::PMSuspended> {
+    constexpr State state() const noexcept { return State(this->index()); }
+};
+
 struct alignas(alignof(virDomainDiskError)) Domain::DiskError {
     enum class Code : decltype(virDomainDiskError::error) {
         NONE = VIR_DOMAIN_DISK_ERROR_NONE,         /* no error */
@@ -458,8 +582,45 @@ struct Domain::FSInfo {
     }
 };
 
+struct alignas(alignof(virDomainJobInfo)) Domain::JobInfo : public virDomainJobInfo {
+    constexpr JobType type() const noexcept { return JobType{virDomainJobInfo::type}; }
+};
+
+// concept Domain::IOThreadInfo
+
+class alignas(alignof(virDomainIOThreadInfo)) Domain::light::IOThreadInfo : private virDomainIOThreadInfo {
+    friend Domain;
+
+    using Base = virDomainIOThreadInfo;
+
+  public:
+    inline ~IOThreadInfo() noexcept { virDomainIOThreadInfoFree(this); }
+    constexpr unsigned iothread_id() const noexcept { return Base::iothread_id; }
+    constexpr unsigned& iothread_id() noexcept { return Base::iothread_id; }
+    constexpr gsl::span<const unsigned char> cpumap() const noexcept { return {Base::cpumap, Base::cpumaplen}; }
+    constexpr gsl::span<unsigned char> cpumap() noexcept { return {Base::cpumap, Base::cpumaplen}; }
+};
+
+class Domain::heavy::IOThreadInfo {
+    friend Domain;
+
+    unsigned m_iothread_id{};
+    std::vector<unsigned char> m_cpumap{};
+
+    IOThreadInfo(virDomainIOThreadInfo& ref) noexcept
+        : m_iothread_id(ref.iothread_id), m_cpumap(ref.cpumap, ref.cpumap + ref.cpumaplen) {} // C++2aTODO make constexpr
+  public:
+    inline ~IOThreadInfo() = default;
+    constexpr unsigned iothread_id() const noexcept { return m_iothread_id; }
+    constexpr unsigned& iothread_id() noexcept { return m_iothread_id; }
+    constexpr gsl::span<const unsigned char> cpumap() const noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
+    constexpr gsl::span<unsigned char> cpumap() noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
+};
+
 [[nodiscard]] constexpr inline Domain::CoreDump::Flags operator|(Domain::CoreDump::Flags lhs, Domain::CoreDump::Flags rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlags operator|(Domain::ModificationImpactFlags lhs,
                                                                          Domain::ModificationImpactFlags rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::VCpuFlags operator|(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::VCpuFlags operator|=(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
 } // namespace virt

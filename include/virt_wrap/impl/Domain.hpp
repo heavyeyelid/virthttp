@@ -124,15 +124,98 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] inline std::string Domain::extractHostname() const noexcept { return {virDomainGetHostname(underlying, 0)}; }
 
+[[nodiscard]] auto Domain::getIOThreadInfo(ModificationImpactFlags flags) const noexcept {
+    return meta::light::wrap_opram_owning_set_destroyable_arr<light::IOThreadInfo>(underlying, virDomainGetIOThreadInfo,
+                                                                                   static_cast<unsigned>(to_integral(flags)));
+}
+
+[[nodiscard]] auto Domain::extractIOThreadInfo(ModificationImpactFlags flags) const -> std::vector<heavy::IOThreadInfo> {
+    return meta::heavy::wrap_opram_owning_set_destroyable_arr<heavy::IOThreadInfo>(underlying, virDomainGetIOThreadInfo,
+                                                                                   static_cast<unsigned>(to_integral(flags)));
+}
+
 [[nodiscard]] inline Domain::Info Domain::getInfo() const noexcept {
     virDomainInfo info;
     virDomainGetInfo(underlying, &info);
     return info;
 }
 
+[[nodiscard]] auto Domain::getJobInfo() const noexcept -> std::optional<JobInfo> {
+    std::optional<JobInfo> ret{JobInfo{}};
+    return virDomainGetJobInfo(underlying, &*ret) == 0 ? ret : std::nullopt;
+}
+
+[[nodiscard]] int Domain::getMaxVcpus() const noexcept { return virDomainGetMaxVcpus(underlying); }
+
+[[nodiscard]] UniqueZstring Domain::getMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlags flags) const noexcept {
+    return UniqueZstring{virDomainGetMetadata(underlying, to_integral(type), ns, to_integral(flags))};
+}
+
+[[nodiscard]] std::string Domain::extractMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlags flags) const {
+    return std::string{static_cast<const char*>(getMetadata(type, ns, flags))};
+}
+
 [[nodiscard]] inline gsl::czstring<> Domain::getName() const noexcept { return virDomainGetName(underlying); }
 
 [[nodiscard]] inline unsigned Domain::getID() const noexcept { return virDomainGetID(underlying); }
+
+[[nodiscard]] int Domain::getNumVcpus(VCpuFlags flags) const noexcept { return virDomainGetVcpusFlags(underlying, to_integral(flags)); }
+
+[[nodiscard]] auto Domain::getSchedulerType() const noexcept -> std::pair<UniqueZstring, int> {
+    std::pair<UniqueZstring, int> ret{};
+    ret.first = UniqueZstring{virDomainGetSchedulerType(underlying, &ret.second)};
+    return ret;
+}
+
+[[nodiscard]] auto Domain::getSecurityLabel() const noexcept -> std::unique_ptr<virSecurityLabel> {
+    auto ret = std::make_unique<virSecurityLabel>();
+    return virDomainGetSecurityLabel(underlying, ret.get()) == 0 ? std::move(ret) : std::unique_ptr<virSecurityLabel>{nullptr};
+}
+
+[[nodiscard]] auto Domain::getSecurityLabelList() const noexcept {
+    return meta::light::wrap_opram_owning_set_destroyable_arr<virSecurityLabel>(underlying, virDomainGetSecurityLabelList);
+}
+
+[[nodiscard]] auto Domain::extractSecurityLabelList() const -> std::vector<virSecurityLabel> {
+    return meta::heavy::wrap_opram_owning_set_destroyable_arr(underlying, virDomainGetSecurityLabelList);
+}
+
+[[nodiscard]] Domain::StateWReason Domain::getState() const noexcept {
+    int state;
+    int reason;
+    const auto res = virDomainGetState(underlying, &state, &reason, 0);
+    if (res != 0)
+        return StateWReason{};
+    switch (state) {
+    case VIR_DOMAIN_NOSTATE:
+        return StateWReason{StateReasons::NoState{reason}};
+    case VIR_DOMAIN_RUNNING:
+        return StateWReason{StateReasons::Running{reason}};
+    case VIR_DOMAIN_BLOCKED:
+        return StateWReason{StateReasons::Blocked{reason}};
+    case VIR_DOMAIN_PAUSED:
+        return StateWReason{StateReasons::Paused{reason}};
+    case VIR_DOMAIN_SHUTDOWN:
+        return StateWReason{StateReasons::Shutdown{reason}};
+    case VIR_DOMAIN_SHUTOFF:
+        return StateWReason{StateReasons::Shutoff{reason}};
+    case VIR_DOMAIN_CRASHED:
+        return StateWReason{StateReasons::Crashed{reason}};
+    case VIR_DOMAIN_PMSUSPENDED:
+        return StateWReason{StateReasons::PMSuspended{reason}};
+    }
+    UNREACHABLE;
+}
+
+[[nodiscard]] auto Domain::getTime() const noexcept {
+    struct TimeRet {
+        long long seconds;
+        unsigned nanosec;
+    };
+    std::optional<TimeRet> ret{};
+    auto& time = ret.emplace();
+    return virDomainGetTime(underlying, &time.seconds, &time.nanosec, 0) == 0 ? ret : std::nullopt;
+}
 
 [[nodiscard]] inline auto Domain::getUUID() const {
     using RetType = std::array<unsigned char, VIR_UUID_BUFLEN>;
@@ -162,6 +245,34 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 }
 
 [[nodiscard]] inline unsigned long Domain::getMaxMemory() const noexcept { return virDomainGetMaxMemory(underlying); }
+
+[[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlags flags) -> std::optional<std::vector<unsigned char>> {
+    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
+        underlying, [&](decltype(underlying) u) { return getInfo().nrVirtCpu; },
+        [=](decltype(underlying) u, unsigned char* ptr, int n) { return virDomainGetVcpuPinInfo(u, n, ptr, VIR_CPU_MAPLEN(n), to_integral(flags)); });
+}
+
+[[nodiscard]] auto Domain::getVcpus() const noexcept {
+    struct Ret {
+        std::vector<virVcpuInfo> infos{};
+        std::vector<unsigned char> cpumaps{};
+        int cpumap_size{};
+    };
+    std::optional<Ret> ret{Ret{}};
+    auto& st = *ret;
+    const auto nvcpu = getInfo().nrVirtCpu;
+    st.cpumap_size = VIR_CPU_MAPLEN(nvcpu);
+    st.infos.resize(nvcpu);
+    st.cpumaps.resize(st.cpumap_size * nvcpu);
+    const auto res = virDomainGetVcpus(underlying, st.infos.data(), nvcpu, st.cpumaps.data(), VIR_CPU_MAPLEN(nvcpu));
+    return res >= 0 ? ret : std::nullopt;
+}
+
+[[nodiscard]] gsl::czstring<> Domain::getXMLDesc(XmlFlags flags) const noexcept { return virDomainGetXMLDesc(underlying, to_integral(flags)); }
+
+[[nodiscard]] TFE Domain::hasManagedSaveImage() const noexcept { return TFE{virDomainHasManagedSaveImage(underlying, 0)}; }
+
+[[nodiscard]] bool Domain::injectNMI() noexcept { return virDomainInjectNMI(underlying, 0) == 0; }
 
 inline bool Domain::setMaxMemory(unsigned long mem) { return virDomainSetMaxMemory(underlying, mem) == 0; }
 
@@ -202,6 +313,12 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlags operator|(Domain::ModificationImpactFlags lhs,
                                                                          Domain::ModificationImpactFlags rhs) noexcept {
     return Domain::ModificationImpactFlags{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr inline Domain::VCpuFlags operator|(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept {
+    return Domain::VCpuFlags{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr inline Domain::VCpuFlags operator|=(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept {
+    return lhs = Domain::VCpuFlags{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept {
     return Domain::Stats::Types(to_integral(lhs) | to_integral(rhs));

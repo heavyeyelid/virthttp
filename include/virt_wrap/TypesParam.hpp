@@ -87,6 +87,9 @@ class TypedParams::Iterator {
     constexpr Iterator operator+(int v) const noexcept { return {it + v}; }
     constexpr Iterator operator-(int v) const noexcept { return {it - v}; }
     constexpr TypedParams::Element operator*() const noexcept { return TypedParams::Element{it}; }
+
+    constexpr bool operator==(const Iterator& oth) const noexcept { return it == oth.it; }
+    constexpr bool operator!=(const Iterator& oth) const noexcept { return it != oth.it; }
 };
 
 }
