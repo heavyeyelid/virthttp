@@ -248,7 +248,7 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlags flags) -> std::optional<std::vector<unsigned char>> {
     return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
-        underlying, [&](decltype(underlying) u) { return getInfo().nrVirtCpu; },
+        underlying, [&](decltype(underlying) u) -> int { return getInfo().nrVirtCpu; },
         [=](decltype(underlying) u, unsigned char* ptr, int n) { return virDomainGetVcpuPinInfo(u, n, ptr, VIR_CPU_MAPLEN(n), to_integral(flags)); });
 }
 

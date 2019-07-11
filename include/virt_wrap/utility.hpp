@@ -190,7 +190,7 @@ auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF d
     using CountFRet = typename CountFTraits::return_type;
 
     using DataFTraits = ext::function_traits<DF>;
-    static_assert(DataFTraits::arity == 3, "Data function requires three arguments");
+    static_assert(DataFTraits::arity == 3 + sizeof...(DF_Args), "Data function requires three base arguments");
     static_assert(std::is_same_v<typename DataFTraits::template Arg_t<0>, U>, "Data function requires the underlying ptr as first argument");
     static_assert(std::is_pointer_v<typename DataFTraits::template Arg_t<0>>, "Data function requires a pointer to the array as second argument");
     static_assert(std::is_same_v<typename DataFTraits::template Arg_t<2>, CountFRet>,
@@ -330,7 +330,8 @@ auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U,
     std::vector<ValueType> ret;
     ret.reserve(res);
     auto it = ptr;
-    while (*it)
+    const auto end = ptr + res;
+    while (it != end)
         ret.emplace_back(*it++);
     freeany(ptr);
     return ret;

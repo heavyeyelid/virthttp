@@ -821,11 +821,18 @@ struct Domain::FSInfo {
     }
 };
 
-struct Domain::IPAddress {
+class Domain::IPAddress {
+    friend Domain;
+    friend Domain::Interface;
+    IPAddress(virDomainIPAddressPtr ptr) : type(Type{ptr->type}), addr(ptr->addr), prefix(ptr->prefix) {}
+  public:
     enum class Type : int {
         IPV4 = VIR_IP_ADDR_TYPE_IPV4,
         IPV6 = VIR_IP_ADDR_TYPE_IPV6,
     };
+    IPAddress() noexcept = default;
+    IPAddress(const virDomainIPAddress& ref) : type(Type{ref.type}), addr(ref.addr), prefix(ref.prefix) {}
+    IPAddress(Type type, std::string addr, uint8_t prefix) noexcept : type(type), addr(std::move(addr)), prefix(prefix) {}
     Type type;
     std::string addr;
     uint8_t prefix;
@@ -844,6 +851,10 @@ class Domain::IPAddressView : private virDomainIPAddress {
 };
 
 class Domain::Interface {
+    friend Domain;
+  public:
+
+    Interface(virDomainInterfacePtr ptr) : name(ptr->name), hwaddr(ptr->hwaddr), addrs(ptr->addrs, ptr->addrs + ptr->naddrs) {}
     std::string name;
     std::string hwaddr;
     std::vector<IPAddress> addrs;
@@ -884,9 +895,11 @@ class Domain::heavy::IOThreadInfo {
     unsigned m_iothread_id{};
     std::vector<unsigned char> m_cpumap{};
 
-    IOThreadInfo(virDomainIOThreadInfo& ref) noexcept
+    IOThreadInfo(const virDomainIOThreadInfo& ref) noexcept
         : m_iothread_id(ref.iothread_id), m_cpumap(ref.cpumap, ref.cpumap + ref.cpumaplen) {} // C++2aTODO make constexpr
   public:
+    IOThreadInfo(virDomainIOThreadInfo* ptr) noexcept
+        : m_iothread_id(ptr->iothread_id), m_cpumap(ptr->cpumap, ptr->cpumap + ptr->cpumaplen) {} // C++2aTODO make constexpr
     inline ~IOThreadInfo() = default;
     constexpr unsigned iothread_id() const noexcept { return m_iothread_id; }
     constexpr unsigned& iothread_id() noexcept { return m_iothread_id; }
