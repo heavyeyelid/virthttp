@@ -219,6 +219,10 @@ Domain Connection::domainLookupByID(int id) const noexcept { return Domain{virDo
 
 Domain Connection::domainLookupByName(gsl::czstring<> name) const noexcept { return Domain{virDomainLookupByName(underlying, name)}; }
 
+Domain Connection::domainLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
+    return Domain{virDomainLookupByUUID(underlying, uuid)};
+}
+
 Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept {
     return Domain{virDomainLookupByUUIDString(underlying, uuid_str)};
 }

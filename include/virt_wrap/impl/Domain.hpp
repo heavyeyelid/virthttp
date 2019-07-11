@@ -274,6 +274,76 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] bool Domain::injectNMI() noexcept { return virDomainInjectNMI(underlying, 0) == 0; }
 
+[[nodiscard]] auto Domain::interfaceAddressesView(InterfaceAddressesSource source) const noexcept {
+    return meta::light::wrap_opram_owning_set_autodestroyable_arr<InterfaceView>(underlying, virDomainInterfaceAddresses, to_integral(source), 0u);
+}
+
+[[nodiscard]] auto Domain::interfaceAddresses(InterfaceAddressesSource source) const -> std::vector<Interface> {
+    return meta::heavy::wrap_opram_owning_set_destroyable_arr<Interface>(underlying, virDomainInterfaceAddresses, to_integral(source), 0u);
+}
+
+[[nodiscard]] auto Domain::interfaceStats(gsl::czstring<> device) const noexcept -> std::optional<virDomainInterfaceStatsStruct> {
+    std::optional<virDomainInterfaceStatsStruct> ret{virDomainInterfaceStatsStruct{}};
+    auto& s = *ret;
+    return virDomainInterfaceStats(underlying, device, &s, sizeof(std::remove_reference_t<decltype(s)>)) ? ret : std::nullopt;
+}
+
+[[nodiscard]] TFE Domain::isPersistent() const noexcept { return TFE{virDomainIsPersistent(underlying)}; }
+
+[[nodiscard]] TFE Domain::isUpdated() const noexcept { return TFE{virDomainIsUpdated(underlying)}; }
+
+bool Domain::managedSave(SaveRestoreFlags flags) noexcept { return virDomainManagedSave(underlying, to_integral(flags)) == 0; }
+
+bool Domain::managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlags flags) noexcept {
+    return virDomainManagedSaveDefineXML(underlying, dxml, to_integral(flags)) == 0;
+}
+
+[[nodiscard]] UniqueZstring Domain::managedSaveGetXMLDesc(SaveImageXMLFlags flags) const noexcept {
+    return UniqueZstring{virDomainManagedSaveGetXMLDesc(underlying, to_integral(flags))};
+}
+
+[[nodiscard]] std::string Domain::managedSaveExtractXMLDesc(SaveImageXMLFlags flags) const noexcept {
+    return {static_cast<const char*>(managedSaveGetXMLDesc(flags))};
+}
+
+bool Domain::managedSaveRemove() noexcept { return virDomainManagedSaveRemove(underlying, 0) == 0; }
+
+bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlags flags) const noexcept {
+    return virDomainMemoryPeek(underlying, start, buffer.size(), buffer.data(), to_integral(flags)) == 0;
+}
+
+auto Domain::memoryStats(unsigned int nr_stats) const noexcept {
+    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats,
+                                                                   0u);
+}
+
+[[nodiscard]] auto Domain::migrateGetCompressionCache() const noexcept -> std::optional<unsigned long long> {
+    unsigned long long v;
+    return virDomainMigrateGetCompressionCache(underlying, &v, 0) == 0 ? std::optional{v} : std::nullopt;
+}
+
+[[nodiscard]] auto Domain::migrateGetMaxDowntime() const noexcept -> std::optional<unsigned long long> {
+    unsigned long long v;
+    return virDomainMigrateGetMaxDowntime(underlying, &v, 0) == 0 ? std::optional{v} : std::nullopt;
+}
+
+[[nodiscard]] auto Domain::migrateGetMaxSpeed(unsigned int flags) const noexcept -> std::optional<unsigned long> {
+    unsigned long v;
+    return virDomainMigrateGetMaxSpeed(underlying, &v, to_integral(flags)) == 0 ? std::optional{v} : std::nullopt;
+}
+
+bool Domain::migrateSetCompressionCache(unsigned long long cacheSize) noexcept {
+    return virDomainMigrateSetCompressionCache(underlying, cacheSize, 0) == 0;
+}
+
+bool Domain::migrateSetMaxDowntime(unsigned long long downtime) noexcept { return virDomainMigrateSetMaxDowntime(underlying, downtime, 0) == 0; }
+
+bool Domain::migrateSetMaxSpeed(unsigned long bandwidth, unsigned int flags) noexcept {
+    return virDomainMigrateSetMaxSpeed(underlying, bandwidth, to_integral(flags)) == 0;
+}
+
+bool Domain::migrateStartPostCopy(unsigned int flags) noexcept { return virDomainMigrateStartPostCopy(underlying, to_integral(flags)) == 0; }
+
 inline bool Domain::setMaxMemory(unsigned long mem) { return virDomainSetMaxMemory(underlying, mem) == 0; }
 
 inline bool Domain::setMemory(unsigned long mem) { return virDomainSetMemory(underlying, mem) == 0; }
@@ -310,6 +380,24 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
     return Domain::CoreDump::Flags{to_integral(lhs) | to_integral(rhs)};
 }
 
+[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlags operator|(Domain::GetAllDomainStatsFlags lhs,
+                                                                        Domain::GetAllDomainStatsFlags rhs) noexcept {
+    return Domain::GetAllDomainStatsFlags{to_integral(lhs) | to_integral(rhs)};
+}
+
+[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlags operator|=(Domain::GetAllDomainStatsFlags& lhs,
+                                                                         Domain::GetAllDomainStatsFlags rhs) noexcept {
+    return lhs = Domain::GetAllDomainStatsFlags{to_integral(lhs) | to_integral(rhs)};
+}
+
+[[nodiscard]] constexpr inline Domain::StatsTypes operator|(Domain::StatsTypes lhs, Domain::StatsTypes rhs) noexcept {
+    return Domain::StatsTypes{to_integral(lhs) | to_integral(rhs)};
+}
+
+[[nodiscard]] constexpr inline Domain::StatsTypes operator|=(Domain::StatsTypes& lhs, Domain::StatsTypes rhs) noexcept {
+    return lhs = Domain::StatsTypes{to_integral(lhs) | to_integral(rhs)};
+}
+
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlags operator|(Domain::ModificationImpactFlags lhs,
                                                                          Domain::ModificationImpactFlags rhs) noexcept {
     return Domain::ModificationImpactFlags{to_integral(lhs) | to_integral(rhs)};
@@ -317,7 +405,7 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
 [[nodiscard]] constexpr inline Domain::VCpuFlags operator|(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept {
     return Domain::VCpuFlags{to_integral(lhs) | to_integral(rhs)};
 }
-[[nodiscard]] constexpr inline Domain::VCpuFlags operator|=(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept {
+[[nodiscard]] constexpr inline Domain::VCpuFlags operator|=(Domain::VCpuFlags& lhs, Domain::VCpuFlags rhs) noexcept {
     return lhs = Domain::VCpuFlags{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept {

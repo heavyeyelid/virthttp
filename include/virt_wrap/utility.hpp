@@ -41,6 +41,11 @@ class alignas(alignof(char*)) UniqueZstring {
         return *this;
     };
 
+    inline auto begin() const noexcept { return std::string_view{ptr}.begin(); }
+    inline auto end() const noexcept { return std::string_view{ptr}.end(); }
+    inline auto cbegin() const noexcept { return std::string_view{ptr}.cbegin(); }
+    inline auto cend() const noexcept { return std::string_view{ptr}.cend(); }
+
     constexpr inline explicit operator const char*() const noexcept { return ptr; }
     constexpr inline explicit operator char*() noexcept { return ptr; }
 };
@@ -177,8 +182,8 @@ template <typename U, typename CF, typename DF> auto wrap_oparm_owning_fill_free
     return ret;
 }
 
-template <typename Conv = void, typename U, typename CF, typename DF>
-auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF data_fcn) {
+template <typename Conv = void, typename U, typename CF, typename DF, typename... DF_Args>
+auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF data_fcn, DF_Args... df_args) {
     using CountFTraits = ext::function_traits<CF>;
     static_assert(CountFTraits::arity == 1, "Counting function requires one argument");
     static_assert(std::is_same_v<typename CountFTraits::template Arg_t<0>, U>, "Counting function requires the underlying ptr as argument");
@@ -200,7 +205,7 @@ auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF d
     auto& vec = ret.emplace();
     vec.resize(count_fcn(underlying));
     if (!vec.empty()) {
-        const auto res = data_fcn(underlying, reinterpret_cast<DedT*>(vec.data()), vec.size()); // C++2a: std::bit_cast
+        const auto res = data_fcn(underlying, reinterpret_cast<DedT*>(vec.data()), vec.size(), df_args...); // C++2a: std::bit_cast
         if (res != 0)
             return RetType{std::nullopt};
     }

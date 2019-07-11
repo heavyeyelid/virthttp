@@ -202,6 +202,8 @@ class Connection {
 
     Domain domainLookupByName(gsl::czstring<>) const noexcept;
 
+    Domain domainLookupByUUID(gsl::basic_zstring<const unsigned char>) const noexcept;
+
     Domain domainLookupByUUIDString(gsl::czstring<>) const noexcept;
 
     virNodeInfo nodeGetInfo() const;
