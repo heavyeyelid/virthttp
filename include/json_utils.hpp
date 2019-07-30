@@ -19,10 +19,16 @@ struct JsonRes : public rapidjson::Document {
   public:
     JsonRes() {
         SetObject();
-        AddMember("results", "", GetAllocator()).SetArray();
+        rapidjson::Value results{}, success{}, errors{}, messages{};
+        results.SetArray();
+        success.SetBool(false);
+        errors.SetArray();
+        messages.SetArray();
+
+        AddMember("results", results, GetAllocator());
         AddMember("success", false, GetAllocator());
-        AddMember("errors", "", GetAllocator()).SetArray();
-        AddMember("messages", "", GetAllocator()).SetArray();
+        AddMember("errors", errors, GetAllocator());
+        AddMember("messages", messages, GetAllocator());
     }
 
     template <typename T>
