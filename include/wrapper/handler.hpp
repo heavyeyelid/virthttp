@@ -128,8 +128,6 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
             }
         } else {
             if (req.method() == http::verb::get) {
-                logger.debug("Listing all domains");
-
                 auto flags = virt::Connection::List::Domains::Flags::DEFAULT;
                 if (auto activity = target.getBool("active"); activity)
                     flags |= *activity ? virt::Connection::List::Domains::Flags::ACTIVE : virt::Connection::List::Domains::Flags::INACTIVE;
@@ -193,9 +191,59 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 virt::Network nw{};
                 if (search_key == SearchKey::by_name) {
                     logger.debug("Network by name");
+                    nw = std::move(conn.networkLookupByName(key_str.c_str()));
+                    if (!nw) {
+                        logger.error("Cannot find network with a such name");
+                        return error(501, "Cannot find network with a such name");
+                    }
                 } else if (search_key == SearchKey::by_uuid) {
                     logger.debug("Network by UUID");
+                    nw = std::move(conn.networkLookupByUUIDString(key_str.c_str()));
+                    if (!nw) {
+                        logger.error("Cannot find network with a such name");
+                        return error(502, "Cannot find network with a such UUID");
+                    }
                 }
+
+                rapidjson::Value nw_json{};
+                nw_json.SetObject();
+
+                rapidjson::Value jsAS{};
+                TFE nwAS = nw.getAutostart();
+                if (!nwAS.err()) {
+                    if (nwAS)
+                        jsAS.SetBool(true);
+                    else
+                        jsAS.SetBool(false);
+                } else {
+                    logger.error("Error occurred while getting network autostart");
+                    return error(503, "Error occurred while getting network autostart");
+                }
+
+                TFE nwActive = nw.isActive();
+                rapidjson::Value jsonActive;
+                if (!nwActive.err()) {
+                    if (nwActive)
+                        jsonActive.SetBool(true);
+                    else
+                        jsonActive.SetBool(false);
+                } else {
+                    logger.error("Error occurred while getting network status");
+                    return error(500, "Error occurred while getting network status");
+                }
+
+                nw_json.AddMember("name", nw.extractName(), json_res.GetAllocator());
+                nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
+                nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
+                nw_json.AddMember("autostart", jsAS, json_res.GetAllocator());
+
+                rapidjson::Document xml{};
+                xml.SetObject();
+                xml.AddMember("xml", rapidjson::Value(nw.extractXMLDesc(), json_res.GetAllocator()), json_res.GetAllocator());
+                json_res.message(xml);
+                json_res.result(nw_json);
+                json_res["success"] = true;
+
             } else {
                 logger.debug("Listing all networks - WIP"); // WIP
                 for (const auto& nw : conn.extractAllNetworks()) {
@@ -207,8 +255,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                         else
                             jsonActive.SetBool(false);
                     } else {
-                        logger.error("Error occurred while getting networks");
-                        return error(250, "Error occurred while getting networks");
+                        logger.error("Error occurred while getting network status");
+                        return error(500, "Error occurred while getting network status");
                     }
                     rapidjson::Value nw_json;
                     nw_json.SetObject();
