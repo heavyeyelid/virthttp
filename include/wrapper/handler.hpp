@@ -59,14 +59,14 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
             virt::Domain dom{};
             if (search_key == SearchKey::by_name) {
                 logger.debug("Getting domain by name");
-                dom = std::move(conn.domainLookupByName(key_str.c_str()));
+                dom = conn.domainLookupByName(key_str.c_str());
                 if (!dom) {
                     logger.error("Cannot find VM with name: ", key_str);
                     return error(100, "Cannot find VM with a such name");
                 }
             } else if (search_key == SearchKey::by_uuid) {
                 logger.debug("Getting domain by uuid");
-                dom = std::move(conn.domainLookupByUUIDString(key_str.c_str()));
+                dom = conn.domainLookupByUUIDString(key_str.c_str());
                 if (!dom) {
                     logger.error("Cannot find VM with UUID: ", key_str);
                     return error(101, "Cannot find VM with a such UUID");
@@ -191,14 +191,14 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 virt::Network nw{};
                 if (search_key == SearchKey::by_name) {
                     logger.debug("Network by name");
-                    nw = std::move(conn.networkLookupByName(key_str.c_str()));
+                    nw = conn.networkLookupByName(key_str.c_str());
                     if (!nw) {
                         logger.error("Cannot find network with a such name");
                         return error(501, "Cannot find network with a such name");
                     }
                 } else if (search_key == SearchKey::by_uuid) {
                     logger.debug("Network by UUID");
-                    nw = std::move(conn.networkLookupByUUIDString(key_str.c_str()));
+                    nw = conn.networkLookupByUUIDString(key_str.c_str());
                     if (!nw) {
                         logger.error("Cannot find network with a such name");
                         return error(502, "Cannot find network with a such UUID");
@@ -236,11 +236,6 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
                 nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
                 nw_json.AddMember("autostart", jsAS, json_res.GetAllocator());
-
-                rapidjson::Document xml{};
-                xml.SetObject();
-                xml.AddMember("xml", rapidjson::Value(nw.extractXMLDesc(), json_res.GetAllocator()), json_res.GetAllocator());
-                json_res.message(xml);
                 json_res.result(nw_json);
                 json_res["success"] = true;
 
