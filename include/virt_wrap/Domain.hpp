@@ -460,8 +460,7 @@ class Domain {
         struct IOThreadInfo;
     };
     class States {
-        constexpr static std::array states = {"No State", "Running", "Blocked", "Paused",
-                                              "Shutdown", "Shutoff", "Crashed", "Power Management Suspended"};
+        constexpr static std::array states = {"No State", "Running", "Blocked", "Paused", "Shutting down", "Shutoff", "Crashed", "Suspended"};
 
       public:
         [[nodiscard]] constexpr const char* operator[](State val) const noexcept { return states[to_integral(val)]; }
