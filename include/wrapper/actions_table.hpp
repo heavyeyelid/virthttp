@@ -76,7 +76,7 @@ class DomainActionsTable {
                     return error(211, "Domain is not suspended");
                 if (!dom.resume()) {
                     logger.error("Cannot resume this domain: ", key_str);
-                    error(212, "Cannot resume the domain");
+                    return error(212, "Cannot resume the domain");
                 }
                 return pm_message("resume", "Domain resumed");
             }
