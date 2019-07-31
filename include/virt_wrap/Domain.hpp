@@ -133,10 +133,7 @@ int virDomainOpenConsole(virDomainPtr dom, const char* dev_name, virStreamPtr st
 int virDomainOpenGraphics(virDomainPtr dom, unsigned int idx, int fd, unsigned int flags);
 int virDomainOpenGraphicsFD(virDomainPtr dom, unsigned int idx, unsigned int flags);
 
-int virDomainPMSuspendForDuration(virDomainPtr dom, unsigned int target, unsigned long long duration, unsigned int flags); //
-int virDomainPMWakeup(virDomainPtr dom, unsigned int flags);
-
-int virDomainPinEmulator(virDomainPtr domain, unsigned char* cpumap, int maplen, unsigned int flags);
+int virDomainPinEmulator(virDomainPtr domain, unsigned char* cpumap, int maplen, unsigned int flags); //
 int virDomainPinIOThread(virDomainPtr domain, unsigned int iothread_id, unsigned char* cpumap, int maplen, unsigned int flags);
 int virDomainPinVcpu(virDomainPtr domain, unsigned int vcpu, unsigned char* cpumap, int maplen);
 int virDomainPinVcpuFlags(virDomainPtr domain, unsigned int vcpu, unsigned char* cpumap, int maplen, unsigned int flags);
@@ -617,6 +614,9 @@ class Domain {
     [[nodiscard]] TFE isPersistent() const noexcept;
 
     [[nodiscard]] TFE isUpdated() const noexcept;
+
+    bool PMSuspendForDuration(unsigned target, unsigned long long duration) noexcept;
+    bool PMWakeup() noexcept;
 
     // [[nodiscard]] static int listGetStats(gsl::basic_zstring<Domain> doms, StatsTypes stats, virDomainStatsRecordPtr** retStats,
     // GetAllDomainStatsFlags flags);

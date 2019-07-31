@@ -292,6 +292,12 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] TFE Domain::isUpdated() const noexcept { return TFE{virDomainIsUpdated(underlying)}; }
 
+bool Domain::PMSuspendForDuration(unsigned target, unsigned long long duration) noexcept {
+    return virDomainPMSuspendForDuration(underlying, target, duration, 0) == 0;
+}
+
+bool Domain::PMWakeup() noexcept { return virDomainPMWakeup(underlying, 0) == 0; }
+
 bool Domain::managedSave(SaveRestoreFlags flags) noexcept { return virDomainManagedSave(underlying, to_integral(flags)) == 0; }
 
 bool Domain::managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlags flags) noexcept {
@@ -313,8 +319,8 @@ bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffe
 }
 
 auto Domain::memoryStats(unsigned int nr_stats) const noexcept {
-    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats,
-                                                                   0u);
+    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
+        underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats, 0u);
 }
 
 [[nodiscard]] auto Domain::migrateGetCompressionCache() const noexcept -> std::optional<unsigned long long> {
