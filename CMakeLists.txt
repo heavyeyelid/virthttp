@@ -5,7 +5,6 @@ set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
 
 include_directories (thirdparty/rapidxml_ns)
-add_executable (virtxml_ag_assist virtxml_autogen_assist.cpp)
 
 include (WA-ICEs) # Workarouds for known ICEs on certain compiler versions
 
