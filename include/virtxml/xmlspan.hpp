@@ -62,7 +62,10 @@ template <typename C, typename T = char> class NamedSpan : public Node {
 
     auto begin() const { return impl::NamedSpanIt<C, T>{node->first_node(name)}; }
     auto begin() { return impl::NamedSpanIt<C, T>{node->first_node(name)}; }
+    auto rbegin() const { return std::make_reverse_iterator(impl::NamedSpanIt<C, T>{node->last_node(name)}); }
+    auto rbegin() { return std::make_reverse_iterator(impl::NamedSpanIt<C, T>{node->last_node(name)}); }
     constexpr auto end() const noexcept { return impl::NamedSpanIt<C, T>::end; }
+    constexpr auto rend() const noexcept { return impl::NamedSpanIt<C, T>::end; }
 
 #else /* With paramexpr */
 
