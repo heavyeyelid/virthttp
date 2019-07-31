@@ -8,11 +8,14 @@
 #include "logger.hpp"
 
 class IniConfig {
+  private:
+    std::string default_http_auth_key = "123456789abcdefgh";
+
   public:
     std::string connDRIV, connTRANS, connUNAME, connHOST, connPORT, connPATH, connEXTP, connURI, http_address, http_doc_root, http_auth_key, httpURI,
         config_file;
     long http_port{}, http_threads{};
-    bool http_auth_key_required;
+    bool http_auth_key_required{};
 
     IniConfig() = default;
 
@@ -36,8 +39,10 @@ class IniConfig {
         http_port = reader.GetInteger("http_server", "port", 8081);
         http_doc_root = reader.Get("http_server", "doc_root", ".");
         http_threads = reader.GetInteger("http_server", "threads", 1);
-        http_auth_key = reader.Get("http_server", "auth-key", "123456789abcdefgh");
         http_auth_key_required = reader.GetBoolean("http_server", "auth-key-required", true);
+        http_auth_key = reader.Get("http_server", "auth-key", default_http_auth_key);
+        if (http_auth_key_required && (http_auth_key == default_http_auth_key))
+            logger.warning("Using default HTTP Auth Key: ", default_http_auth_key);
 
         connDRIV = reader.Get("libvirtd", "driver", "qemu");
         connTRANS = reader.Get("libvirtd", "transport", "");

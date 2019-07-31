@@ -16,6 +16,8 @@ int main(int argc, char** argv) {
     iniConfig.init("config.ini");
     logger.info("libvirt server URI: ", iniConfig.getConnURI());
     logger.info("http server URI: ", iniConfig.getHttpURI());
+    if (!iniConfig.isHTTPAuthRequired())
+        logger.warning("The HTTP authentication is disabled! Beware of unauthorized access!");
 
     const auto address = net::ip::make_address(iniConfig.http_address);
     const auto port = static_cast<unsigned short>(iniConfig.http_port);
