@@ -35,18 +35,20 @@ class DomainActionsTable {
                 json_res.result(res_val);
                 json_res["success"] = true;
             } else if (json_status == virt::Domain::State::RUNNING && dom.getInfo().state == 5) {
-                if (!dom.resume()) {
-                    logger.error("Cannot start this VM: ", key_str);
-                    return error(202, "Could not start the VM");
-                }
-                dom.resume();
-                json_res.AddMember("status", 1, json_res.GetAllocator());
-                rapidjson::Value msg_val{};
-                msg_val.SetObject();
-                msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
-                json_res.message(msg_val);
-                json_res.result(res_val);
-                json_res["success"] = true;
+                logger.error("Not implemented");
+                return error(-1, "Not implemented");
+                //                if (!dom.resume()) {
+                //                    logger.error("Cannot start this VM: ", key_str);
+                //                    return error(202, "Could not start the VM");
+                //                }
+                //                dom.resume();
+                //                json_res.AddMember("status", 1, json_res.GetAllocator());
+                //                rapidjson::Value msg_val{};
+                //                msg_val.SetObject();
+                //                msg_val.AddMember("starting", "Domain is starting", json_res.GetAllocator());
+                //                json_res.message(msg_val);
+                //                json_res.result(res_val);
+                //                json_res["success"] = true;
             } else if (json_status == virt::Domain::State::SHUTOFF && dom_state == 5) {
                 return error(201, "Domain is not running");
             } else if (json_status == virt::Domain::State::RUNNING && dom_state == 1) {

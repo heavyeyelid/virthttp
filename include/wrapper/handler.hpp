@@ -269,7 +269,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     };
 
     [&] {
-        if (req["X-Auth-Key"] != iniConfig.http_auth_key)
+        if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
             return error(1, "Bad X-Auth-Key");
         logger.debug("Opening connection to ", iniConfig.getConnURI());
         virt::Connection conn{iniConfig.connURI.c_str()};
