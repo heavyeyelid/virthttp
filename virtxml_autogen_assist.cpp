@@ -115,8 +115,9 @@ bool verify(const xml_document<>& doc) noexcept {
     return gram_node->first_node("start");
 }
 
-class DFIterator {
+struct DFIterator {
     const xml_node<>* n;
+    auto operator*() const noexcept { return n; }
     auto operator++() noexcept {
         if (n->first_node()) {
             do {
@@ -129,9 +130,31 @@ class DFIterator {
         else
             n = nullptr;
     }
-    constexpr bool operator==(const DFIterator& oth) const noexcept {
+    constexpr bool operator!=(const DFIterator& oth) const noexcept { return n != oth.n; }
+    constexpr bool operator==(const DFIterator& oth) const noexcept { return n == oth.n; }
+    constexpr bool operator!=(std::nullptr_t) const noexcept { return !n; }
+    constexpr bool operator==(std::nullptr_t) const noexcept { return n; }
+};
 
+struct DLIterator {
+    const xml_node<>* n;
+    auto operator*() const noexcept { return n; }
+    auto operator++() noexcept {
+        if (n->first_node()) {
+            n = n->first_node();
+        } else if (n->next_sibling())
+            n = n->next_sibling();
+        else if (n->parent())
+            do {
+                n = n->parent();
+            } while (n->parent());
+        else
+            n = nullptr;
     }
+    constexpr bool operator!=(const DFIterator& oth) const noexcept { return n != oth.n; }
+    constexpr bool operator==(const DFIterator& oth) const noexcept { return n == oth.n; }
+    constexpr bool operator!=(std::nullptr_t) const noexcept { return !n; }
+    constexpr bool operator==(std::nullptr_t) const noexcept { return n; }
 };
 
 namespace RNGAST {
@@ -203,10 +226,18 @@ void parse(const xml_node<>* gram) {
         def_tags[curr->first_attribute("name")->value()] = it != tags.end() ? it->second : DefTag::NONE;
     }
 
+    std::vector<RNGAST::Definition> ast_defs;
     // ASTify each def while counting references to them
     // TODO
     for (auto curr = gram->first_node("define"); curr; curr = curr->next_sibling("define")) {
         auto v = curr;
+        auto& def = ast_defs.emplace_back();
+        DLIterator it{v};
+        while (it != nullptr) {
+            const auto node = *it;
+            if (node->name() == "element"sv) {
+            }
+        }
     }
 
     // Rebuild full tree, removing singly referenced definitions
