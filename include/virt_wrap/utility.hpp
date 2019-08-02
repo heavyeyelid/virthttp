@@ -56,9 +56,7 @@ template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
     }
 };
 
-template <class Helper> class EnumSetIterator {
-    static_assert(std::is_same_v<typename Helper::Tag, EnumSetHelperTag>);
-    using E = typename Helper::Enum;
+template <class E> class EnumSetIterator {
     using U = decltype(to_integral(std::declval<E>()));
     E e;
 
