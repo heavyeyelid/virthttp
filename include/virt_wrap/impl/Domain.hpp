@@ -395,7 +395,12 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
                                                                          Domain::GetAllDomainStatsFlag rhs) noexcept {
     return lhs = Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
-
+[[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept {
+    return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr inline Domain::ShutdownFlag operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept {
+    return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
+}
 [[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept {
     return Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
 }

@@ -14,6 +14,8 @@
 #define UNREACHABLE ;
 #endif
 
+template <class... Ts> void sink(Ts&&... ts) { (static_cast<void>(std::move(ts)), ...); }
+
 template <typename E> constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }
 
 constexpr auto pow10(std::size_t n) {
@@ -21,7 +23,6 @@ constexpr auto pow10(std::size_t n) {
     while (n--)
         ret *= 10;
     return ret;
-    __builtin_unreachable();
 }
 
 constexpr unsigned strntou(const char* str, std::size_t len) {

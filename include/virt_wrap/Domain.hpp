@@ -936,6 +936,8 @@ class Domain::heavy::IOThreadInfo {
 [[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs, Domain::GetAllDomainStatsFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs,
                                                                         Domain::GetAllDomainStatsFlag rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::ShutdownFlag operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
