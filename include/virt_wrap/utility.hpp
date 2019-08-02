@@ -37,20 +37,51 @@ template <class CRTP, class E, class V = gsl::czstring<>> class EnumHelper {
     }
 };
 
+class EnumSetHelperTag;
 template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
     using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
 
     constexpr decltype(auto) values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
   public:
+    using Tag = EnumSetHelperTag;
+    using Enum = E;
     [[nodiscard]] constexpr V operator[](E val) const noexcept {
-        return values()[sizeof(decltype(to_integral(val))) - __builtin_clz(to_integral(val)) - 1]; // C++2a: use std::countl_zeroe();
+        return values()[sizeof(decltype(to_integral(val))) * 8 - __builtin_clz(to_integral(val)) - 1]; // C++2a: use std::countl_zeroe();
     }
-    [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[ sizeof(decltype(val)) - +val - 1]; }
+    [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[sizeof(decltype(val)) * 8 - +val - 1]; }
     [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
         const auto res = cexpr::find(values().cbegin(), values().cend(), v);
         return res != values().end() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
     }
+};
+
+template <class Helper> class EnumSetIterator {
+    static_assert(std::is_same_v<typename Helper::Tag, EnumSetHelperTag>);
+    using E = typename Helper::Enum;
+    using U = decltype(to_integral(std::declval<E>()));
+    E e;
+
+  public:
+    explicit constexpr EnumSetIterator(E e) noexcept : e(e) {};
+
+    constexpr auto& operator++() noexcept {
+        const auto lz = __builtin_clz(to_integral(e));
+        const auto hi1b = sizeof(U) * 8 - lz - 1;
+        if(hi1b == -1)
+            e = E(0);
+        else
+            e = E(to_integral(e) &= ~(1 << hi1b));
+        return *this;
+    }
+
+    constexpr E operator*() const noexcept {
+        const auto lz = __builtin_clz(to_integral(e));
+        const auto hi1b = sizeof(U) * 8 - lz - 1;
+        return 1u << hi1b;
+    }
+
+    constexpr static EnumSetIterator end{E(0)};
 };
 
 class alignas(alignof(char*)) UniqueZstring {

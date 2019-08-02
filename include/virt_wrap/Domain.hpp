@@ -467,7 +467,7 @@ class Domain {
     class States : public EnumHelper<States, State> {
         using Base = EnumHelper<States, State>;
         friend Base;
-        constexpr static std::array values = {"No State", "Running", "Blocked", "Paused",
+        constexpr static std::array values = {"No State",      "Running", "Blocked", "Paused",
                                               "Shutting down", "Shutoff", "Crashed", "Power Management Suspended"};
     };
     constexpr static States States{};
