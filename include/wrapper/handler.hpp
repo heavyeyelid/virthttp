@@ -92,15 +92,19 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                                 return true;
 
                             const auto& json_deps = it->value;
-                            if (!json_deps.IsArray())
-                                return error(0, "Syntax error"), outcomes.push_back(ActionOutcome::FAILURE), false;
-
-                            const auto deps_arr = json_deps.GetArray();
-                            return std::all_of(deps_arr.begin(), deps_arr.end(), [&](const auto& dep) {
+                            auto success_pred = [&](const auto& dep) {
                                 if (!dep.IsInt() || dep.GetInt() >= curr_idx || outcomes[dep.GetInt()] != ActionOutcome::SUCCESS)
                                     return outcomes.push_back(ActionOutcome::SKIPPED), false;
                                 return true;
-                            });
+                            };
+                            if (json_deps.IsArray()) {
+                                const auto deps_arr = json_deps.GetArray();
+                                return std::all_of(deps_arr.begin(), deps_arr.end(), success_pred);
+                            }
+                            if (json_deps.IsInt()) {
+                                return success_pred(json_deps);
+                            }
+                            return error(0, "Syntax error"), outcomes.push_back(ActionOutcome::FAILURE), false;
                         }()) {
                         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
                         outcomes.push_back(hdl ? hdl(action_val, json_res, dom, key_str) : (error(123, "Unknown action"), ActionOutcome::FAILURE));

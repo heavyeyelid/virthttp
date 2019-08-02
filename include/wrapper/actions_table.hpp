@@ -21,19 +21,47 @@ class DomainActionsTable {
                 json_res.message(msg_val);
                 return ActionOutcome::SUCCESS;
             };
-            if (!val.IsString())
+
+            std::string pm_req{}, flags[] = {"DEFAULT"};
+            bool isFlag{};
+            if (val.IsString()) {
+                pm_req = val.GetString();
+                isFlag = false;
+            } else if (val.IsObject()) {
+                auto it_req = val.FindMember("request");
+                auto it_flags = val.FindMember("type");
+                if (it_req == val.MemberEnd())
+                    return error(300, "Invalid power management value");
+                if (it_flags != val.MemberEnd()) {
+                    if (it_flags->value.IsString())
+                        flags[0] = it_flags->value.GetString();
+                    else if (it_flags->value.IsArray()) {
+                        auto arr = it_flags->value.GetArray();
+                        int i = 0;
+                        for (auto it = arr.Begin(); it != arr.End(); ++it, i++) {
+                            if (!it->IsString())
+                                return error(301, "Invalid flag");
+                            flags[i] = it->GetString();
+                        }
+                    }
+                }
+                pm_req = it_req->value.GetString();
+                isFlag = true;
+            } else {
                 return error(300, "Invalid power management value");
-            const auto pm_req = val.GetString();
+            }
             using namespace std::literals;
             const auto dom_state = virt::Domain::State{dom.getInfo().state};
             if (pm_req == "shutdown"sv) {
                 if (dom_state != virt::Domain::State::RUNNING)
                     return error(201, "Domain is not running");
-                if (!dom.shutdown()) {
-                    logger.error("Cannot shut down this domain: ", key_str);
-                    return error(200, "Could not shut down the domain");
+                if (isFlag) {
+                    if (!dom.shutdown(virt::Domain::ShutdownFlags[flags])) {
+                        logger.error("Cannot shut down this domain: ", key_str);
+                        return error(200, "Could not shut down the domain");
+                    }
+                    return pm_message("shutdown", "Domain is being shutdown");
                 }
-                return pm_message("shutdown", "Domain is being shutdown");
             }
             if (pm_req == "destroy"sv) {
                 if (dom.isActive())
