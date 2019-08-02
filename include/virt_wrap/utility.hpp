@@ -63,12 +63,12 @@ template <class Helper> class EnumSetIterator {
     E e;
 
   public:
-    explicit constexpr EnumSetIterator(E e) noexcept : e(e) {};
+    explicit constexpr EnumSetIterator(E e) noexcept : e(e){};
 
     constexpr auto& operator++() noexcept {
         const auto lz = __builtin_clz(to_integral(e));
         const auto hi1b = sizeof(U) * 8 - lz - 1;
-        if(hi1b == -1)
+        if (hi1b == -1)
             e = E(0);
         else
             e = E(to_integral(e) &= ~(1 << hi1b));
