@@ -23,7 +23,6 @@ constexpr auto pow10(std::size_t n) {
     while (n--)
         ret *= 10;
     return ret;
-    __builtin_unreachable();
 }
 
 constexpr unsigned strntou(const char* str, std::size_t len) {
