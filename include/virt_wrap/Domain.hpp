@@ -227,7 +227,7 @@ class Domain {
     class CreateFlags : public EnumSetHelper<CreateFlags, CreateFlag> {
         using Base = EnumSetHelper<CreateFlags, CreateFlag>;
         friend Base;
-        constexpr static std::array values = {"none", "paused", "autodestroy", "bypass_cache", "force_boot", "validate"};
+        constexpr static std::array values = {"paused", "autodestroy", "bypass_cache", "force_boot", "validate"};
     };
     constexpr static CreateFlags CreateFlags{};
     enum class DestroyFlag {
@@ -237,7 +237,7 @@ class Domain {
     class DestroyFlags : public EnumSetHelper<DestroyFlags, DestroyFlag> {
         using Base = EnumSetHelper<DestroyFlags, DestroyFlag>;
         friend Base;
-        constexpr static std::array values = {"default", "graceful"};
+        constexpr static std::array values = {"graceful"};
     };
     constexpr static DestroyFlags DestroyFlags{};
     enum class DeviceModifyFlag {
@@ -294,7 +294,7 @@ class Domain {
     class ShutdownFlags : public EnumSetHelper<ShutdownFlags, ShutdownFlag > {
         using Base = EnumSetHelper<ShutdownFlags, ShutdownFlag>;
         friend Base;
-        constexpr static std::array values = {"default", "acpi_power_btn", "guest_agent", "initctl", "signal", "paravirt"};
+        constexpr static std::array values = {"acpi_power_btn", "guest_agent", "initctl", "signal", "paravirt"};
     };
     constexpr static ShutdownFlags ShutdownFlags{};
     struct StateReason {
