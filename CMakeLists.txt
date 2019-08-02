@@ -4,7 +4,10 @@ project (HeavyEyelid)
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
 
-include_directories (thirdparty/rapidxml_ns)
+include_directories (thirdparty/gsl/include
+        thirdparty/rapidxml_ns
+        thirdparty/rapidjson/include
+        include)
 add_executable (virtxml_ag_assist virtxml_autogen_assist.cpp)
 
 include (WA-ICEs) # Workarouds for known ICEs on certain compiler versions
@@ -22,9 +25,7 @@ find_package (LibVirt
 
 if (Boost_FOUND AND LibVirt_FOUND)
     include_directories (${Boost_INCLUDE_DIRS} ${LibVirt_INCLUDE_DIRS}
-            thirdparty/gsl/include
             thirdparty/lift/include
-            thirdparty/rapidjson/include
             thirdparty/inih
             thirdparty/ctre/include
             include)
