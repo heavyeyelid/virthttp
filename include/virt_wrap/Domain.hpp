@@ -224,10 +224,22 @@ class Domain {
         FORCE_BOOT = VIR_DOMAIN_START_FORCE_BOOT,
         VALIDATE = VIR_DOMAIN_START_VALIDATE
     };
+    class CreateFlags : public EnumSetHelper<CreateFlags, CreateFlag> {
+        using Base = EnumSetHelper<CreateFlags, CreateFlag>;
+        friend Base;
+        constexpr static std::array values = {"none", "paused", "autodestroy", "bypass_cache", "force_boot", "validate"};
+    };
+    constexpr static CreateFlags CreateFlags{};
     enum class DestroyFlag {
         DEFAULT = VIR_DOMAIN_DESTROY_DEFAULT,   /* Default behavior - could lead to data loss!! */
         GRACEFUL = VIR_DOMAIN_DESTROY_GRACEFUL, /* only SIGTERM, no SIGKILL */
     };
+    class DestroyFlags : public EnumSetHelper<DestroyFlags, DestroyFlag> {
+        using Base = EnumSetHelper<DestroyFlags, DestroyFlag>;
+        friend Base;
+        constexpr static std::array values = {"default", "graceful"};
+    };
+    constexpr static DestroyFlags DestroyFlags{};
     enum class DeviceModifyFlag {
         /* See ModificationImpactFlag for these flags.  */
         CURRENT = VIR_DOMAIN_DEVICE_MODIFY_CURRENT,
@@ -279,6 +291,12 @@ class Domain {
         SIGNAL = VIR_DOMAIN_REBOOT_SIGNAL,                 /* Send a signal */
         PARAVIRT = VIR_DOMAIN_REBOOT_PARAVIRT,             /* Use paravirt guest control */
     };
+    class ShutdownFlags : public EnumSetHelper<ShutdownFlags, ShutdownFlag > {
+        using Base = EnumSetHelper<ShutdownFlags, ShutdownFlag>;
+        friend Base;
+        constexpr static std::array values = {"default", "acpi_power_btn", "guest_agent", "initctl", "signal", "paravirt"};
+    };
+    constexpr static ShutdownFlags ShutdownFlags{};
     struct StateReason {
         enum class NoState {
             UNKNOWN = VIR_DOMAIN_NOSTATE_UNKNOWN, /* the reason is unknown */
@@ -508,7 +526,7 @@ class Domain {
 
     bool create() noexcept;
 
-    bool create(CreateFlag flags) noexcept;
+    bool create(CreateFlag flag) noexcept;
 
     // createWithFiles() // Left out
 
@@ -520,13 +538,13 @@ class Domain {
 
     bool destroy() noexcept;
 
-    bool destroy(DestroyFlag flags) noexcept;
+    bool destroy(DestroyFlag flag) noexcept;
 
     bool detachDevice(gsl::czstring<> xml) noexcept;
 
-    bool detachDevice(gsl::czstring<> xml, DeviceModifyFlag flags = DeviceModifyFlag::LIVE) noexcept;
+    bool detachDevice(gsl::czstring<> xml, DeviceModifyFlag flag = DeviceModifyFlag::LIVE) noexcept;
 
-    bool detachDeviceAlias(gsl::czstring<> alias, DeviceModifyFlag flags = DeviceModifyFlag::LIVE) noexcept;
+    bool detachDeviceAlias(gsl::czstring<> alias, DeviceModifyFlag flag = DeviceModifyFlag::LIVE) noexcept;
 
     int fsFreeze(gsl::span<gsl::czstring<>> mountpoints) noexcept;
 
@@ -605,7 +623,7 @@ class Domain {
 
     [[nodiscard]] auto getVcpus() const noexcept;
 
-    [[nodiscard]] gsl::czstring<> getXMLDesc(XmlFlag flags = XmlFlag::DEFAULT) const noexcept;
+    [[nodiscard]] gsl::czstring<> getXMLDesc(XmlFlag flag = XmlFlag::DEFAULT) const noexcept;
 
     [[nodiscard]] TFE hasManagedSaveImage() const noexcept;
 
@@ -627,17 +645,17 @@ class Domain {
     // [[nodiscard]] static int listGetStats(gsl::basic_zstring<Domain> doms, StatsType stats, virDomainStatsRecordPtr** retStats,
     // GetAllDomainStatsFlag flags);
 
-    bool managedSave(SaveRestoreFlag flags) noexcept;
+    bool managedSave(SaveRestoreFlag flag) noexcept;
 
-    bool managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
+    bool managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlag flag) noexcept;
 
-    [[nodiscard]] UniqueZstring managedSaveGetXMLDesc(SaveImageXMLFlag flags) const noexcept;
+    [[nodiscard]] UniqueZstring managedSaveGetXMLDesc(SaveImageXMLFlag flag) const noexcept;
 
-    [[nodiscard]] std::string managedSaveExtractXMLDesc(SaveImageXMLFlag flags) const noexcept;
+    [[nodiscard]] std::string managedSaveExtractXMLDesc(SaveImageXMLFlag flag) const noexcept;
 
     bool managedSaveRemove() noexcept;
 
-    bool memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlag flags) const noexcept;
+    bool memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlag flag) const noexcept;
 
     auto memoryStats(unsigned int nr_stats) const noexcept;
 
@@ -645,21 +663,21 @@ class Domain {
 
     [[nodiscard]] auto migrateGetMaxDowntime() const noexcept -> std::optional<unsigned long long>;
 
-    [[nodiscard]] auto migrateGetMaxSpeed(unsigned int flags) const noexcept -> std::optional<unsigned long>;
+    [[nodiscard]] auto migrateGetMaxSpeed(unsigned int flag) const noexcept -> std::optional<unsigned long>;
 
     bool migrateSetCompressionCache(unsigned long long cacheSize) noexcept;
 
     bool migrateSetMaxDowntime(unsigned long long downtime) noexcept;
 
-    bool migrateSetMaxSpeed(unsigned long bandwidth, unsigned int flags) noexcept;
+    bool migrateSetMaxSpeed(unsigned long bandwidth, unsigned int flag) noexcept;
 
-    bool migrateStartPostCopy(unsigned int flags) noexcept;
+    bool migrateStartPostCopy(unsigned int flag) noexcept;
 
     bool setMaxMemory(unsigned long);
 
     bool setMemory(unsigned long);
 
-    void reboot(ShutdownFlag flags = ShutdownFlag::DEFAULT);
+    void reboot(ShutdownFlag flag = ShutdownFlag::DEFAULT);
 
     void reset();
 
@@ -670,7 +688,7 @@ class Domain {
     bool setAutoStart(bool);
     bool shutdown() noexcept;
 
-    bool shutdown(ShutdownFlag flags) noexcept;
+    bool shutdown(ShutdownFlag flag) noexcept;
 
     void suspend();
 
