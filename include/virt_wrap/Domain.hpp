@@ -471,8 +471,8 @@ class Domain {
                                               "Shutting down", "Shutoff", "Crashed", "Power Management Suspended"};
     };
     constexpr static States States{};
-    class SaveRestoreFlags : public EnumHelper<SaveRestoreFlags, SaveRestoreFlag> {
-        using Base = EnumHelper<SaveRestoreFlags, State>;
+    class SaveRestoreFlags : public EnumSetHelper<SaveRestoreFlags, SaveRestoreFlag> {
+        using Base = EnumSetHelper<SaveRestoreFlags, State>;
         friend Base;
         constexpr static std::array values = {"bypass_cache", "running", "paused"};
     };
