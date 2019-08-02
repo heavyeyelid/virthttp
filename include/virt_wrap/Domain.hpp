@@ -174,8 +174,6 @@ int virDomainSetVcpusFlags(virDomainPtr domain, unsigned int nvcpus, unsigned in
 int virDomainUpdateDeviceFlags(virDomainPtr domain, const char* xml, unsigned int flags);
 } // namespace tmp
 
-using namespace std::literals;
-
 namespace virt {
 class Domain {
     friend Connection;
@@ -465,7 +463,7 @@ class Domain {
         using Base = EnumHelper<States, State>;
         friend Base;
         constexpr static std::array values = {"No State", "Running", "Blocked", "Paused",
-                                              "Shutdown", "Shutoff", "Crashed", "Power Management Suspended"};
+                                              "Shutting down", "Shutoff", "Crashed", "Power Management Suspended"};
     };
     constexpr static States States{};
     enum class UndefineFlags {

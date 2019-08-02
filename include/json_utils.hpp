@@ -26,7 +26,7 @@ struct JsonRes : public rapidjson::Document {
         messages.SetArray();
 
         AddMember("results", results, GetAllocator());
-        AddMember("success", false, GetAllocator());
+        AddMember("success", true, GetAllocator());
         AddMember("errors", errors, GetAllocator());
         AddMember("messages", messages, GetAllocator());
     }
