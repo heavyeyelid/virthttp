@@ -391,21 +391,21 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
     return Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 
-[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs,
+constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs,
                                                                          Domain::GetAllDomainStatsFlag rhs) noexcept {
     return lhs = Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept {
     return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
 }
-[[nodiscard]] constexpr inline Domain::ShutdownFlag operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept {
+constexpr inline Domain::ShutdownFlag operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept {
     return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept {
     return Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
 }
 
-[[nodiscard]] constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept {
+constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept {
     return lhs = Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
 }
 
@@ -416,7 +416,7 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept {
     return Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
 }
-[[nodiscard]] constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept {
+constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept {
     return lhs = Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept {
