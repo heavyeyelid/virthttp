@@ -174,6 +174,8 @@ int virDomainSetVcpusFlags(virDomainPtr domain, unsigned int nvcpus, unsigned in
 int virDomainUpdateDeviceFlags(virDomainPtr domain, const char* xml, unsigned int flags);
 } // namespace tmp
 
+using namespace std::literals;
+
 namespace virt {
 class Domain {
     friend Connection;
@@ -459,18 +461,13 @@ class Domain {
     struct heavy {
         struct IOThreadInfo;
     };
-    class States {
-        constexpr static std::array states = {"No State", "Running", "Blocked", "Paused",
+    class States : public EnumHelper<States, State> {
+        using Base = EnumHelper<States, State>;
+        friend Base;
+        constexpr static std::array values = {"No State", "Running", "Blocked", "Paused",
                                               "Shutdown", "Shutoff", "Crashed", "Power Management Suspended"};
-
-      public:
-        [[nodiscard]] constexpr const char* operator[](State val) const noexcept { return states[to_integral(val)]; }
-        [[nodiscard]] constexpr const char* operator[](unsigned char val) const noexcept { return states[+val]; }
-        [[nodiscard]] constexpr State operator[](std::string_view sv) const noexcept {
-            const auto res = cexpr::find(states.cbegin(), states.cend(), sv);
-            return State(std::distance(states.cbegin(), res));
-        }
-    } constexpr static States{};
+    };
+    constexpr static States States{};
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
         SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain, then also remove any snapshot metadata */
