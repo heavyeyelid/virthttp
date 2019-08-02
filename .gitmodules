@@ -16,3 +16,6 @@
 [submodule "thirdparty/ctre"]
 	path = thirdparty/ctre
 	url = https://github.com/hanickadot/compile-time-regular-expressions
+[submodule "docs"]
+	path = docs
+	url = https://github.com/ShinoYasx/HeavyEyelid.wiki.git
