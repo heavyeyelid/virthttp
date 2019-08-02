@@ -141,9 +141,9 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
 
                 auto [tag_name, tag_uuid, tag_status] = std::make_tuple(target["name"], target["uuid"], target["status"]);
                 if (!tag_status.empty()) {
-                    const auto status = (std::all_of(tag_status.cbegin(), tag_status.cend(), [&](auto c) { return std::isdigit(c); }))
+                    const virt::Domain::State status = (std::all_of(tag_status.cbegin(), tag_status.cend(), [&](auto c) { return std::isdigit(c); }))
                                             ? virt::Domain::State(std::stol(std::string{tag_status}))
-                                            : virt::Domain::States[tag_status];
+                                            : virt::Domain::States[tag_status]; /* Put error handling */
                     switch (status) {
                     case virt::Domain::State::RUNNING:
                         flags |= virt::Connection::List::Domains::Flags::RUNNING;

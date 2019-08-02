@@ -115,6 +115,25 @@ bool verify(const xml_document<>& doc) noexcept {
     return gram_node->first_node("start");
 }
 
+class DFIterator {
+    const xml_node<>* n;
+    auto operator++() noexcept {
+        if (n->first_node()) {
+            do {
+                n = n->first_node();
+            } while (n->first_node());
+        } else if (n->next_sibling())
+            n = n->next_sibling();
+        else if (n->parent())
+            n = n->parent();
+        else
+            n = nullptr;
+    }
+    constexpr bool operator==(const DFIterator& oth) const noexcept {
+
+    }
+};
+
 namespace RNGAST {
 
 class Class;
@@ -165,12 +184,12 @@ void parse(const xml_node<>* gram) {
     enum class DefTag { NONE, IS_TYPE, IS_CLASSMK };
 
     constexpr const std::array<std::pair<std::string_view, DefTag>, 7> tags{{{"element", DefTag::IS_CLASSMK},
-                                                                       {"attribute", DefTag::IS_CLASSMK},
-                                                                       {"zeroOrMore", DefTag::IS_CLASSMK},
-                                                                       {"oneOrMore", DefTag::IS_CLASSMK},
-                                                                       {"group", DefTag::IS_CLASSMK},
-                                                                       {"data", DefTag::IS_TYPE},
-                                                                       {"value", DefTag::IS_TYPE}}};
+                                                                             {"attribute", DefTag::IS_CLASSMK},
+                                                                             {"zeroOrMore", DefTag::IS_CLASSMK},
+                                                                             {"oneOrMore", DefTag::IS_CLASSMK},
+                                                                             {"group", DefTag::IS_CLASSMK},
+                                                                             {"data", DefTag::IS_TYPE},
+                                                                             {"value", DefTag::IS_TYPE}}};
 
     split_flatmap<std::string_view, DefTag> def_tags;
 
@@ -180,13 +199,15 @@ void parse(const xml_node<>* gram) {
         while (v->name() == "interleave"sv || v->name() == "optional"sv || v->name() == "choice"sv)
             v = v->first_node();
 
-
-        const auto it = std::find_if(tags.begin(), tags.end(), [=](auto tag){ return tag.first == v->name(); });
+        const auto it = std::find_if(tags.begin(), tags.end(), [=](auto tag) { return tag.first == v->name(); });
         def_tags[curr->first_attribute("name")->value()] = it != tags.end() ? it->second : DefTag::NONE;
     }
 
     // ASTify each def while counting references to them
     // TODO
+    for (auto curr = gram->first_node("define"); curr; curr = curr->next_sibling("define")) {
+        auto v = curr;
+    }
 
     // Rebuild full tree, removing singly referenced definitions
     // TODO

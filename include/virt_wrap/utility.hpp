@@ -24,16 +24,32 @@ template <typename T> inline void freeany(T ptr) {
 }
 
 template <class CRTP, class E, class V = gsl::czstring<>> class EnumHelper {
-        using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view , V>;
+    using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
 
     constexpr decltype(auto) values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
   public:
     [[nodiscard]] constexpr V operator[](E val) const noexcept { return values()[to_integral(val)]; }
     [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[+val]; }
-    [[nodiscard]] constexpr E operator[](AC v) const noexcept {
+    [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
         const auto res = cexpr::find(values().cbegin(), values().cend(), v);
-        return E(std::distance(values().cbegin(), res));
+        return res != values().end() ? std::optional{E(std::distance(values().cbegin(), res))} : std::nullopt;
+    }
+};
+
+template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
+    using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
+
+    constexpr decltype(auto) values() const noexcept { return static_cast<const CRTP&>(*this).values; }
+
+  public:
+    [[nodiscard]] constexpr V operator[](E val) const noexcept {
+        return values()[sizeof(decltype(to_integral(val))) - __builtin_clz(to_integral(val)) - 1]; // C++2a: use std::countl_zeroe();
+    }
+    [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[ sizeof(decltype(val)) - +val - 1]; }
+    [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
+        const auto res = cexpr::find(values().cbegin(), values().cend(), v);
+        return res != values().end() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
     }
 };
 

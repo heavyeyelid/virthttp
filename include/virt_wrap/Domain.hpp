@@ -172,6 +172,11 @@ int virDomainSetVcpu(virDomainPtr domain, const char* vcpumap, int state, unsign
 int virDomainSetVcpus(virDomainPtr domain, unsigned int nvcpus);
 int virDomainSetVcpusFlags(virDomainPtr domain, unsigned int nvcpus, unsigned int flags);
 int virDomainUpdateDeviceFlags(virDomainPtr domain, const char* xml, unsigned int flags);
+
+/*
+ * ((?:[A-Z]+_)+([A-Z]+)(?!_))\s*=.*,(.*)
+ * $2 = $1, $3
+ * */
 } // namespace tmp
 
 namespace virt {
@@ -197,7 +202,7 @@ class Domain {
         class Record;
     };
     struct CoreDump {
-        enum class Flags {
+        enum class Flag {
             CRASH = VIR_DUMP_CRASH,               /* crash after dump */
             LIVE = VIR_DUMP_LIVE,                 /* live dump */
             BYPASS_CACHE = VIR_DUMP_BYPASS_CACHE, /* avoid file system cache pollution */
@@ -211,7 +216,7 @@ class Domain {
             KDUMP_SNAPPY = VIR_DOMAIN_CORE_DUMP_FORMAT_KDUMP_SNAPPY, /* kdump-compressed format, with snappy compression */
         };
     };
-    enum class CreateFlags {
+    enum class CreateFlag {
         NONE = VIR_DOMAIN_NONE,
         PAUSED = VIR_DOMAIN_START_PAUSED,
         AUTODESTROY = VIR_DOMAIN_START_AUTODESTROY,
@@ -219,12 +224,12 @@ class Domain {
         FORCE_BOOT = VIR_DOMAIN_START_FORCE_BOOT,
         VALIDATE = VIR_DOMAIN_START_VALIDATE
     };
-    enum class DestroyFlags {
+    enum class DestroyFlag {
         DEFAULT = VIR_DOMAIN_DESTROY_DEFAULT,   /* Default behavior - could lead to data loss!! */
         GRACEFUL = VIR_DOMAIN_DESTROY_GRACEFUL, /* only SIGTERM, no SIGKILL */
     };
-    enum class DeviceModifyFlags {
-        /* See ModificationImpactFlags for these flags.  */
+    enum class DeviceModifyFlag {
+        /* See ModificationImpactFlag for these flags.  */
         CURRENT = VIR_DOMAIN_DEVICE_MODIFY_CURRENT,
         LIVE = VIR_DOMAIN_DEVICE_MODIFY_LIVE,
         CONFIG = VIR_DOMAIN_DEVICE_MODIFY_CONFIG,
@@ -232,7 +237,7 @@ class Domain {
         /* Additionally, these flags may be bitwise-OR'd in.  */
         FORCE = VIR_DOMAIN_DEVICE_MODIFY_FORCE, /* Forcibly modify device (ex. force eject a cdrom) */
     };
-    enum class GetAllDomainStatsFlags : unsigned {
+    enum class GetAllDomainStatsFlag : unsigned {
         ACTIVE = VIR_CONNECT_GET_ALL_DOMAINS_STATS_ACTIVE,
         INACTIVE = VIR_CONNECT_GET_ALL_DOMAINS_STATS_INACTIVE,
 
@@ -262,11 +267,11 @@ class Domain {
         FAILED = VIR_DOMAIN_JOB_FAILED,       /* Job hit error, but isn't cleaned up */
         CANCELLED = VIR_DOMAIN_JOB_CANCELLED, /* Job was aborted, but isn't cleaned up */
     };
-    enum class SaveImageXMLFlags : unsigned {
+    enum class SaveImageXMLFlag : unsigned {
         SECURE = VIR_DOMAIN_XML_SECURE, /* dump security sensitive information too */
     };
-    class SaveRestoreFlags;
-    enum class ShutdownFlags {
+    class SaveRestoreFlag;
+    enum class ShutdownFlag {
         DEFAULT = VIR_DOMAIN_REBOOT_DEFAULT,               /* hypervisor choice */
         ACPI_POWER_BTN = VIR_DOMAIN_REBOOT_ACPI_POWER_BTN, /* Send ACPI event */
         GUEST_AGENT = VIR_DOMAIN_REBOOT_GUEST_AGENT,       /* Use guest agent */
@@ -274,7 +279,7 @@ class Domain {
         SIGNAL = VIR_DOMAIN_REBOOT_SIGNAL,                 /* Send a signal */
         PARAVIRT = VIR_DOMAIN_REBOOT_PARAVIRT,             /* Use paravirt guest control */
     };
-    struct StateReasons {
+    struct StateReason {
         enum class NoState {
             UNKNOWN = VIR_DOMAIN_NOSTATE_UNKNOWN, /* the reason is unknown */
         };
@@ -334,7 +339,7 @@ class Domain {
         };
     };
     struct StateWReason;
-    enum class StatsTypes {
+    enum class StatsType {
         STATE = VIR_DOMAIN_STATS_STATE,         /* return domain state */
         TOTAL = VIR_DOMAIN_STATS_CPU_TOTAL,     /* return domain CPU info */
         BALLOON = VIR_DOMAIN_STATS_BALLOON,     /* return domain balloon info */
@@ -344,11 +349,11 @@ class Domain {
         PERF = VIR_DOMAIN_STATS_PERF,           /* return domain perf event info */
         IOTHREAD = VIR_DOMAIN_STATS_IOTHREAD,   /* return iothread poll info */
     };
-    enum class MemoryFlags {
+    enum class MemoryFlag {
         VIRTUAL = VIR_MEMORY_VIRTUAL,   /* addresses are virtual addresses */
         PHYSICAL = VIR_MEMORY_PHYSICAL, /* addresses are physical addresses */
     };
-    enum class MemoryStatTags {
+    enum class MemoryStatTag {
         /* The total amount of data read from swap space (in kB). */
         SWAP_IN = VIR_DOMAIN_MEMORY_STAT_SWAP_IN,
         /* The total amount of memory written out to swap space (in kB). */
@@ -412,13 +417,13 @@ class Domain {
         TITLE = VIR_DOMAIN_METADATA_TITLE,             /* Operate on <title> */
         ELEMENT = VIR_DOMAIN_METADATA_ELEMENT,         /* Operate on <metadata> */
     };
-    enum class ModificationImpactFlags {
+    enum class ModificationImpactFlag {
         CURRENT = VIR_DOMAIN_AFFECT_CURRENT, /* Affect current domain state.  */
         LIVE = VIR_DOMAIN_AFFECT_LIVE,       /* Affect running domain state.  */
         CONFIG = VIR_DOMAIN_AFFECT_CONFIG,   /* Affect persistent domain state.  */
     };
-    enum class VCpuFlags {
-        /* See ModificationImpactFlags for these flags.  */
+    enum class VCpuFlag {
+        /* See ModificationImpactFlag for these flags.  */
         CURRENT = VIR_DOMAIN_VCPU_CURRENT,
         LIVE = VIR_DOMAIN_VCPU_LIVE,
         CONFIG = VIR_DOMAIN_VCPU_CONFIG,
@@ -428,7 +433,7 @@ class Domain {
         GUEST = VIR_DOMAIN_VCPU_GUEST,               /* Modify state of the cpu in the guest */
         HOTPLUGGABLE = VIR_DOMAIN_VCPU_HOTPLUGGABLE, /* Make vcpus added hot(un)pluggable */
     };
-    enum class XmlFlags {
+    enum class XmlFlag {
         DEFAULT = 0,
         SECURE = VIR_DOMAIN_XML_SECURE,         /* dump security sensitive information too */
         INACTIVE = VIR_DOMAIN_XML_INACTIVE,     /* dump inactive domain information */
@@ -466,6 +471,12 @@ class Domain {
                                               "Shutting down", "Shutoff", "Crashed", "Power Management Suspended"};
     };
     constexpr static States States{};
+    class SaveRestoreFlags : public EnumHelper<SaveRestoreFlags, SaveRestoreFlag> {
+        using Base = EnumHelper<SaveRestoreFlags, State>;
+        friend Base;
+        constexpr static std::array values = {"bypass_cache", "running", "paused"};
+    };
+    constexpr static SaveRestoreFlags SaveRestoreFlags{};
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
         SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain, then also remove any snapshot metadata */
@@ -489,33 +500,33 @@ class Domain {
 
     bool abortJob() noexcept;
 
-    bool addIOThread(unsigned int iothread_id, ModificationImpactFlags flags = ModificationImpactFlags::CURRENT) noexcept;
+    bool addIOThread(unsigned int iothread_id, ModificationImpactFlag flags = ModificationImpactFlag::CURRENT) noexcept;
 
     bool attachDevice(gsl::czstring<> xml) noexcept;
 
-    bool attachDevice(gsl::czstring<> xml, DeviceModifyFlags flags) noexcept;
+    bool attachDevice(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept;
 
     bool create() noexcept;
 
-    bool create(CreateFlags flags) noexcept;
+    bool create(CreateFlag flags) noexcept;
 
     // createWithFiles() // Left out
 
-    bool coreDump(std::filesystem::path to, CoreDump::Flags flags) const noexcept;
+    bool coreDump(std::filesystem::path to, CoreDump::Flag flags) const noexcept;
 
-    bool coreDump(std::filesystem::path to, CoreDump::Format format, CoreDump::Flags flags) const noexcept;
+    bool coreDump(std::filesystem::path to, CoreDump::Format format, CoreDump::Flag flags) const noexcept;
 
-    bool delIOThread(unsigned int iothread_id, ModificationImpactFlags flags) noexcept;
+    bool delIOThread(unsigned int iothread_id, ModificationImpactFlag flags) noexcept;
 
     bool destroy() noexcept;
 
-    bool destroy(DestroyFlags flags) noexcept;
+    bool destroy(DestroyFlag flags) noexcept;
 
     bool detachDevice(gsl::czstring<> xml) noexcept;
 
-    bool detachDevice(gsl::czstring<> xml, DeviceModifyFlags flags = DeviceModifyFlags::LIVE) noexcept;
+    bool detachDevice(gsl::czstring<> xml, DeviceModifyFlag flags = DeviceModifyFlag::LIVE) noexcept;
 
-    bool detachDeviceAlias(gsl::czstring<> alias, DeviceModifyFlags flags = DeviceModifyFlags::LIVE) noexcept;
+    bool detachDeviceAlias(gsl::czstring<> alias, DeviceModifyFlag flags = DeviceModifyFlag::LIVE) noexcept;
 
     int fsFreeze(gsl::span<gsl::czstring<>> mountpoints) noexcept;
 
@@ -546,9 +557,9 @@ class Domain {
 
     [[nodiscard]] unsigned getID() const noexcept;
 
-    [[nodiscard]] auto getIOThreadInfo(ModificationImpactFlags flags) const noexcept;
+    [[nodiscard]] auto getIOThreadInfo(ModificationImpactFlag flags) const noexcept;
 
-    [[nodiscard]] auto extractIOThreadInfo(ModificationImpactFlags flags) const -> std::vector<heavy::IOThreadInfo>;
+    [[nodiscard]] auto extractIOThreadInfo(ModificationImpactFlag flags) const -> std::vector<heavy::IOThreadInfo>;
 
     [[nodiscard]] Info getInfo() const noexcept;
 
@@ -557,14 +568,14 @@ class Domain {
     [[nodiscard]] int getMaxVcpus() const noexcept;
 
     [[nodiscard]] UniqueZstring getMetadata(MetadataType type, gsl::czstring<> ns,
-                                            ModificationImpactFlags flags = ModificationImpactFlags::CURRENT) const noexcept;
+                                            ModificationImpactFlag flags = ModificationImpactFlag::CURRENT) const noexcept;
 
     [[nodiscard]] std::string extractMetadata(MetadataType type, gsl::czstring<> ns,
-                                              ModificationImpactFlags flags = ModificationImpactFlags::CURRENT) const;
+                                              ModificationImpactFlag flags = ModificationImpactFlag::CURRENT) const;
 
     [[nodiscard]] gsl::czstring<> getName() const noexcept;
 
-    [[nodiscard]] int getNumVcpus(VCpuFlags flags) const noexcept;
+    [[nodiscard]] int getNumVcpus(VCpuFlag flags) const noexcept;
 
     [[nodiscard]] auto getSchedulerType() const noexcept -> std::pair<UniqueZstring, int>;
 
@@ -590,11 +601,11 @@ class Domain {
 
     [[nodiscard]] unsigned long getMaxMemory() const noexcept;
 
-    [[nodiscard]] auto getVcpuPinInfo(VCpuFlags flags) -> std::optional<std::vector<unsigned char>>;
+    [[nodiscard]] auto getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>>;
 
     [[nodiscard]] auto getVcpus() const noexcept;
 
-    [[nodiscard]] gsl::czstring<> getXMLDesc(XmlFlags flags = XmlFlags::DEFAULT) const noexcept;
+    [[nodiscard]] gsl::czstring<> getXMLDesc(XmlFlag flags = XmlFlag::DEFAULT) const noexcept;
 
     [[nodiscard]] TFE hasManagedSaveImage() const noexcept;
 
@@ -613,20 +624,20 @@ class Domain {
     bool PMSuspendForDuration(unsigned target, unsigned long long duration) noexcept;
     bool PMWakeup() noexcept;
 
-    // [[nodiscard]] static int listGetStats(gsl::basic_zstring<Domain> doms, StatsTypes stats, virDomainStatsRecordPtr** retStats,
-    // GetAllDomainStatsFlags flags);
+    // [[nodiscard]] static int listGetStats(gsl::basic_zstring<Domain> doms, StatsType stats, virDomainStatsRecordPtr** retStats,
+    // GetAllDomainStatsFlag flags);
 
-    bool managedSave(SaveRestoreFlags flags) noexcept;
+    bool managedSave(SaveRestoreFlag flags) noexcept;
 
-    bool managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlags flags) noexcept;
+    bool managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
 
-    [[nodiscard]] UniqueZstring managedSaveGetXMLDesc(SaveImageXMLFlags flags) const noexcept;
+    [[nodiscard]] UniqueZstring managedSaveGetXMLDesc(SaveImageXMLFlag flags) const noexcept;
 
-    [[nodiscard]] std::string managedSaveExtractXMLDesc(SaveImageXMLFlags flags) const noexcept;
+    [[nodiscard]] std::string managedSaveExtractXMLDesc(SaveImageXMLFlag flags) const noexcept;
 
     bool managedSaveRemove() noexcept;
 
-    bool memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlags flags) const noexcept;
+    bool memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlag flags) const noexcept;
 
     auto memoryStats(unsigned int nr_stats) const noexcept;
 
@@ -648,7 +659,7 @@ class Domain {
 
     bool setMemory(unsigned long);
 
-    void reboot(ShutdownFlags flags = ShutdownFlags::DEFAULT);
+    void reboot(ShutdownFlag flags = ShutdownFlag::DEFAULT);
 
     void reset();
 
@@ -659,7 +670,7 @@ class Domain {
     bool setAutoStart(bool);
     bool shutdown() noexcept;
 
-    bool shutdown(ShutdownFlags flags) noexcept;
+    bool shutdown(ShutdownFlag flags) noexcept;
 
     void suspend();
 
@@ -667,14 +678,14 @@ class Domain {
 
     bool undefine(UndefineFlags) noexcept;
 
-    [[nodiscard]] static Domain createXML(Connection&, gsl::czstring<> xml, CreateFlags flags = CreateFlags::NONE);
+    [[nodiscard]] static Domain createXML(Connection&, gsl::czstring<> xml, CreateFlag flags = CreateFlag::NONE);
 
     // [[nodiscard]] static Domain defineXML();
 };
 
 // HELP ME I NEED GENERATING METACLASSES
 // otherwise I'll just use macros...
-class Domain::SaveRestoreFlags {
+class Domain::SaveRestoreFlag {
     struct EBase {};
     struct DEFAULT_t : EBase {
         constexpr static auto value = 0;
@@ -691,18 +702,18 @@ class Domain::SaveRestoreFlags {
 
     unsigned underlying{};
 
-    friend constexpr SaveRestoreFlags operator|(DEFAULT_t, BYPASS_CACHE_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(DEFAULT_t, RUNNING_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(DEFAULT_t, PAUSED_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(BYPASS_CACHE_t, DEFAULT_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(BYPASS_CACHE_t, RUNNING_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(BYPASS_CACHE_t, PAUSED_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(RUNNING_t, DEFAULT_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(RUNNING_t, BYPASS_CACHE_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(PAUSED_t, DEFAULT_t) noexcept;
-    friend constexpr SaveRestoreFlags operator|(PAUSED_t, BYPASS_CACHE_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(DEFAULT_t, BYPASS_CACHE_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(DEFAULT_t, RUNNING_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(DEFAULT_t, PAUSED_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(BYPASS_CACHE_t, DEFAULT_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(BYPASS_CACHE_t, RUNNING_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(BYPASS_CACHE_t, PAUSED_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(RUNNING_t, DEFAULT_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(RUNNING_t, BYPASS_CACHE_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(PAUSED_t, DEFAULT_t) noexcept;
+    friend constexpr SaveRestoreFlag operator|(PAUSED_t, BYPASS_CACHE_t) noexcept;
 
-    friend constexpr unsigned impl_to_integral(SaveRestoreFlags) noexcept;
+    friend constexpr unsigned impl_to_integral(SaveRestoreFlag) noexcept;
 
   public:
     constexpr static auto DEFAULT = DEFAULT_t{};
@@ -710,72 +721,72 @@ class Domain::SaveRestoreFlags {
     constexpr static auto RUNNING = RUNNING_t{};
     constexpr static auto PAUSED = PAUSED_t{};
 
-    constexpr SaveRestoreFlags() = default;
-    constexpr SaveRestoreFlags(unsigned val) noexcept : underlying(val) {}
-    template <typename T, typename = std::enable_if_t<std::is_base_of_v<EBase, T>>> constexpr SaveRestoreFlags(T) noexcept : underlying(T::value) {}
-    template <typename T, typename = std::enable_if_t<std::is_base_of_v<EBase, T>>> constexpr SaveRestoreFlags& operator=(T) noexcept {
+    constexpr SaveRestoreFlag() = default;
+    constexpr SaveRestoreFlag(unsigned val) noexcept : underlying(val) {}
+    template <typename T, typename = std::enable_if_t<std::is_base_of_v<EBase, T>>> constexpr SaveRestoreFlag(T) noexcept : underlying(T::value) {}
+    template <typename T, typename = std::enable_if_t<std::is_base_of_v<EBase, T>>> constexpr SaveRestoreFlag& operator=(T) noexcept {
         underlying = T::value;
         return *this;
     }
 
-    constexpr SaveRestoreFlags& operator|=(DEFAULT_t) noexcept {
+    constexpr SaveRestoreFlag& operator|=(DEFAULT_t) noexcept {
         underlying |= 0;
         return *this;
     }
-    constexpr SaveRestoreFlags& operator|=(BYPASS_CACHE_t) noexcept {
+    constexpr SaveRestoreFlag& operator|=(BYPASS_CACHE_t) noexcept {
         underlying |= VIR_DOMAIN_SAVE_BYPASS_CACHE;
         return *this;
     }
-    constexpr SaveRestoreFlags& operator|=(RUNNING_t) {
+    constexpr SaveRestoreFlag& operator|=(RUNNING_t) {
         underlying &= ~VIR_DOMAIN_SAVE_PAUSED;
         underlying |= VIR_DOMAIN_SAVE_RUNNING;
         return *this;
     }
-    constexpr SaveRestoreFlags& operator|=(PAUSED_t) {
+    constexpr SaveRestoreFlag& operator|=(PAUSED_t) {
         underlying &= ~VIR_DOMAIN_SAVE_RUNNING;
         underlying |= VIR_DOMAIN_SAVE_PAUSED;
         return *this;
     }
 
-    constexpr SaveRestoreFlags operator|(SaveRestoreFlags f) const noexcept;
-    constexpr SaveRestoreFlags operator|(DEFAULT_t) const noexcept { return *this; }
-    constexpr SaveRestoreFlags operator|(BYPASS_CACHE_t) const noexcept { return {underlying | VIR_DOMAIN_SAVE_BYPASS_CACHE}; }
-    constexpr SaveRestoreFlags operator|(RUNNING_t) const noexcept { return {(underlying & ~VIR_DOMAIN_SAVE_PAUSED) | VIR_DOMAIN_SAVE_RUNNING}; }
-    constexpr SaveRestoreFlags operator|(PAUSED_t) const noexcept { return {(underlying & ~VIR_DOMAIN_SAVE_RUNNING) | VIR_DOMAIN_SAVE_PAUSED}; }
+    constexpr SaveRestoreFlag operator|(SaveRestoreFlag f) const noexcept;
+    constexpr SaveRestoreFlag operator|(DEFAULT_t) const noexcept { return *this; }
+    constexpr SaveRestoreFlag operator|(BYPASS_CACHE_t) const noexcept { return {underlying | VIR_DOMAIN_SAVE_BYPASS_CACHE}; }
+    constexpr SaveRestoreFlag operator|(RUNNING_t) const noexcept { return {(underlying & ~VIR_DOMAIN_SAVE_PAUSED) | VIR_DOMAIN_SAVE_RUNNING}; }
+    constexpr SaveRestoreFlag operator|(PAUSED_t) const noexcept { return {(underlying & ~VIR_DOMAIN_SAVE_RUNNING) | VIR_DOMAIN_SAVE_PAUSED}; }
 };
 
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::DEFAULT_t, Domain::SaveRestoreFlags::BYPASS_CACHE_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::DEFAULT_t, Domain::SaveRestoreFlag::BYPASS_CACHE_t) noexcept {
     return {VIR_DOMAIN_SAVE_BYPASS_CACHE};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::DEFAULT_t, Domain::SaveRestoreFlags::RUNNING_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::DEFAULT_t, Domain::SaveRestoreFlag::RUNNING_t) noexcept {
     return {VIR_DOMAIN_SAVE_RUNNING};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::DEFAULT_t, Domain::SaveRestoreFlags::PAUSED_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::DEFAULT_t, Domain::SaveRestoreFlag::PAUSED_t) noexcept {
     return {VIR_DOMAIN_SAVE_PAUSED};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::BYPASS_CACHE_t, Domain::SaveRestoreFlags::DEFAULT_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::BYPASS_CACHE_t, Domain::SaveRestoreFlag::DEFAULT_t) noexcept {
     return {VIR_DOMAIN_SAVE_BYPASS_CACHE};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::BYPASS_CACHE_t, Domain::SaveRestoreFlags::RUNNING_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::BYPASS_CACHE_t, Domain::SaveRestoreFlag::RUNNING_t) noexcept {
     return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_RUNNING};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::BYPASS_CACHE_t, Domain::SaveRestoreFlags::PAUSED_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::BYPASS_CACHE_t, Domain::SaveRestoreFlag::PAUSED_t) noexcept {
     return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_PAUSED};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::RUNNING_t, Domain::SaveRestoreFlags::DEFAULT_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::RUNNING_t, Domain::SaveRestoreFlag::DEFAULT_t) noexcept {
     return {VIR_DOMAIN_SAVE_RUNNING};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::RUNNING_t, Domain::SaveRestoreFlags::BYPASS_CACHE_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::RUNNING_t, Domain::SaveRestoreFlag::BYPASS_CACHE_t) noexcept {
     return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_RUNNING};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::PAUSED_t, Domain::SaveRestoreFlags::DEFAULT_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::PAUSED_t, Domain::SaveRestoreFlag::DEFAULT_t) noexcept {
     return {VIR_DOMAIN_SAVE_PAUSED};
 }
-constexpr Domain::SaveRestoreFlags operator|(Domain::SaveRestoreFlags::PAUSED_t, Domain::SaveRestoreFlags::BYPASS_CACHE_t) noexcept {
+constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::PAUSED_t, Domain::SaveRestoreFlag::BYPASS_CACHE_t) noexcept {
     return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_PAUSED};
 }
 
-constexpr unsigned impl_to_integral(virt::Domain::SaveRestoreFlags f) noexcept { return f.underlying; }
+constexpr unsigned impl_to_integral(virt::Domain::SaveRestoreFlag f) noexcept { return f.underlying; }
 
 class Domain::Stats::Record {
     friend Connection;
@@ -788,8 +799,8 @@ class Domain::Stats::Record {
   public:
 };
 
-class Domain::StateWReason : public std::variant<StateReasons::NoState, StateReasons::Running, StateReasons::Blocked, StateReasons::Paused,
-                                                 StateReasons::Shutdown, StateReasons::Shutoff, StateReasons::Crashed, StateReasons::PMSuspended> {
+class Domain::StateWReason : public std::variant<StateReason::NoState, StateReason::Running, StateReason::Blocked, StateReason::Paused,
+                                                 StateReason::Shutdown, StateReason::Shutoff, StateReason::Crashed, StateReason::PMSuspended> {
     constexpr State state() const noexcept { return State(this->index()); }
 };
 
@@ -820,6 +831,7 @@ class Domain::IPAddress {
     friend Domain;
     friend Domain::Interface;
     IPAddress(virDomainIPAddressPtr ptr) : type(Type{ptr->type}), addr(ptr->addr), prefix(ptr->prefix) {}
+
   public:
     enum class Type : int {
         IPV4 = VIR_IP_ADDR_TYPE_IPV4,
@@ -847,8 +859,8 @@ class Domain::IPAddressView : private virDomainIPAddress {
 
 class Domain::Interface {
     friend Domain;
-  public:
 
+  public:
     Interface(virDomainInterfacePtr ptr) : name(ptr->name), hwaddr(ptr->hwaddr), addrs(ptr->addrs, ptr->addrs + ptr->naddrs) {}
     std::string name;
     std::string hwaddr;
@@ -902,18 +914,17 @@ class Domain::heavy::IOThreadInfo {
     constexpr gsl::span<unsigned char> cpumap() noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
 };
 
-[[nodiscard]] constexpr inline Domain::CoreDump::Flags operator|(Domain::CoreDump::Flags lhs, Domain::CoreDump::Flags rhs) noexcept;
-[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlags operator|(Domain::GetAllDomainStatsFlags lhs,
-                                                                        Domain::GetAllDomainStatsFlags rhs) noexcept;
-[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlags operator|=(Domain::GetAllDomainStatsFlags& lhs,
-                                                                         Domain::GetAllDomainStatsFlags rhs) noexcept;
-[[nodiscard]] constexpr inline Domain::StatsTypes operator|(Domain::StatsTypes lhs, Domain::StatsTypes rhs) noexcept;
-[[nodiscard]] constexpr inline Domain::StatsTypes operator|=(Domain::StatsTypes& lhs, Domain::StatsTypes rhs) noexcept;
-[[nodiscard]] constexpr inline Domain::ModificationImpactFlags operator|(Domain::ModificationImpactFlags lhs,
-                                                                         Domain::ModificationImpactFlags rhs) noexcept;
-[[nodiscard]] constexpr inline Domain::VCpuFlags operator|(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept;
-[[nodiscard]] constexpr inline Domain::VCpuFlags operator|=(Domain::VCpuFlags& lhs, Domain::VCpuFlags rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs, Domain::GetAllDomainStatsFlag rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs,
+                                                                        Domain::GetAllDomainStatsFlag rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
+                                                                        Domain::ModificationImpactFlag rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
 } // namespace virt
 
-constexpr unsigned to_integral(virt::Domain::SaveRestoreFlags f) noexcept { return virt::impl_to_integral(f); }
+constexpr unsigned to_integral(virt::Domain::SaveRestoreFlag f) noexcept { return virt::impl_to_integral(f); }

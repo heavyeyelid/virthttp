@@ -29,49 +29,49 @@ inline Domain::~Domain() noexcept {
 
 constexpr inline Domain::operator bool() const noexcept { return underlying != nullptr; }
 
-[[nodiscard]] inline Domain Domain::createXML(Connection& c, gsl::czstring<> xml, CreateFlags flags) {
+[[nodiscard]] inline Domain Domain::createXML(Connection& c, gsl::czstring<> xml, CreateFlag flags) {
     return Domain{virDomainCreateXML(c.underlying, xml, to_integral(flags))};
 }
 
 bool Domain::abortJob() noexcept { return virDomainAbortJob(underlying) == 0; }
 
-bool Domain::addIOThread(unsigned int iothread_id, ModificationImpactFlags flags) noexcept {
+bool Domain::addIOThread(unsigned int iothread_id, ModificationImpactFlag flags) noexcept {
     return virDomainAddIOThread(underlying, iothread_id, to_integral(flags)) == 0;
 }
 
 bool Domain::attachDevice(gsl::czstring<> xml) noexcept { return virDomainAttachDevice(underlying, xml) == 0; }
 
-bool Domain::attachDevice(gsl::czstring<> xml, DeviceModifyFlags flags) noexcept {
+bool Domain::attachDevice(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept {
     return virDomainAttachDeviceFlags(underlying, xml, to_integral(flags)) == 0;
 }
 
 bool inline Domain::create() noexcept { return virDomainCreate(underlying) == 0; }
 
-bool inline Domain::create(CreateFlags flags) noexcept { return virDomainCreateWithFlags(underlying, to_integral(flags)) == 0; }
+bool inline Domain::create(CreateFlag flags) noexcept { return virDomainCreateWithFlags(underlying, to_integral(flags)) == 0; }
 
-inline bool Domain::coreDump(std::filesystem::path to, CoreDump::Flags flags) const noexcept {
+inline bool Domain::coreDump(std::filesystem::path to, CoreDump::Flag flags) const noexcept {
     return virDomainCoreDump(underlying, to.c_str(), to_integral(flags)) == 0;
 }
 
-inline bool Domain::coreDump(std::filesystem::path to, CoreDump::Format format, CoreDump::Flags flags) const noexcept {
+inline bool Domain::coreDump(std::filesystem::path to, CoreDump::Format format, CoreDump::Flag flags) const noexcept {
     return virDomainCoreDumpWithFormat(underlying, to.c_str(), to_integral(format), to_integral(flags)) == 0;
 }
 
-inline bool Domain::delIOThread(unsigned int iothread_id, ModificationImpactFlags flags) noexcept {
+inline bool Domain::delIOThread(unsigned int iothread_id, ModificationImpactFlag flags) noexcept {
     return virDomainDelIOThread(underlying, iothread_id, to_integral(flags)) == 0;
 }
 
 inline bool Domain::destroy() noexcept { return virDomainDestroy(underlying) == 0; }
 
-inline bool Domain::destroy(DestroyFlags flags) noexcept { return virDomainDestroyFlags(underlying, to_integral(flags)) == 0; }
+inline bool Domain::destroy(DestroyFlag flags) noexcept { return virDomainDestroyFlags(underlying, to_integral(flags)) == 0; }
 
 inline bool Domain::detachDevice(gsl::czstring<> xml) noexcept { return virDomainDetachDevice(underlying, xml) == 0; }
 
-inline bool Domain::detachDevice(gsl::czstring<> xml, DeviceModifyFlags flags) noexcept {
+inline bool Domain::detachDevice(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept {
     return virDomainDetachDeviceFlags(underlying, xml, to_integral(flags)) == 0;
 }
 
-inline bool Domain::detachDeviceAlias(gsl::czstring<> alias, DeviceModifyFlags flags) noexcept {
+inline bool Domain::detachDeviceAlias(gsl::czstring<> alias, DeviceModifyFlag flags) noexcept {
     return virDomainDetachDeviceAlias(underlying, alias, to_integral(flags)) == 0;
 }
 
@@ -124,12 +124,12 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] inline std::string Domain::extractHostname() const noexcept { return {virDomainGetHostname(underlying, 0)}; }
 
-[[nodiscard]] auto Domain::getIOThreadInfo(ModificationImpactFlags flags) const noexcept {
+[[nodiscard]] auto Domain::getIOThreadInfo(ModificationImpactFlag flags) const noexcept {
     return meta::light::wrap_opram_owning_set_destroyable_arr<light::IOThreadInfo>(underlying, virDomainGetIOThreadInfo,
                                                                                    static_cast<unsigned>(to_integral(flags)));
 }
 
-[[nodiscard]] auto Domain::extractIOThreadInfo(ModificationImpactFlags flags) const -> std::vector<heavy::IOThreadInfo> {
+[[nodiscard]] auto Domain::extractIOThreadInfo(ModificationImpactFlag flags) const -> std::vector<heavy::IOThreadInfo> {
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<heavy::IOThreadInfo>(underlying, virDomainGetIOThreadInfo,
                                                                                    static_cast<unsigned>(to_integral(flags)));
 }
@@ -147,11 +147,11 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] int Domain::getMaxVcpus() const noexcept { return virDomainGetMaxVcpus(underlying); }
 
-[[nodiscard]] UniqueZstring Domain::getMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlags flags) const noexcept {
+[[nodiscard]] UniqueZstring Domain::getMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlag flags) const noexcept {
     return UniqueZstring{virDomainGetMetadata(underlying, to_integral(type), ns, to_integral(flags))};
 }
 
-[[nodiscard]] std::string Domain::extractMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlags flags) const {
+[[nodiscard]] std::string Domain::extractMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlag flags) const {
     return std::string{static_cast<const char*>(getMetadata(type, ns, flags))};
 }
 
@@ -159,7 +159,7 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] inline unsigned Domain::getID() const noexcept { return virDomainGetID(underlying); }
 
-[[nodiscard]] int Domain::getNumVcpus(VCpuFlags flags) const noexcept { return virDomainGetVcpusFlags(underlying, to_integral(flags)); }
+[[nodiscard]] int Domain::getNumVcpus(VCpuFlag flags) const noexcept { return virDomainGetVcpusFlags(underlying, to_integral(flags)); }
 
 [[nodiscard]] auto Domain::getSchedulerType() const noexcept -> std::pair<UniqueZstring, int> {
     std::pair<UniqueZstring, int> ret{};
@@ -188,21 +188,21 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
         return StateWReason{};
     switch (state) {
     case VIR_DOMAIN_NOSTATE:
-        return StateWReason{StateReasons::NoState{reason}};
+        return StateWReason{StateReason::NoState{reason}};
     case VIR_DOMAIN_RUNNING:
-        return StateWReason{StateReasons::Running{reason}};
+        return StateWReason{StateReason::Running{reason}};
     case VIR_DOMAIN_BLOCKED:
-        return StateWReason{StateReasons::Blocked{reason}};
+        return StateWReason{StateReason::Blocked{reason}};
     case VIR_DOMAIN_PAUSED:
-        return StateWReason{StateReasons::Paused{reason}};
+        return StateWReason{StateReason::Paused{reason}};
     case VIR_DOMAIN_SHUTDOWN:
-        return StateWReason{StateReasons::Shutdown{reason}};
+        return StateWReason{StateReason::Shutdown{reason}};
     case VIR_DOMAIN_SHUTOFF:
-        return StateWReason{StateReasons::Shutoff{reason}};
+        return StateWReason{StateReason::Shutoff{reason}};
     case VIR_DOMAIN_CRASHED:
-        return StateWReason{StateReasons::Crashed{reason}};
+        return StateWReason{StateReason::Crashed{reason}};
     case VIR_DOMAIN_PMSUSPENDED:
-        return StateWReason{StateReasons::PMSuspended{reason}};
+        return StateWReason{StateReason::PMSuspended{reason}};
     }
     UNREACHABLE;
 }
@@ -246,7 +246,7 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] inline unsigned long Domain::getMaxMemory() const noexcept { return virDomainGetMaxMemory(underlying); }
 
-[[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlags flags) -> std::optional<std::vector<unsigned char>> {
+[[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>> {
     return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
         underlying, [&](decltype(underlying) u) -> int { return getInfo().nrVirtCpu; },
         [=](decltype(underlying) u, unsigned char* ptr, int n) { return virDomainGetVcpuPinInfo(u, n, ptr, VIR_CPU_MAPLEN(n), to_integral(flags)); });
@@ -268,7 +268,7 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     return res >= 0 ? ret : std::nullopt;
 }
 
-[[nodiscard]] gsl::czstring<> Domain::getXMLDesc(XmlFlags flags) const noexcept { return virDomainGetXMLDesc(underlying, to_integral(flags)); }
+[[nodiscard]] gsl::czstring<> Domain::getXMLDesc(XmlFlag flags) const noexcept { return virDomainGetXMLDesc(underlying, to_integral(flags)); }
 
 [[nodiscard]] TFE Domain::hasManagedSaveImage() const noexcept { return TFE{virDomainHasManagedSaveImage(underlying, 0)}; }
 
@@ -298,23 +298,23 @@ bool Domain::PMSuspendForDuration(unsigned target, unsigned long long duration) 
 
 bool Domain::PMWakeup() noexcept { return virDomainPMWakeup(underlying, 0) == 0; }
 
-bool Domain::managedSave(SaveRestoreFlags flags) noexcept { return virDomainManagedSave(underlying, to_integral(flags)) == 0; }
+bool Domain::managedSave(SaveRestoreFlag flags) noexcept { return virDomainManagedSave(underlying, to_integral(flags)) == 0; }
 
-bool Domain::managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlags flags) noexcept {
+bool Domain::managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept {
     return virDomainManagedSaveDefineXML(underlying, dxml, to_integral(flags)) == 0;
 }
 
-[[nodiscard]] UniqueZstring Domain::managedSaveGetXMLDesc(SaveImageXMLFlags flags) const noexcept {
+[[nodiscard]] UniqueZstring Domain::managedSaveGetXMLDesc(SaveImageXMLFlag flags) const noexcept {
     return UniqueZstring{virDomainManagedSaveGetXMLDesc(underlying, to_integral(flags))};
 }
 
-[[nodiscard]] std::string Domain::managedSaveExtractXMLDesc(SaveImageXMLFlags flags) const noexcept {
+[[nodiscard]] std::string Domain::managedSaveExtractXMLDesc(SaveImageXMLFlag flags) const noexcept {
     return {static_cast<const char*>(managedSaveGetXMLDesc(flags))};
 }
 
 bool Domain::managedSaveRemove() noexcept { return virDomainManagedSaveRemove(underlying, 0) == 0; }
 
-bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlags flags) const noexcept {
+bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlag flags) const noexcept {
     return virDomainMemoryPeek(underlying, start, buffer.size(), buffer.data(), to_integral(flags)) == 0;
 }
 
@@ -356,7 +356,7 @@ inline bool Domain::setMemory(unsigned long mem) { return virDomainSetMemory(und
 
 [[nodiscard]] inline bool Domain::isActive() const noexcept { return virDomainIsActive(underlying) != 0; }
 
-inline void Domain::reboot(Domain::ShutdownFlags flags) { virDomainReboot(underlying, to_integral(flags)); }
+inline void Domain::reboot(Domain::ShutdownFlag flags) { virDomainReboot(underlying, to_integral(flags)); }
 
 inline bool Domain::rename(gsl::czstring<> name) { return virDomainRename(underlying, name, 0) == 0; }
 
@@ -368,7 +368,7 @@ inline bool Domain::setAutoStart(bool as) { return virDomainSetAutostart(underly
 
 inline bool Domain::shutdown() noexcept { return virDomainShutdown(underlying) == 0; }
 
-inline bool Domain::shutdown(Domain::ShutdownFlags flags) noexcept { return virDomainShutdownFlags(underlying, to_integral(flags)) == 0; }
+inline bool Domain::shutdown(Domain::ShutdownFlag flags) noexcept { return virDomainShutdownFlags(underlying, to_integral(flags)) == 0; }
 
 inline void Domain::suspend() { virDomainSuspend(underlying); }
 
@@ -382,37 +382,37 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
                    [](const virTypedParameter& tp) { return TypedParameter{tp}; });
 }
 
-[[nodiscard]] constexpr inline Domain::CoreDump::Flags operator|(Domain::CoreDump::Flags lhs, Domain::CoreDump::Flags rhs) noexcept {
-    return Domain::CoreDump::Flags{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept {
+    return Domain::CoreDump::Flag{to_integral(lhs) | to_integral(rhs)};
 }
 
-[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlags operator|(Domain::GetAllDomainStatsFlags lhs,
-                                                                        Domain::GetAllDomainStatsFlags rhs) noexcept {
-    return Domain::GetAllDomainStatsFlags{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs,
+                                                                        Domain::GetAllDomainStatsFlag rhs) noexcept {
+    return Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 
-[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlags operator|=(Domain::GetAllDomainStatsFlags& lhs,
-                                                                         Domain::GetAllDomainStatsFlags rhs) noexcept {
-    return lhs = Domain::GetAllDomainStatsFlags{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs,
+                                                                         Domain::GetAllDomainStatsFlag rhs) noexcept {
+    return lhs = Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 
-[[nodiscard]] constexpr inline Domain::StatsTypes operator|(Domain::StatsTypes lhs, Domain::StatsTypes rhs) noexcept {
-    return Domain::StatsTypes{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept {
+    return Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
 }
 
-[[nodiscard]] constexpr inline Domain::StatsTypes operator|=(Domain::StatsTypes& lhs, Domain::StatsTypes rhs) noexcept {
-    return lhs = Domain::StatsTypes{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept {
+    return lhs = Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
 }
 
-[[nodiscard]] constexpr inline Domain::ModificationImpactFlags operator|(Domain::ModificationImpactFlags lhs,
-                                                                         Domain::ModificationImpactFlags rhs) noexcept {
-    return Domain::ModificationImpactFlags{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
+                                                                         Domain::ModificationImpactFlag rhs) noexcept {
+    return Domain::ModificationImpactFlag{to_integral(lhs) | to_integral(rhs)};
 }
-[[nodiscard]] constexpr inline Domain::VCpuFlags operator|(Domain::VCpuFlags lhs, Domain::VCpuFlags rhs) noexcept {
-    return Domain::VCpuFlags{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept {
+    return Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
 }
-[[nodiscard]] constexpr inline Domain::VCpuFlags operator|=(Domain::VCpuFlags& lhs, Domain::VCpuFlags rhs) noexcept {
-    return lhs = Domain::VCpuFlags{to_integral(lhs) | to_integral(rhs)};
+[[nodiscard]] constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept {
+    return lhs = Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept {
     return Domain::Stats::Types(to_integral(lhs) | to_integral(rhs));
