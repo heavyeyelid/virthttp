@@ -8,6 +8,13 @@ enum class ActionOutcome { SUCCESS, FAILURE, SKIPPED };
 
 class DomainActionsTable {
   private:
+    template <class Flag, class Flags, class Err> constexpr auto genGetFlag(const Flags& flags, Err& error) noexcept {
+        return [&](const rapidjson::Value& json_flag) -> std::optional<Flag> {
+            if (auto v = flags[std::string_view{json_flag.GetString(), json_flag.GetStringLength()}]; v)
+                return std::optional{*v};
+            return error(301, "Invalid flag"), std::nullopt;
+        };
+    }
     using ActionHdl = ActionOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str);
     constexpr static std::array<std::string_view, 5> keys = {"power_mgt", "name", "memory", "max_memory", "autostart"};
     constexpr static std::array<ActionHdl, 5> fcns = {
@@ -32,9 +39,9 @@ class DomainActionsTable {
                 return std::optional{shutdownFlag};
             };
 
-            std::string pm_req{}, json_flag = "default", flag_arr[] = {"default"};
-
+            std::string pm_req{}, json_flag{};
             bool isFlag{};
+
             if (val.IsString()) {
                 pm_req = val.GetString();
                 isFlag = false;
@@ -44,33 +51,47 @@ class DomainActionsTable {
                 if (it_req == val.MemberEnd())
                     return error(300, "Invalid power management value");
                 if (it_flags != val.MemberEnd()) {
-                    if (it_flags->value.IsString())
+                    auto v = &it_flags->value;
+                    isFlag = true;
+                    if (v->IsString())
                         json_flag = it_flags->value.GetString();
-                    else if (it_flags->value.IsArray()) {
-                        auto arr = it_flags->value.GetArray();
-                        int i = 0;
-                        for (auto it = arr.Begin(); it != arr.End(); ++it, i++) {
-                            if (!it->IsString())
-                                return error(301, "Invalid flag");
-                            flag_arr[i] = it->GetString();
-                        }
-                    }
+                    else if (v->IsArray())
+                        // Stuff if flag is an array
+                        ;
+                    else
+                        return error(301, "Invalid flag");
                 }
                 pm_req = it_req->value.GetString();
-                isFlag = true;
             } else {
                 return error(300, "Invalid power management value");
             }
             using namespace std::literals;
             const auto dom_state = virt::Domain::State{dom.getInfo().state};
+
+            // Start specific flag handling to make generic
             if (pm_req == "shutdown"sv) {
                 if (dom_state != virt::Domain::State::RUNNING)
                     return error(201, "Domain is not running");
                 if (isFlag) {
-                    const auto v = getShutdownFlag(json_flag);
-                    if (!v)
-                        return error(301, "Invalid flag");
-                    if (!dom.shutdown(*v)) {
+                    virt::Domain::ShutdownFlag flagset{};
+                    auto it_flags = val.FindMember("type");
+                    if (it_flags != val.MemberEnd()) {
+                        const auto& fl = it_flags->value;
+                        if (fl.IsArray()) {
+                            auto json_arr = it_flags->value.GetArray();
+                            logger.debug("Flag is an array");
+                            for (const auto& json_str : json_arr) {
+                                auto v = getShutdownFlag(json_str.GetString());
+                                if (!v)
+                                    return error(301, "Invalid flag");
+                                flagset |= *v;
+                            }
+                        } else if (fl.IsString()) {
+                            flagset = *getShutdownFlag(fl.GetString());
+                        }
+                    }
+
+                    if (!dom.shutdown(flagset)) {
                         logger.error("Cannot shutdown this domain: ", key_str);
                         return error(200, "Could not shutdown the domain");
                     }
@@ -82,6 +103,8 @@ class DomainActionsTable {
                 }
                 return pm_message("shutdown", "Domain is being shutdown");
             }
+            // End
+
             if (pm_req == "destroy"sv) {
                 if (!dom.isActive())
                     return error(210, "Domain is not active");
@@ -109,6 +132,7 @@ class DomainActionsTable {
                 if (dom.isActive())
                     return error(203, "Domain is already active");
                 if (isFlag) {
+                    logger.debug("Flag is an array");
                     virt::Domain::CreateFlag createFlag;
                     if (std::all_of(json_flag.cbegin(), json_flag.cend(), [&](auto c) { return std::isdigit(c); }))
                         createFlag = virt::Domain::CreateFlag(std::stol(std::string{json_flag}));
