@@ -224,22 +224,22 @@ class Domain {
         FORCE_BOOT = VIR_DOMAIN_START_FORCE_BOOT,
         VALIDATE = VIR_DOMAIN_START_VALIDATE
     };
-    class CreateFlags : public EnumSetHelper<CreateFlags, CreateFlag> {
-        using Base = EnumSetHelper<CreateFlags, CreateFlag>;
+    class CreateFlagsC : public EnumSetHelper<CreateFlagsC, CreateFlag> {
+        using Base = EnumSetHelper<CreateFlagsC, CreateFlag>;
         friend Base;
         constexpr static std::array values = {"paused", "autodestroy", "bypass_cache", "force_boot", "validate"};
     };
-    constexpr static CreateFlags CreateFlags{};
+    constexpr static CreateFlagsC CreateFlags{};
     enum class DestroyFlag {
         DEFAULT = VIR_DOMAIN_DESTROY_DEFAULT,   /* Default behavior - could lead to data loss!! */
         GRACEFUL = VIR_DOMAIN_DESTROY_GRACEFUL, /* only SIGTERM, no SIGKILL */
     };
-    class DestroyFlags : public EnumSetHelper<DestroyFlags, DestroyFlag> {
-        using Base = EnumSetHelper<DestroyFlags, DestroyFlag>;
+    class DestroyFlagsC : public EnumSetHelper<DestroyFlagsC, DestroyFlag> {
+        using Base = EnumSetHelper<DestroyFlagsC, DestroyFlag>;
         friend Base;
         constexpr static std::array values = {"graceful"};
     };
-    constexpr static DestroyFlags DestroyFlags{};
+    constexpr static DestroyFlagsC DestroyFlags{};
     enum class DeviceModifyFlag {
         /* See ModificationImpactFlag for these flags.  */
         CURRENT = VIR_DOMAIN_DEVICE_MODIFY_CURRENT,
@@ -291,12 +291,12 @@ class Domain {
         SIGNAL = VIR_DOMAIN_REBOOT_SIGNAL,                 /* Send a signal */
         PARAVIRT = VIR_DOMAIN_REBOOT_PARAVIRT,             /* Use paravirt guest control */
     };
-    class ShutdownFlags : public EnumSetHelper<ShutdownFlags, ShutdownFlag > {
-        using Base = EnumSetHelper<ShutdownFlags, ShutdownFlag>;
+    class ShutdownFlagsC : public EnumSetHelper<ShutdownFlagsC, ShutdownFlag> {
+        using Base = EnumSetHelper<ShutdownFlagsC, ShutdownFlag>;
         friend Base;
         constexpr static std::array values = {"acpi_power_btn", "guest_agent", "initctl", "signal", "paravirt"};
     };
-    constexpr static ShutdownFlags ShutdownFlags{};
+    constexpr static ShutdownFlagsC ShutdownFlags{};
     struct StateReason {
         enum class NoState {
             UNKNOWN = VIR_DOMAIN_NOSTATE_UNKNOWN, /* the reason is unknown */
@@ -482,19 +482,19 @@ class Domain {
     struct heavy {
         struct IOThreadInfo;
     };
-    class States : public EnumHelper<States, State> {
-        using Base = EnumHelper<States, State>;
+    class StatesC : public EnumHelper<StatesC, State> {
+        using Base = EnumHelper<StatesC, State>;
         friend Base;
         constexpr static std::array values = {"No State",      "Running", "Blocked", "Paused",
                                               "Shutting down", "Shutoff", "Crashed", "Power Management Suspended"};
     };
-    constexpr static States States{};
-    class SaveRestoreFlags : public EnumSetHelper<SaveRestoreFlags, SaveRestoreFlag> {
-        using Base = EnumSetHelper<SaveRestoreFlags, State>;
+    constexpr static StatesC States{};
+    class SaveRestoreFlagsC : public EnumSetHelper<SaveRestoreFlagsC, SaveRestoreFlag> {
+        using Base = EnumSetHelper<SaveRestoreFlagsC, State>;
         friend Base;
         constexpr static std::array values = {"bypass_cache", "running", "paused"};
     };
-    constexpr static SaveRestoreFlags SaveRestoreFlags{};
+    constexpr static SaveRestoreFlagsC SaveRestoreFlags{};
     enum class UndefineFlags {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
         SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain, then also remove any snapshot metadata */
@@ -677,9 +677,9 @@ class Domain {
 
     bool setMemory(unsigned long);
 
-    void reboot(ShutdownFlag flag = ShutdownFlag::DEFAULT);
+    bool reboot(ShutdownFlag flags = ShutdownFlag::DEFAULT);
 
-    void reset();
+    bool reset();
 
     bool rename(gsl::czstring<>);
 
@@ -934,8 +934,7 @@ class Domain::heavy::IOThreadInfo {
 
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs, Domain::GetAllDomainStatsFlag rhs) noexcept;
-constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs,
-                                                                        Domain::GetAllDomainStatsFlag rhs) noexcept;
+constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs, Domain::GetAllDomainStatsFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept;
 constexpr inline Domain::ShutdownFlag operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept;
@@ -945,6 +944,6 @@ constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::St
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept;
 constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
-} // namespace virt
 
 constexpr unsigned to_integral(virt::Domain::SaveRestoreFlag f) noexcept { return virt::impl_to_integral(f); }
+} // namespace virt

@@ -14,7 +14,13 @@
 #define UNREACHABLE ;
 #endif
 
+
 template <class... Ts> void sink(Ts&&... ts) { (static_cast<void>(std::move(ts)), ...); }
+
+template <class Lambda, class... Ts>
+constexpr auto test_sfinae(Lambda lambda, Ts&&...)
+-> decltype(lambda(std::declval<Ts>()...), bool{}) { return true; }
+constexpr bool test_sfinae(...)  { return false; }
 
 template <typename E> constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }
 

@@ -356,11 +356,11 @@ inline bool Domain::setMemory(unsigned long mem) { return virDomainSetMemory(und
 
 [[nodiscard]] inline bool Domain::isActive() const noexcept { return virDomainIsActive(underlying) != 0; }
 
-inline void Domain::reboot(Domain::ShutdownFlag flags) { virDomainReboot(underlying, to_integral(flags)); }
+inline bool Domain::reboot(Domain::ShutdownFlag flags) { return virDomainReboot(underlying, to_integral(flags)) == 0; }
 
 inline bool Domain::rename(gsl::czstring<> name) { return virDomainRename(underlying, name, 0) == 0; }
 
-inline void Domain::reset() { virDomainReset(underlying, 0); }
+inline bool Domain::reset() { return virDomainReset(underlying, 0) == 0; }
 
 inline bool Domain::resume() noexcept { return virDomainResume(underlying) == 0; }
 
