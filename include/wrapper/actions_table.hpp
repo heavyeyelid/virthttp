@@ -21,19 +21,21 @@ class DomainActionsTable {
         auto getFlag = DomainActionsTable::getFlag<F, Fs>;
 
         F flagset{};
-        if constexpr (test_sfinae([](auto f) -> decltype(f | f) {}, F{})) {
-            if (json_flag.IsArray()) {
-                const auto json_arr = json_flag.GetArray();
+        if (json_flag.IsArray()) {
+            const auto json_arr = json_flag.GetArray();
+            if constexpr (test_sfinae([](auto f) -> decltype(f | f) {}, F{})) {
                 for (const auto& json_str : json_arr) {
                     const auto v = getFlag(json_str, error);
                     if (!v)
                         return error(301, "Invalid flag");
                     flagset |= *v;
                 }
-                return {flagset};
+            } else {
+                if(json_arr.Size() > 1)
+                    return error(301, "Invalid flag");
+                return {json_arr.Empty() ? F{} : getFlag(json_arr[0], error)};
             }
-        }
-        if (json_flag.IsString()) {
+        } else if (json_flag.IsString()) {
             const auto v = getFlag(json_flag, error);
             if (!v)
                 return error(301, "Invalid flag");
@@ -146,7 +148,7 @@ class DomainActionsTable {
                         return error(213, "Could not reboot the domain");
 
                 } else {
-                    if(!dom.reboot())
+                    if (!dom.reboot())
                         return error(213, "Could not reboot the domain");
                 }
                 return pm_message("reboot", "Domain is being reboot");
@@ -156,7 +158,7 @@ class DomainActionsTable {
                     return error(210, "Domain is not active");
                 if (json_flag)
                     return error(301, "Invalid flag");
-                if(!dom.reset())
+                if (!dom.reset())
                     return error(214, "Could not reset the domain");
                 return pm_message("reset", "Domain was reset");
             }
