@@ -399,7 +399,7 @@ constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainSt
     return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
 }
 constexpr inline Domain::ShutdownFlag operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept {
-    return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
+    return lhs = Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept {
     return Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
