@@ -44,7 +44,7 @@
 | 300        | Invalid power management value |
 | 301        | Invalid flag |
 
-# Networks
+### Networks
 
 | Error code | Description |
 | ---------- | ----------- |
