@@ -17,9 +17,10 @@ enum class ActionOutcome { SUCCESS, FAILURE, SKIPPED };
 constexpr auto action_scope = [](auto&&... actions) {
     using Arr = std::array<std::function<ActionOutcome()>, sizeof...(actions)>; // pray for SFO ; wait for expansion statements
     for (auto&& action : Arr{actions...}) {
-        if (action() != ActionOutcome::SKIPPED)
-            return;
+        if (const auto ao = action(); ao != ActionOutcome::SKIPPED)
+            return ao;
     }
+    return ActionOutcome::SKIPPED;
 };
 
 class DomainActionsTable {
@@ -128,26 +129,25 @@ class DomainActionsTable {
                 };
             };
             constexpr auto no_flags = tp<Empty, Empty>;
-            action_scope(pm_hdl("shutdown", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.shutdown), 200,
-                                "Could not shutdown the domain", "Domain is being shutdown",
-                                PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
-                         pm_hdl("destroy", tp<virt::Domain::DestroyFlag, virt::Domain::DestroyFlagsC>, PM_LIFT(dom.destroy), 209,
-                                "Could not destroy the domain", "Domain destroyed",
-                                PM_PREREQ(if (!dom.isActive()) return error(210, "Domain is not active");)),
-                         pm_hdl("start", tp<virt::Domain::CreateFlag, virt::Domain::CreateFlagsC>, PM_LIFT(dom.create), 202,
-                                "Could not start the domain", "Domain started",
-                                PM_PREREQ(if (dom.isActive()) return error(203, "Domain is already active");)),
-                         pm_hdl("reboot", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.reboot), 213,
-                                "Could not reboot the domain", "Domain is being rebooted",
-                                PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
-                         pm_hdl("reset", no_flags, PM_LIFT(dom.reset), 214, "Could not reset the Domain", "Domain was reset",
-                                PM_PREREQ(if (!dom.isActive()) return error(210, "Domain is not active");)),
-                         pm_hdl("suspend", no_flags, PM_LIFT(dom.suspend), 215, "Could not suspend the domain", "Domain suspended",
-                                PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
-                         pm_hdl("resume", no_flags, PM_LIFT(dom.resume), 212, "Cannot resume the domain", "Domain resumed",
-                                PM_PREREQ(if (dom_state != virt::Domain::State::PAUSED) return error(211, "Domain is not suspended");)));
-
-            return error(300, "Invalid power management value");
+            return action_scope(pm_hdl("shutdown", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.shutdown), 200,
+                                       "Could not shutdown the domain", "Domain is being shutdown",
+                                       PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
+                                pm_hdl("destroy", tp<virt::Domain::DestroyFlag, virt::Domain::DestroyFlagsC>, PM_LIFT(dom.destroy), 209,
+                                       "Could not destroy the domain", "Domain destroyed",
+                                       PM_PREREQ(if (!dom.isActive()) return error(210, "Domain is not active");)),
+                                pm_hdl("start", tp<virt::Domain::CreateFlag, virt::Domain::CreateFlagsC>, PM_LIFT(dom.create), 202,
+                                       "Could not start the domain", "Domain started",
+                                       PM_PREREQ(if (dom.isActive()) return error(203, "Domain is already active");)),
+                                pm_hdl("reboot", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.reboot), 213,
+                                       "Could not reboot the domain", "Domain is being rebooted",
+                                       PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
+                                pm_hdl("reset", no_flags, PM_LIFT(dom.reset), 214, "Could not reset the Domain", "Domain was reset",
+                                       PM_PREREQ(if (!dom.isActive()) return error(210, "Domain is not active");)),
+                                pm_hdl("suspend", no_flags, PM_LIFT(dom.suspend), 215, "Could not suspend the domain", "Domain suspended",
+                                       PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
+                                pm_hdl("resume", no_flags, PM_LIFT(dom.resume), 212, "Cannot resume the domain", "Domain resumed",
+                                       PM_PREREQ(if (dom_state != virt::Domain::State::PAUSED) return error(211, "Domain is not suspended");)),
+                                [&]() { return error(300, "Invalid power management value"); });
         },
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
