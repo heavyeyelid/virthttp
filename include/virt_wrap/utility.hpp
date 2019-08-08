@@ -16,6 +16,8 @@
 #define UNREACHABLE
 #endif
 
+class Empty {};
+
 template <class... Ts> void sink(Ts&&... ts) { (static_cast<void>(std::move(ts)), ...); }
 
 template <class Lambda, class... Ts> constexpr auto test_sfinae(Lambda lambda, Ts&&...) -> decltype(lambda(std::declval<Ts>()...), bool{}) {
@@ -48,7 +50,7 @@ class EnumSetHelperTag;
 template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
     using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
 
-    constexpr decltype(auto) values() const noexcept { return static_cast<const CRTP&>(*this).values; }
+    constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
   public:
     using Tag = EnumSetHelperTag;
@@ -58,8 +60,8 @@ template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
     }
     [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[sizeof(decltype(val)) * 8 - +val - 1]; }
     [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
-        const auto res = cexpr::find(values().cbegin(), values().cend(), v);
-        return res != values().end() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
+        const auto res = cexpr::find(values().cbegin(), values().end(), v);
+        return res != values().cend() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
     }
 };
 
@@ -296,9 +298,11 @@ auto wrap_opram_owning_set_autodestroyable_arr(U underlying, DataFRet (*data_fcn
 
 template <typename Wrap, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U, typename DataFRet, typename T, typename... DataFArgs>
 auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
-    if constexpr (dtroy == std::destroy_at<Wrap>) {
+#ifndef __GNUC__
+    if constexpr (dtroy == std::destroy_at<Wrap>) { // GNU WARNING: FAILS TO COMPILE ON GCC <= 9.1 DUE TO AN ICE OVER ADRESSES OF TEMPLATED FUNCTIONS
         return wrap_opram_owning_set_autodestroyable_arr<Wrap>(underlying, data_fcn, data_f_args...);
     }
+#endif
 
     using RetType = UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)>;
     Wrap* lease_arr;

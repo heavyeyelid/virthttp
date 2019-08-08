@@ -690,7 +690,7 @@ class Domain {
 
     bool shutdown(ShutdownFlag flag) noexcept;
 
-    void suspend();
+    bool suspend();
 
     bool undefine() noexcept;
 
@@ -928,8 +928,8 @@ class Domain::heavy::IOThreadInfo {
     inline ~IOThreadInfo() = default;
     constexpr unsigned iothread_id() const noexcept { return m_iothread_id; }
     constexpr unsigned& iothread_id() noexcept { return m_iothread_id; }
-    constexpr gsl::span<const unsigned char> cpumap() const noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
-    constexpr gsl::span<unsigned char> cpumap() noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
+    gsl::span<const unsigned char> cpumap() const noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
+    gsl::span<unsigned char> cpumap() noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
 };
 
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept;

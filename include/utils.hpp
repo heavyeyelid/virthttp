@@ -5,22 +5,14 @@
 
 #include <algorithm>
 #include <type_traits>
+#include "virt_wrap/utility.hpp"
 
-#ifdef __GNUC__
-#define UNREACHABLE __builtin_unreachable();
-#elif _MSC_VER
-#define UNREACHABLE __assume(0);
-#else
-#define UNREACHABLE ;
-#endif
+template <class T, class U> struct TypePair {
+    using First = T;
+    using Second = U;
+};
 
-
-template <class... Ts> void sink(Ts&&... ts) { (static_cast<void>(std::move(ts)), ...); }
-
-template <class Lambda, class... Ts>
-constexpr auto test_sfinae(Lambda lambda, Ts&&...)
--> decltype(lambda(std::declval<Ts>()...), bool{}) { return true; }
-constexpr bool test_sfinae(...)  { return false; }
+template <class T, class U> TypePair<T, U> tp{};
 
 template <typename E> constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }
 

@@ -18,8 +18,8 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include <urlparser.hpp>
 #include <vector>
+#include <urlparser.hpp>
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <boost/config.hpp>
