@@ -1,8 +1,8 @@
 #pragma once
 
-#include <rapidxml_ns.hpp>
 #include <string_view>
 #include <gsl/gsl>
+#include <rapidxml_ns.hpp>
 #include "generic.hpp"
 #include "xmlspan.hpp"
 #include "xmlval.hpp"

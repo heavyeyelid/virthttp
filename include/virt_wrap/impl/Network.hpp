@@ -10,9 +10,7 @@
 
 namespace virt {
 
-constexpr inline Network::Network(Network&& net) noexcept : underlying(net.underlying) {
-    net.underlying = nullptr;
-}
+constexpr inline Network::Network(Network&& net) noexcept : underlying(net.underlying) { net.underlying = nullptr; }
 
 inline Network& Network::operator=(Network&& net) noexcept {
     this->~Network();
@@ -49,7 +47,7 @@ inline Network::~Network() noexcept {
 [[nodiscard]] auto Network::extractUUIDString() const -> std::string {
     std::string ret{};
     ret.resize(VIR_UUID_STRING_BUFLEN);
-    if(virNetworkGetUUIDString(underlying, ret.data()) != 0)
+    if (virNetworkGetUUIDString(underlying, ret.data()) != 0)
         return {};
     ret.resize(std::strlen(ret.data()));
     ret.shrink_to_fit();

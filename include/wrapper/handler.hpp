@@ -146,9 +146,9 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 auto [tag_name, tag_uuid, tag_status] = std::make_tuple(target["name"], target["uuid"], target["status"]);
                 if (!tag_status.empty()) {
                     virt::Domain::State status;
-                    if(std::all_of(tag_status.cbegin(), tag_status.cend(), [&](auto c) { return std::isdigit(c); }))
+                    if (std::all_of(tag_status.cbegin(), tag_status.cend(), [&](auto c) { return std::isdigit(c); }))
                         status = virt::Domain::State(std::stol(std::string{tag_status}));
-                    else if(const auto v = virt::Domain::States[tag_status]; v)
+                    else if (const auto v = virt::Domain::States[tag_status]; v)
                         status = *v;
                     else
                         return error(301, "Invalid flag");

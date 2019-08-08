@@ -1,7 +1,7 @@
 #pragma once
 
-#include <rapidxml_ns.hpp>
 #include <string_view>
+#include <rapidxml_ns.hpp>
 
 namespace virtxml {
 using namespace rapidxml_ns;
