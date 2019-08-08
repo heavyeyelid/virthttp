@@ -8,7 +8,6 @@ include_directories (thirdparty/gsl/include
         thirdparty/rapidxml_ns
         thirdparty/rapidjson/include
         include)
-add_executable (virtxml_ag_assist virtxml_autogen_assist.cpp)
 
 include (WA-ICEs) # Workarouds for known ICEs on certain compiler versions
 

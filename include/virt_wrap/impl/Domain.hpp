@@ -370,7 +370,7 @@ inline bool Domain::shutdown() noexcept { return virDomainShutdown(underlying) =
 
 inline bool Domain::shutdown(Domain::ShutdownFlag flags) noexcept { return virDomainShutdownFlags(underlying, to_integral(flags)) == 0; }
 
-inline void Domain::suspend() { virDomainSuspend(underlying); }
+inline bool Domain::suspend() { return virDomainSuspend(underlying) == 0; }
 
 inline bool Domain::undefine() noexcept { return virDomainUndefine(underlying) == 0; }
 

@@ -39,6 +39,7 @@
 | 212        | Cannot resume the domain |
 | 213        | Cannot reboot the domain |
 | 214        | Cannot reset the domain |
+| 215        | Cannot suspend the domain |
 | 298        | PATCH data has to be an array of actions |
 | 300        | Invalid power management value |
 | 301        | Invalid flag |

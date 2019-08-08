@@ -1,12 +1,26 @@
 #pragma once
 #include <array>
+#include <functional>
+#include <string_view>
 #include <gsl/gsl>
 #include "cexpr_algs.hpp"
 #include "json_utils.hpp"
+#include "utils.hpp"
+
+#define PM_LIFT(mem_fn) [&](auto... args) { return mem_fn(args...); }
+#define PM_PREREQ(...) [&] { __VA_ARGS__ return ActionOutcome::SUCCESS; }
 
 using namespace std::literals;
 
 enum class ActionOutcome { SUCCESS, FAILURE, SKIPPED };
+
+constexpr auto action_scope = [](auto&&... actions) {
+    using Arr = std::array<std::function<ActionOutcome()>, sizeof...(actions)>; // pray for SFO ; wait for expansion statements
+    for (auto&& action : Arr{actions...}) {
+        if (action() != ActionOutcome::SUCCESS)
+            return;
+    }
+};
 
 class DomainActionsTable {
   private:
@@ -31,7 +45,7 @@ class DomainActionsTable {
                     flagset |= *v;
                 }
             } else {
-                if(json_arr.Size() > 1)
+                if (json_arr.Size() > 1)
                     return error(301, "Invalid flag");
                 return {json_arr.Empty() ? F{} : getFlag(json_arr[0], error)};
             }
@@ -49,11 +63,10 @@ class DomainActionsTable {
     constexpr static std::array<ActionHdl, 5> fcns = {
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
-            auto pm_message = [&](const std::string& name, const std::string& value) {
+            auto pm_message = [&](gsl::czstring<> name, gsl::czstring<> value) {
                 rapidjson::Value msg_val{};
                 msg_val.SetObject();
-                msg_val.AddMember(rapidjson::Value(name, json_res.GetAllocator()), rapidjson::Value(value, json_res.GetAllocator()),
-                                  json_res.GetAllocator());
+                msg_val.AddMember(rapidjson::StringRef(name), rapidjson::StringRef(value), json_res.GetAllocator());
                 json_res.message(msg_val);
                 return ActionOutcome::SUCCESS;
             };
@@ -79,108 +92,61 @@ class DomainActionsTable {
 
             const auto dom_state = virt::Domain::State{dom.getInfo().state};
 
-            if (pm_req == "shutdown"sv) {
-                if (dom_state != virt::Domain::State::RUNNING)
-                    return error(201, "Domain is not running");
-                if (json_flag) {
-                    const auto o_flagset = getCombinedFlags<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>(*json_flag, json_res);
-                    if (!o_flagset)
-                        return ActionOutcome::FAILURE;
-                    if (const auto flagset = *o_flagset; !dom.shutdown(flagset)) {
-                        logger.error("Cannot shutdown this domain: ", key_str);
-                        return error(200, "Could not shutdown the domain");
-                    }
-                } else {
-                    if (!dom.shutdown()) {
-                        logger.error("Cannot shutdown this domain: ", key_str);
-                        return error(200, "Could not shutdown the domain");
-                    }
-                }
-                return pm_message("shutdown", "Domain is being shutdown");
-            }
+            const auto pm_hdl = [&](gsl::czstring<> req_tag, auto flags, auto mem_fcn, int errc, gsl::czstring<> err_msg, gsl::czstring<> pm_msg,
+                                    auto prereqs) {
+                using Flag = typename decltype(flags)::First;
+                using FlagsC = typename decltype(flags)::Second;
+                return [=, &json_flag, &json_res]() {
+                    const auto local_error = [&] {
+                        logger.error(err_msg, " :", key_str);
+                        return error(errc, err_msg);
+                    };
 
-            if (pm_req == "destroy"sv) {
-                if (!dom.isActive())
-                    return error(210, "Domain is not active");
-                if (json_flag) {
-                    const auto o_flagset = getCombinedFlags<virt::Domain::DestroyFlag, virt::Domain::DestroyFlagsC>(*json_flag, json_res);
-                    if (!o_flagset)
-                        return ActionOutcome::FAILURE;
-                    if (const auto flagset = *o_flagset; !dom.destroy()) {
-                        logger.error("Cannot destroy this domain: ", key_str);
-                        return error(209, "Could not destroy the domain");
+                    if (pm_req == std::string_view{req_tag}) {
+                        if (prereqs() == ActionOutcome::FAILURE)
+                            return ActionOutcome::FAILURE;
+                        if (json_flag) {
+                            if constexpr (test_sfinae([](auto f) -> std::enable_if_t<!std::is_same_v<decltype(f), Empty>> {}, Flag{})) {
+                                constexpr const auto getFlags = getCombinedFlags<Flag, FlagsC>;
+                                const auto o_flagset = getFlags(*json_flag, json_res);
+                                if (!o_flagset)
+                                    return ActionOutcome::FAILURE;
+                                if (const auto flagset = *o_flagset; !mem_fcn(flagset))
+                                    return local_error();
+                            } else
+                                return error(301, "Invalid flag");
+                        } else {
+                            if constexpr (test_sfinae([](auto f) { f(); }, mem_fcn)) {
+                                if (!mem_fcn())
+                                    local_error();
+                            } else
+                                return error(301, "Invalid flag");
+                        }
+                        return pm_message(req_tag, pm_msg);
                     }
-                } else {
-                    if (!dom.shutdown()) {
-                        logger.error("Cannot destroy this domain: ", key_str);
-                        return error(209, "Could not destroy the domain");
-                    }
-                }
-                return pm_message("destroy", "Domain destroyed");
-            }
-            if (pm_req == "start"sv) {
-                if (dom.isActive())
-                    return error(203, "Domain is already active");
-                if (json_flag) {
-                    const auto o_flagset = getCombinedFlags<virt::Domain::CreateFlag, virt::Domain::CreateFlagsC>(*json_flag, json_res);
-                    if (!o_flagset)
-                        return ActionOutcome::FAILURE;
-                    if (const auto flagset = *o_flagset; !dom.create(flagset)) {
-                        logger.error("Cannot start this domain: ", key_str);
-                        return error(202, "Could not start the domain");
-                    }
-                } else {
-                    if (!dom.create()) {
-                        logger.error("Cannot start this domain: ", key_str);
-                        return error(202, "Could not start the domain");
-                    }
-                }
-                return pm_message("start", "Domain started");
-            }
-            if (pm_req == "reboot"sv) {
-                if (dom_state != virt::Domain::State::RUNNING)
-                    return error(201, "Domain is not running");
-                if (json_flag) {
-                    const auto o_flagset = getCombinedFlags<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>(*json_flag, json_res);
-                    if (!o_flagset)
-                        return ActionOutcome::FAILURE;
-                    if (const auto flagset = *o_flagset; !dom.reboot(flagset))
-                        return error(213, "Could not reboot the domain");
+                    return ActionOutcome::SUCCESS;
+                };
+            };
+            constexpr auto no_flags = tp<Empty, Empty>;
+            action_scope(pm_hdl("shutdown", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.shutdown), 200,
+                                "Could not shutdown the domain", "Domain is being shutdown",
+                                PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
+                         pm_hdl("destroy", tp<virt::Domain::DestroyFlag, virt::Domain::DestroyFlagsC>, PM_LIFT(dom.destroy), 209,
+                                "Could not destroy the domain", "Domain destroyed",
+                                PM_PREREQ(if (!dom.isActive()) return error(210, "Domain is not active");)),
+                         pm_hdl("start", tp<virt::Domain::CreateFlag, virt::Domain::CreateFlagsC>, PM_LIFT(dom.create), 202,
+                                "Could not start the domain", "Domain started",
+                                PM_PREREQ(if (dom.isActive()) return error(203, "Domain is already active");)),
+                         pm_hdl("reboot", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.reboot), 213,
+                                "Could not reboot the domain", "Domain is being rebooted",
+                                PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
+                         pm_hdl("reset", no_flags, PM_LIFT(dom.reset), 214, "Could not reset the Domain", "Domain was reset",
+                                PM_PREREQ(if (!dom.isActive()) return error(210, "Domain is not active");)),
+                         pm_hdl("suspend", no_flags, PM_LIFT(dom.suspend), 215, "Could not suspend the domain", "Domain suspended",
+                                PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201, "Domain is not running");)),
+                         pm_hdl("resume", no_flags, PM_LIFT(dom.resume), 212, "Cannot resume the domain", "Domain resumed",
+                                PM_PREREQ(if (dom_state != virt::Domain::State::PAUSED) return error(211, "Domain is not suspended");)));
 
-                } else {
-                    if (!dom.reboot())
-                        return error(213, "Could not reboot the domain");
-                }
-                return pm_message("reboot", "Domain is being reboot");
-            }
-            if (pm_req == "reset"sv) {
-                if (!dom.isActive())
-                    return error(210, "Domain is not active");
-                if (json_flag)
-                    return error(301, "Invalid flag");
-                if (!dom.reset())
-                    return error(214, "Could not reset the domain");
-                return pm_message("reset", "Domain was reset");
-            }
-            if (pm_req == "suspend"sv) {
-                if (dom_state != virt::Domain::State::RUNNING)
-                    return error(201, "Domain is not running");
-                if (json_flag)
-                    return error(301, "Invalid flag");
-                dom.suspend();
-                return pm_message("suspend", "Domain suspended");
-            }
-            if (pm_req == "resume"sv) {
-                if (dom_state != virt::Domain::State::PAUSED)
-                    return error(211, "Domain is not suspended");
-                if (json_flag)
-                    return error(301, "Invalid flag");
-                if (!dom.resume()) {
-                    logger.error("Cannot resume this domain: ", key_str);
-                    return error(212, "Cannot resume the domain");
-                }
-                return pm_message("resume", "Domain resumed");
-            }
             return error(300, "Invalid power management value");
         },
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
