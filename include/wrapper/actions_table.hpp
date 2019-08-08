@@ -17,7 +17,7 @@ enum class ActionOutcome { SUCCESS, FAILURE, SKIPPED };
 constexpr auto action_scope = [](auto&&... actions) {
     using Arr = std::array<std::function<ActionOutcome()>, sizeof...(actions)>; // pray for SFO ; wait for expansion statements
     for (auto&& action : Arr{actions...}) {
-        if (action() != ActionOutcome::SUCCESS)
+        if (action() != ActionOutcome::SKIPPED)
             return;
     }
 };
@@ -124,7 +124,7 @@ class DomainActionsTable {
                         }
                         return pm_message(req_tag, pm_msg);
                     }
-                    return ActionOutcome::SUCCESS;
+                    return ActionOutcome::SKIPPED;
                 };
             };
             constexpr auto no_flags = tp<Empty, Empty>;
