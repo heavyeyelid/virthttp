@@ -29,7 +29,8 @@ class Error {
     Level level;
     std::string message;
 
-    explicit Error(virErrorPtr p) : code(Code((p ? p->code : 0))), level(p ? p->level : Level(0)), message(p ? p->message : nullptr) {}
+    inline explicit Error(virErrorPtr p) : code(Code((p ? p->code : 0))), level(p ? p->level : Level(0)), message(p ? p->message : nullptr) {}
+    inline explicit operator bool() const noexcept { return message.c_str() != nullptr; }
     friend Error extractLastError();
 };
 
