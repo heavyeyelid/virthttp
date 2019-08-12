@@ -109,10 +109,10 @@ class alignas(alignof(char*)) UniqueZstring {
         return *this;
     };
 
-    inline auto begin() const noexcept { return std::string_view{ptr}.begin(); }
-    inline auto end() const noexcept { return std::string_view{ptr}.end(); }
-    inline auto cbegin() const noexcept { return std::string_view{ptr}.cbegin(); }
-    inline auto cend() const noexcept { return std::string_view{ptr}.cend(); }
+    [[nodiscard]] inline auto begin() const noexcept { return std::string_view{ptr}.begin(); }
+    [[nodiscard]] inline auto end() const noexcept { return std::string_view{ptr}.end(); }
+    [[nodiscard]] inline auto cbegin() const noexcept { return std::string_view{ptr}.cbegin(); }
+    [[nodiscard]] inline auto cend() const noexcept { return std::string_view{ptr}.cend(); }
 
     constexpr inline explicit operator const char*() const noexcept { return ptr; }
     constexpr inline explicit operator char*() noexcept { return ptr; }
@@ -298,7 +298,7 @@ auto wrap_opram_owning_set_autodestroyable_arr(U underlying, DataFRet (*data_fcn
 
 template <typename Wrap, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U, typename DataFRet, typename T, typename... DataFArgs>
 auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
-    if constexpr (dtroy == std::destroy_at<Wrap>) { // GNU WARNING: FAILS TO COMPILE ON GCC <= 9.1 DUE TO AN ICE OVER ADRESSES OF TEMPLATED FUNCTIONS
+    if constexpr (dtroy == std::destroy_at<Wrap>) { // GNU WARNING: FAILS TO COMPILE ON GCC <= 9.1 DUE TO AN ICE OVER ADDRESSES OF TEMPLATED FUNCTIONS
         return wrap_opram_owning_set_autodestroyable_arr<Wrap>(underlying, data_fcn, data_f_args...);
     }
 
