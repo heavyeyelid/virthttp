@@ -63,6 +63,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virtxml/xmlval.hpp
             include/wrapper/actions_table.hpp
             include/wrapper/config.hpp
+            include/wrapper/error_msg.hpp
             include/wrapper/handler.hpp
             include/virt_wrap.hpp
             include/logger.hpp
@@ -70,7 +71,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp)
+            include/urlparser.hpp )
 
     target_link_libraries(HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
