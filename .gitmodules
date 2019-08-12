@@ -1,6 +1,6 @@
-[submodule "third-party/gsl"]
-	path = thirdparty/gsl
-	url = https://github.com/microsoft/GSL.git
+[submodule "docs"]
+	path = docs
+	url = https://github.com/ShinoYasx/HeavyEyelid.wiki.git
 [submodule "thirdparty/rapidxml_ns"]
 	path = thirdparty/rapidxml_ns
 	url = https://github.com/svgpp/rapidxml_ns.git
@@ -16,6 +16,6 @@
 [submodule "thirdparty/ctre"]
 	path = thirdparty/ctre
 	url = https://github.com/hanickadot/compile-time-regular-expressions
-[submodule "docs"]
-	path = docs
-	url = https://github.com/ShinoYasx/HeavyEyelid.wiki.git
+[submodule "thirdparty/gsl"]
+	path = thirdparty/gsl
+	url = https://github.com/microsoft/GSL
