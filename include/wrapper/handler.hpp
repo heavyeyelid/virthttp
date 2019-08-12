@@ -9,8 +9,8 @@
 #include "virt_wrap.hpp"
 
 #include "actions_table.hpp"
-#include "json_utils.hpp"
 #include "fwd.hpp"
+#include "json_utils.hpp"
 #include "logger.hpp"
 #include "urlparser.hpp"
 
@@ -76,40 +76,13 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             case http::verb::patch: {
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
-                if (!json_req.IsArray())
-                    return error(298);
+                using Member = rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<>>;
 
-                std::vector<ActionOutcome> outcomes{};
-                outcomes.reserve(json_req.Size());
-                for (const auto& action : json_req.GetArray()) {
-                    const auto curr_idx = outcomes.size();
-                    const auto& action_obj = *action.MemberBegin();
-                    const auto& [action_name, action_val] = action_obj;
-
-                    if ([&]() noexcept {
-                            const auto it = action.FindMember("depends");
-                            if (it == action.MemberEnd())
-                                return true;
-
-                            const auto& json_deps = it->value;
-                            auto success_pred = [&](const auto& dep) {
-                                if (!dep.IsInt() || dep.GetInt() >= curr_idx || outcomes[dep.GetInt()] != ActionOutcome::SUCCESS)
-                                    return outcomes.push_back(ActionOutcome::SKIPPED), false;
-                                return true;
-                            };
-                            if (json_deps.IsArray()) {
-                                const auto deps_arr = json_deps.GetArray();
-                                return std::all_of(deps_arr.begin(), deps_arr.end(), success_pred);
-                            }
-                            if (json_deps.IsInt()) {
-                                return success_pred(json_deps);
-                            }
-                            return error(0), outcomes.push_back(ActionOutcome::FAILURE), false;
-                        }()) {
-                        const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-                        outcomes.push_back(hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), ActionOutcome::FAILURE));
-                    }
-                }
+                handle_depends(json_req, json_res, [&](const Member& obj){
+                  const auto& [action_name, action_val] = obj;
+                  const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
+                  return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), ActionOutcome::FAILURE);
+                });
             } break;
             case http::verb::get: {
                 rapidjson::Value res_val;

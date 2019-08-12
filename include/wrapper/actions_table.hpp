@@ -5,6 +5,7 @@
 #include <gsl/gsl>
 #include "cexpr_algs.hpp"
 #include "json_utils.hpp"
+#include "depends.hpp"
 #include "utils.hpp"
 
 #define PM_LIFT(mem_fn) [&](auto... args) { return mem_fn(args...); }
@@ -12,7 +13,7 @@
 
 using namespace std::literals;
 
-enum class ActionOutcome { SUCCESS, FAILURE, SKIPPED };
+using ActionOutcome = DependsOutcome;
 
 constexpr auto action_scope = [](auto&&... actions) {
     using Arr = std::array<std::function<ActionOutcome()>, sizeof...(actions)>; // pray for SFO ; wait for expansion statements

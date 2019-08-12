@@ -17,7 +17,7 @@ IncludeCategories:
     Priority:        -4
   - Regex:           '<[[:alnum:].\/]+>'
     Priority:        -3
-  - Regex:           '"[[:alnum:].]+"'
+  - Regex:           '"[[:alnum:]._]+"'
     Priority:        -1
   - Regex:           '.*'
     Priority:        -2

@@ -37,6 +37,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
 
     add_executable(HE_debug
             main.cpp
+            src/wrapper/depends.cpp
             include/wrapper/http_wrapper.hpp
             include/utils.hpp
             include/virt_wrap/AdminConnection.hpp
@@ -63,6 +64,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virtxml/xmlval.hpp
             include/wrapper/actions_table.hpp
             include/wrapper/config.hpp
+            include/wrapper/depends.hpp
             include/wrapper/error_msg.hpp
             include/wrapper/handler.hpp
             include/virt_wrap.hpp
@@ -71,7 +73,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp )
+            include/urlparser.hpp)
 
     target_link_libraries(HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
