@@ -171,7 +171,7 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
 
     auto req_method = req.method();
 
-    auto buffer = handle_json(std::move(req));
+    auto buffer = handle_json(req);
 
     // Build the path to the requested file
     /*
@@ -197,21 +197,27 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
     auto const size = body.size();
     */
 
+    const auto forward_packid = [&](auto& res) noexcept {
+        if (const auto pakid = req["X-Packet-ID"]; !pakid.empty())
+            res.set("X-Packet-ID", pakid);
+    };
+
     // Respond to HEAD request
     if (req_method == http::verb::head) {
         http::response<http::empty_body> res{http::status::ok, req.version()};
         res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(http::field::content_type, "application/json");
+        forward_packid(res);
         res.content_length(std::size_t{buffer.GetSize()});
         res.keep_alive(req.keep_alive());
         return send(std::move(res));
     }
 
-    // Respond to GET request
     http::response<http::string_body> res{http::status::ok, req.version()};
     res.body() = std::string{buffer.GetString()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, "application/json");
+    forward_packid(res);
     res.content_length(std::size_t{buffer.GetSize()});
     res.keep_alive(req.keep_alive());
     return send(std::move(res));

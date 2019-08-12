@@ -19,7 +19,7 @@ namespace http = beast::http;
 
 constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
 
-template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http::request<Body, http::basic_fields<Allocator>>&& req) {
+template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const http::request<Body, http::basic_fields<Allocator>>& req) {
     auto target = TargetParser{bsv2stdsv(req.target())};
 
     enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
