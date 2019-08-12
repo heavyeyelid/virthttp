@@ -76,12 +76,12 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             case http::verb::patch: {
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
-                using Member = rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<>>;
 
-                handle_depends(json_req, json_res, [&](const Member& obj){
-                  const auto& [action_name, action_val] = obj;
-                  const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-                  return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), ActionOutcome::FAILURE);
+                handle_depends(json_req, json_res, [&](const rapidjson::Value& action) {
+                    const auto& action_obj = *action.MemberBegin();
+                    const auto& [action_name, action_val] = action_obj;
+                    const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
+                    return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), ActionOutcome::FAILURE);
                 });
             } break;
             case http::verb::get: {
@@ -162,16 +162,30 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             case http::verb::post: {
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
-                if (json_req.IsString()) { // Assuming the string contains the xml
-                    const auto dom = virt::Domain::createXML(conn, json_req.GetString());
-                    if (!dom)
-                        return error(105);
-                    rapidjson::Value res_val;
-                    res_val.SetObject();
-                    res_val.AddMember("created", true, json_res.GetAllocator());
-                    json_res.result(std::move(res_val));
-                } else
-                    error(0);
+
+                auto handle_creation = [&](const rapidjson::Value& obj, bool known_str = false, bool known_obj = false) {
+                    if (known_str || obj.IsString()) {
+                        const auto dom = virt::Domain::createXML(conn, json_req.GetString());
+                        if (!dom)
+                            return error(105), DependsOutcome::FAILURE;
+                        rapidjson::Value res_val;
+                        res_val.SetObject();
+                        res_val.AddMember("created", true, json_res.GetAllocator());
+                        json_res.result(std::move(res_val));
+                        return DependsOutcome::SUCCESS;
+                    }
+                    if (obj.IsObject())
+                        return error(-1), DependsOutcome::FAILURE;
+                    return error(0), DependsOutcome::FAILURE;
+                };
+
+                if (json_req.IsString())
+                    return (void)handle_creation(json_req, true);
+                if (json_req.IsObject())
+                    return (void)handle_creation(json_req, false, true);
+                if (json_req.IsArray())
+                    return (void)handle_depends(json_req, json_res, [&](const rapidjson::Value& obj) { return handle_creation(obj); });
+
             } break;
             default: {
             }

@@ -8,6 +8,7 @@ using namespace std::literals;
 class ErrorMessages {
     using P = std::pair<int, std::string_view>;
     constexpr static std::array pairs = {
+        P{-1, "Unsupported"sv},
         P{0, "Syntax error"sv},
         P{1, "Bad X-Auth-Key"sv},
         P{2, "Bad URL"sv},

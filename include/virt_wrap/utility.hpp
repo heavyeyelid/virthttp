@@ -6,7 +6,9 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <optional>
 #include <type_traits>
+#include <gsl/gsl>
 
 #ifdef __GNUC__
 #define UNREACHABLE __builtin_unreachable()

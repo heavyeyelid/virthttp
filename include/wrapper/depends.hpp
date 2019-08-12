@@ -18,9 +18,7 @@ template <typename Hdl> void handle_depends(const rapidjson::Value& json_req, Js
     outcomes.reserve(json_req.Size());
 
     for (const auto& action : json_req.GetArray()) {
-        const auto& action_obj = *action.MemberBegin();
-
         if (check_depends(action, outcomes, json_res))
-            outcomes.push_back(hdl(action_obj));
+            outcomes.push_back(hdl(action));
     }
 }
