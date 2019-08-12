@@ -48,6 +48,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/tfe.hpp
             include/virt_wrap/type_ops.hpp
             include/virt_wrap/utility.hpp
+            include/virt_wrap/Error.hpp
             include/virt_wrap/Network.hpp
             include/virt_wrap/NodeDevice.hpp
             include/virt_wrap/impl/Connection.hpp
