@@ -16,6 +16,7 @@ class ErrorMessages {
         P{101, "Cannot find domain with a such UUID"sv},
         P{102, "No UUID specified"sv},
         P{103, "No name specified"sv},
+        P{105, "Failed to create domain"sv},
         P{122, "Bad action"sv},
         P{123, "Unknown action"sv},
         P{200, "Could not shut down the domain"sv},

@@ -51,7 +51,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         return true;
     };
 
-    auto domains = [&](const virt::Connection& conn) {
+    auto domains = [&](virt::Connection conn) {
         if (!getSearchKey("domains"))
             return;
 
@@ -124,13 +124,15 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
                 res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
 
-                json_res.result(res_val);
+                json_res.result(std::move(res_val));
             } break;
             default: {
             }
             }
         } else {
-            if (req.method() == http::verb::get) {
+            switch (req.method()) {
+            case http::verb::get: {
+                /* Filters extraction */
                 auto flags = virt::Connection::List::Domains::Flags::DEFAULT;
                 if (auto activity = target.getBool("active"); activity)
                     flags |= *activity ? virt::Connection::List::Domains::Flags::ACTIVE : virt::Connection::List::Domains::Flags::INACTIVE;
@@ -174,6 +176,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
                     res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
+                    /* Manual filters application */
                     if (!tag_name.empty() && tag_name != dom.getName())
                         continue;
                     if (!tag_uuid.empty() && tag_uuid != dom.extractUUIDString())
@@ -182,11 +185,28 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                         continue;
                     json_res.result(res_val);
                 }
+            } break;
+            case http::verb::post: {
+                rapidjson::Document json_req{};
+                json_req.Parse(req.body().data());
+                if (json_req.IsString()) { // Assuming the string contains the xml
+                    const auto dom = virt::Domain::createXML(conn, json_req.GetString());
+                    if (!dom)
+                        return error(105);
+                    rapidjson::Value res_val;
+                    res_val.SetObject();
+                    res_val.AddMember("created", true, json_res.GetAllocator());
+                    json_res.result(std::move(res_val));
+                } else
+                    error(0);
+            } break;
+            default: {
+            }
             }
         }
     };
 
-    auto networks = [&](const virt::Connection& conn) {
+    auto networks = [&](virt::Connection&& conn) {
         if (!getSearchKey("networks"))
             return;
         switch (req.method()) {
@@ -288,7 +308,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
     }();
 
     rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<>> writer(buffer);
+    using UTF8_Writer = rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<>>;
+    UTF8_Writer writer(buffer);
     json_res.Accept(writer);
 
     return buffer;

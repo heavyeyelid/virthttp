@@ -24,6 +24,7 @@
 | 101        | Cannot find domain with a such UUID |
 | 102        | No UUID specified |
 | 103        | No name specified |
+| 105        | Failed to create domain |
 | 200        | Could not shut down the domain |
 | 201        | Domain is not running |
 | 202        | Could not start the domain |
