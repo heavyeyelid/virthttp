@@ -1,7 +1,7 @@
 #pragma once
 
-#include <rapidxml_ns.hpp>
 #include <gsl/gsl>
+#include <rapidxml_ns.hpp>
 #include "generic.hpp"
 
 namespace virtxml {

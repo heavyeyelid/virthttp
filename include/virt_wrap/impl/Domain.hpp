@@ -387,12 +387,11 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
 }
 
 [[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs,
-                                                                        Domain::GetAllDomainStatsFlag rhs) noexcept {
+                                                                       Domain::GetAllDomainStatsFlag rhs) noexcept {
     return Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 
-constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs,
-                                                                         Domain::GetAllDomainStatsFlag rhs) noexcept {
+constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs, Domain::GetAllDomainStatsFlag rhs) noexcept {
     return lhs = Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept {
@@ -410,7 +409,7 @@ constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::St
 }
 
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
-                                                                         Domain::ModificationImpactFlag rhs) noexcept {
+                                                                        Domain::ModificationImpactFlag rhs) noexcept {
     return Domain::ModificationImpactFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept {

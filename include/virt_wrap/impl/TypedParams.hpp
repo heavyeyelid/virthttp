@@ -61,13 +61,12 @@ void TypedParams::add(gsl::czstring<> name, gsl::czstring<> czs) { virTypedParam
 
 void TypedParams::add(const TypedParameter& tp) {
     const auto name = tp.first.data();
-    std::visit(
-        Visitor{// I hate when I can't just lift a member overload set
-                // //C++2a: TODO change captures to [=, this]
-                [&, this](int v) { add(name, v); }, [&, this](unsigned v) { add(name, v); }, [&, this](long long v) { add(name, v); },
-                [&, this](unsigned long long v) { add(name, v); }, [&, this](double v) { add(name, v); }, [&, this](bool v) { add(name, v); },
-                [&, this](std::string v) { add(name, v.c_str()); }},
-        tp.second);
+    std::visit(Visitor{// I hate when I can't just lift a member overload set
+                       // //C++2a: TODO change captures to [=, this]
+                       [&, this](int v) { add(name, v); }, [&, this](unsigned v) { add(name, v); }, [&, this](long long v) { add(name, v); },
+                       [&, this](unsigned long long v) { add(name, v); }, [&, this](double v) { add(name, v); }, [&, this](bool v) { add(name, v); },
+                       [&, this](std::string v) { add(name, v.c_str()); }},
+               tp.second);
 }
 
 template <typename T> T TypedParams::get(gsl::czstring<> name) const {

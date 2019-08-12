@@ -50,7 +50,7 @@ class EnumSetHelperTag;
 template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
     using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
 
-    constexpr decltype(auto) values() const noexcept { return static_cast<const CRTP&>(*this).values; }
+    constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
   public:
     using Tag = EnumSetHelperTag;
@@ -60,8 +60,8 @@ template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
     }
     [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[sizeof(decltype(val)) * 8 - +val - 1]; }
     [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
-        const auto res = cexpr::find(values().cbegin(), values().cend(), v);
-        return res != values().end() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
+        const auto res = cexpr::find(values().cbegin(), values().end(), v);
+        return res != values().cend() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
     }
 };
 

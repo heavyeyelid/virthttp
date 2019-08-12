@@ -6,11 +6,11 @@
 
 #include <algorithm>
 #include <cstring>
+#include <string_view>
+#include <vector>
 #include <ctll.hpp>
 #include <ctre.hpp>
 #include <flatmap.hpp>
-#include <string_view>
-#include <vector>
 
 constexpr auto target_pattern = ctll::fixed_string{R"(^($|/[^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
 
@@ -86,13 +86,13 @@ class TargetParser {
 
     constexpr std::optional<bool> getBool(std::string_view key) const noexcept {
         const auto val = (*this)[key];
-        if(val.data() == nullptr)
+        if (val.data() == nullptr)
             return std::nullopt;
-        if(val.empty())
+        if (val.empty())
             return true;
-        if(val == "1" || val == "yes" || val == "true")
+        if (val == "1" || val == "yes" || val == "true")
             return true;
-        if(val == "0" || val == "no" || val == "false")
+        if (val == "0" || val == "no" || val == "false")
             return false;
         return std::nullopt;
     }

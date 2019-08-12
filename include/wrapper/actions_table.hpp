@@ -42,7 +42,7 @@ class DomainActionsTable {
                 for (const auto& json_str : json_arr) {
                     const auto v = getFlag(json_str, error);
                     if (!v)
-                        return error(301, "Invalid flag");
+                        return std::nullopt;
                     flagset |= *v;
                 }
             } else {
@@ -53,7 +53,7 @@ class DomainActionsTable {
         } else if (json_flag.IsString()) {
             const auto v = getFlag(json_flag, error);
             if (!v)
-                return error(301, "Invalid flag");
+                return std::nullopt;
             flagset = *v;
         }
         return {flagset};

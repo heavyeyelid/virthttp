@@ -1,29 +1,29 @@
-cmake_minimum_required (VERSION 3.12)
-project (HeavyEyelid)
+cmake_minimum_required(VERSION 3.12)
+project(HeavyEyelid)
 
-set (CMAKE_CXX_STANDARD 17)
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
 
-include_directories (thirdparty/gsl/include
+include_directories(thirdparty/gsl/include
         thirdparty/rapidxml_ns
         thirdparty/rapidjson/include
         include)
 
-include (WA-ICEs) # Workarouds for known ICEs on certain compiler versions
+include(WA-ICEs) # Workarouds for known ICEs on certain compiler versions
 
 if (!MACOS AND !MINGW)
-    set (CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif ()
 
-find_package (Boost 1.66
+find_package(Boost 1.66
         REQUIRED
         COMPONENTS system)
 
-find_package (LibVirt
+find_package(LibVirt
         REQUIRED)
 
 if (Boost_FOUND AND LibVirt_FOUND)
-    include_directories (${Boost_INCLUDE_DIRS} ${LibVirt_INCLUDE_DIRS}
+    include_directories(${Boost_INCLUDE_DIRS} ${LibVirt_INCLUDE_DIRS}
             thirdparty/lift/include
             thirdparty/inih
             thirdparty/ctre/include
@@ -31,11 +31,11 @@ if (Boost_FOUND AND LibVirt_FOUND)
 
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_compile_options("-O3")
-        add_compile_options ("-mtune=native")
-        add_compile_options ("-g")
-    endif()
+        add_compile_options("-mtune=native")
+        add_compile_options("-g")
+    endif ()
 
-    add_executable (HE_debug
+    add_executable(HE_debug
             main.cpp
             include/wrapper/http_wrapper.hpp
             include/utils.hpp
@@ -72,8 +72,8 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/json_utils.hpp
             include/urlparser.hpp)
 
-    target_link_libraries (HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread )
+    target_link_libraries(HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
-        target_link_libraries (HE_debug Ws2_32.lib WSock32.lib)
+        target_link_libraries(HE_debug Ws2_32.lib WSock32.lib)
     endif ()
 endif ()
