@@ -9,19 +9,17 @@
 #include "utils.hpp"
 
 #define PM_LIFT(mem_fn) [&](auto... args) { return mem_fn(args...); }
-#define PM_PREREQ(...) [&] { __VA_ARGS__ return ActionOutcome::SUCCESS; }
+#define PM_PREREQ(...) [&] { __VA_ARGS__ return DependsOutcome::SUCCESS; }
 
 using namespace std::literals;
 
-using ActionOutcome = DependsOutcome;
-
 constexpr auto action_scope = [](auto&&... actions) {
-    using Arr = std::array<std::function<ActionOutcome()>, sizeof...(actions)>; // pray for SFO ; wait for expansion statements
+    using Arr = std::array<std::function<DependsOutcome()>, sizeof...(actions)>; // pray for SFO ; wait for expansion statements
     for (auto&& action : Arr{actions...}) {
-        if (const auto ao = action(); ao != ActionOutcome::SKIPPED)
+        if (const auto ao = action(); ao != DependsOutcome::SKIPPED)
             return ao;
     }
-    return ActionOutcome::SKIPPED;
+    return DependsOutcome::SKIPPED;
 };
 
 class DomainActionsTable {
@@ -60,17 +58,17 @@ class DomainActionsTable {
         return {flagset};
     }
 
-    using ActionHdl = ActionOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str);
+    using ActionHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str);
     constexpr static std::array<std::string_view, 5> keys = {"power_mgt", "name", "memory", "max_memory", "autostart"};
     constexpr static std::array<ActionHdl, 5> fcns = {
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
-            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             auto pm_message = [&](gsl::czstring<> name, gsl::czstring<> value) {
                 rapidjson::Value msg_val{};
                 msg_val.SetObject();
                 msg_val.AddMember(rapidjson::StringRef(name), rapidjson::StringRef(value), json_res.GetAllocator());
                 json_res.message(msg_val);
-                return ActionOutcome::SUCCESS;
+                return DependsOutcome::SUCCESS;
             };
 
             constexpr auto getShutdownFlag = getFlag<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>;
@@ -105,14 +103,14 @@ class DomainActionsTable {
                     };
 
                     if (pm_req == std::string_view{req_tag}) {
-                        if (prereqs() == ActionOutcome::FAILURE)
-                            return ActionOutcome::FAILURE;
+                        if (prereqs() == DependsOutcome::FAILURE)
+                            return DependsOutcome::FAILURE;
                         if (json_flag) {
                             if constexpr (test_sfinae([](auto f) -> std::enable_if_t<!std::is_same_v<decltype(f), Empty>> {}, Flag{})) {
                                 constexpr const auto getFlags = getCombinedFlags<Flag, FlagsC>;
                                 const auto o_flagset = getFlags(*json_flag, json_res);
                                 if (!o_flagset)
-                                    return ActionOutcome::FAILURE;
+                                    return DependsOutcome::FAILURE;
                                 if (const auto flagset = *o_flagset; !mem_fcn(flagset))
                                     return local_error();
                             } else
@@ -126,7 +124,7 @@ class DomainActionsTable {
                         }
                         return pm_message(req_tag, pm_msg);
                     }
-                    return ActionOutcome::SKIPPED;
+                    return DependsOutcome::SKIPPED;
                 };
             };
             constexpr auto no_flags = tp<Empty, Empty>;
@@ -146,37 +144,37 @@ class DomainActionsTable {
                        PM_PREREQ(if (dom_state != virt::Domain::State::PAUSED) return error(211);)),
                 [&]() { return error(300); });
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
-            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsString())
                 return error(0);
             if (!dom.rename(val.GetString()))
                 return error(205);
-            return ActionOutcome::SUCCESS;
+            return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
-            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsInt())
                 return error(0);
             if (!dom.setMemory(val.GetInt()))
                 return error(206);
-            return ActionOutcome::SUCCESS;
+            return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
-            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsInt())
                 return error(0);
             if (!dom.setMaxMemory(val.GetInt()))
                 return error(207);
-            return ActionOutcome::SUCCESS;
+            return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> ActionOutcome {
-            auto error = [&](auto... args) { return json_res.error(args...), ActionOutcome::FAILURE; };
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsBool())
                 return error(0);
             if (!dom.setAutoStart(val.GetBool()))
                 return error(208);
-            return ActionOutcome::SUCCESS;
+            return DependsOutcome::SUCCESS;
         },
     };
 
@@ -192,7 +190,7 @@ class DomainActionsTable {
 
 class DomainQueryTable {
   private:
-    using ActionHdl = ActionOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, const virt::Domain& dom, const std::string& key_str);
+    using ActionHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, const virt::Domain& dom, const std::string& key_str);
     constexpr static std::array<std::string_view, 0> keys = {};
     constexpr static std::array<ActionHdl, 0> fcns = {};
 

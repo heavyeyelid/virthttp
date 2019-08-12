@@ -3,6 +3,8 @@
 
 bool check_depends(const rapidjson::Value& json, std::vector<DependsOutcome>& outcomes, JsonRes& json_res) noexcept {
     auto error = [&](auto... args) { return json_res.error(args...); };
+    if (!json.IsObject())
+        return true;
     const auto it = json.FindMember("depends");
     if (it == json.MemberEnd())
         return true;

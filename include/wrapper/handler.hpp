@@ -8,6 +8,7 @@
 #include <rapidjson/document.h>
 #include "virt_wrap.hpp"
 
+#include "handlers/domain.hpp"
 #include "actions_table.hpp"
 #include "fwd.hpp"
 #include "json_utils.hpp"
@@ -25,7 +26,6 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
     enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
 
     JsonRes json_res{};
-
     std::string key_str{};
 
     auto error = [&](auto... args) { return json_res.error(args...); };
@@ -51,12 +51,16 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         return true;
     };
 
-    auto domains = [&](virt::Connection conn) {
+    auto domains = [&](virt::Connection&& conn) {
+        HandlerContext hdl_ctx{conn, json_res, key_str};
+        virt::Domain dom{};
+        DomainHandlers hdls{hdl_ctx, dom};
+
         if (!getSearchKey("domains"))
             return;
 
         if (search_key != SearchKey::none) {
-            virt::Domain dom{};
+
             if (search_key == SearchKey::by_name) {
                 logger.debug("Getting domain by name");
                 dom = conn.domainLookupByName(key_str.c_str());
@@ -76,13 +80,10 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             case http::verb::patch: {
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
-
-                handle_depends(json_req, json_res, [&](const rapidjson::Value& action) {
-                    const auto& action_obj = *action.MemberBegin();
-                    const auto& [action_name, action_val] = action_obj;
-                    const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-                    return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), ActionOutcome::FAILURE);
-                });
+                if (json_req.IsObject())
+                    return (void)hdls.modification(json_req);
+                if (json_req.IsArray())
+                    return (void)handle_depends(json_req, json_res, [&](const auto& action) { return hdls.modification(action); });
             } break;
             case http::verb::get: {
                 rapidjson::Value res_val;
@@ -162,30 +163,13 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             case http::verb::post: {
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
-
-                auto handle_creation = [&](const rapidjson::Value& obj, bool known_str = false, bool known_obj = false) {
-                    if (known_str || obj.IsString()) {
-                        const auto dom = virt::Domain::createXML(conn, json_req.GetString());
-                        if (!dom)
-                            return error(105), DependsOutcome::FAILURE;
-                        rapidjson::Value res_val;
-                        res_val.SetObject();
-                        res_val.AddMember("created", true, json_res.GetAllocator());
-                        json_res.result(std::move(res_val));
-                        return DependsOutcome::SUCCESS;
-                    }
-                    if (obj.IsObject())
-                        return error(-1), DependsOutcome::FAILURE;
-                    return error(0), DependsOutcome::FAILURE;
-                };
-
                 if (json_req.IsString())
-                    return (void)handle_creation(json_req, true);
+                    return (void)hdls.creation(json_req, true);
                 if (json_req.IsObject())
-                    return (void)handle_creation(json_req, false, true);
+                    return (void)hdls.creation(json_req, false, true);
                 if (json_req.IsArray())
-                    return (void)handle_depends(json_req, json_res, [&](const rapidjson::Value& obj) { return handle_creation(obj); });
-
+                    return (void)handle_depends(json_req, json_res, [&](const rapidjson::Value& obj) { return hdls.creation(obj); });
+                return error(0);
             } break;
             default: {
             }
