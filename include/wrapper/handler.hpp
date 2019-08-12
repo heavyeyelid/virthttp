@@ -35,13 +35,13 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
         if (target.getPath().substr(key_start, 8).compare("/by-uuid") == 0) {
             search_key = SearchKey::by_uuid;
             if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
-                return error(102, "No UUID specified"), false;
+                return error(102), false;
             else
                 key_str = target.getPath().substr(key_start + 9);
         } else if (target.getPath().substr(key_start, 8).compare("/by-name") == 0) {
             search_key = SearchKey::by_name;
             if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
-                return error(103, "No name specified"), false;
+                return error(103), false;
             else
                 key_str = target.getPath().substr(key_start + 9);
         } else if (!target.getPath().substr(key_start).empty() && !target.getPath().substr(key_start + 1).empty()) {
@@ -62,14 +62,14 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 dom = conn.domainLookupByName(key_str.c_str());
                 if (!dom) {
                     logger.error("Cannot find domain with name: ", key_str);
-                    return error(100, "Cannot find domain with a such name");
+                    return error(100);
                 }
             } else if (search_key == SearchKey::by_uuid) {
                 logger.debug("Getting domain by uuid");
                 dom = conn.domainLookupByUUIDString(key_str.c_str());
                 if (!dom) {
                     logger.error("Cannot find domain with UUID: ", key_str);
-                    return error(101, "Cannot find domain with a such UUID");
+                    return error(101);
                 }
             }
             switch (req.method()) {
@@ -77,7 +77,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                 rapidjson::Document json_req{};
                 json_req.Parse(req.body().data());
                 if (!json_req.IsArray())
-                    return error(298, "PATCH data has to be an array of actions");
+                    return error(298);
 
                 std::vector<ActionOutcome> outcomes{};
                 outcomes.reserve(json_req.Size());
@@ -104,10 +104,10 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                             if (json_deps.IsInt()) {
                                 return success_pred(json_deps);
                             }
-                            return error(0, "Syntax error"), outcomes.push_back(ActionOutcome::FAILURE), false;
+                            return error(0), outcomes.push_back(ActionOutcome::FAILURE), false;
                         }()) {
                         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-                        outcomes.push_back(hdl ? hdl(action_val, json_res, dom, key_str) : (error(123, "Unknown action"), ActionOutcome::FAILURE));
+                        outcomes.push_back(hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), ActionOutcome::FAILURE));
                     }
                 }
             } break;
@@ -151,7 +151,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     else if (const auto v = virt::Domain::States[tag_status]; v)
                         status = *v;
                     else
-                        return error(301, "Invalid flag");
+                        return error(301);
                     switch (status) {
                     case virt::Domain::State::RUNNING:
                         flags |= virt::Connection::List::Domains::Flags::RUNNING;
@@ -200,14 +200,14 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                     nw = conn.networkLookupByName(key_str.c_str());
                     if (!nw) {
                         logger.error("Cannot find network with a such name");
-                        return error(501, "Cannot find network with a such name");
+                        return error(501);
                     }
                 } else if (search_key == SearchKey::by_uuid) {
                     logger.debug("Network by UUID");
                     nw = conn.networkLookupByUUIDString(key_str.c_str());
                     if (!nw) {
                         logger.error("Cannot find network with a such name");
-                        return error(502, "Cannot find network with a such UUID");
+                        return error(502);
                     }
                 }
 
@@ -223,7 +223,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                         jsAS.SetBool(false);
                 } else {
                     logger.error("Error occurred while getting network autostart");
-                    return error(503, "Error occurred while getting network autostart");
+                    return error(503);
                 }
 
                 TFE nwActive = nw.isActive();
@@ -235,7 +235,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                         jsonActive.SetBool(false);
                 } else {
                     logger.error("Error occurred while getting network status");
-                    return error(500, "Error occurred while getting network status");
+                    return error(500);
                 }
 
                 nw_json.AddMember("name", nw.extractName(), json_res.GetAllocator());
@@ -256,7 +256,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
                             jsonActive.SetBool(false);
                     } else {
                         logger.error("Error occurred while getting network status");
-                        return error(500, "Error occurred while getting network status");
+                        return error(500);
                     }
                     rapidjson::Value nw_json;
                     nw_json.SetObject();
@@ -274,19 +274,19 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(http:
 
     [&] {
         if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
-            return error(1, "Bad X-Auth-Key");
+            return error(1);
         logger.debug("Opening connection to ", iniConfig.getConnURI());
         virt::Connection conn{iniConfig.connURI.c_str()};
         if (!conn) {
             logger.error("Failed to open connection to ", iniConfig.getConnURI());
-            return error(10, "Failed to open connection to LibVirtD");
+            return error(10);
         }
         if (req.target().starts_with("/libvirt/domains"))
             return domains(std::move(conn));
         else if (req.target().starts_with("/libvirt/networks"))
             return networks(std::move(conn));
         else
-            return error(2, "Bad URL");
+            return error(2);
     }();
 
     rapidjson::StringBuffer buffer;

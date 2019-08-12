@@ -1,5 +1,6 @@
 #pragma once
 #include <rapidjson/document.h>
+#include "wrapper/error_msg.hpp"
 
 template <typename T> struct JsonSpan {
     T& wrapped;
@@ -33,8 +34,9 @@ struct JsonRes : public rapidjson::Document {
 
     template <typename T> void result(T&& val) { (*this)["results"].PushBack(val, GetAllocator()); }
     template <typename T> void message(T&& val) { (*this)["messages"].PushBack(val, GetAllocator()); }
-    void error(int code, std::string_view msg) {
+    void error(int code) {
         (*this)["success"] = false;
+        const auto msg = error_messages[code];
         rapidjson::Value err{};
         err.SetObject();
         err.AddMember("code", code, GetAllocator());
