@@ -12,6 +12,7 @@ class ErrorMessages {
         P{0, "Syntax error"sv},
         P{1, "Bad X-Auth-Key"sv},
         P{2, "Bad URL"sv},
+        P{3, "Bad request"sv},
         P{10, "Failed to open connection to LibVirtD"sv},
         P{100, "Cannot find domain with a such name"sv},
         P{101, "Cannot find domain with a such UUID"sv},
