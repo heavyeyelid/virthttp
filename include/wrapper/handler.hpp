@@ -162,7 +162,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                     if (!tag_name.empty() && tag_name != dom.getName())
                         continue;
                     if (!tag_uuid.empty() && tag_uuid != dom.extractUUIDString())
-                        continue;
+                        break;
                     if (!tag_status.empty() && (tag_status != virt::Domain::States[info.state] && tag_status != std::to_string(info.state)))
                         continue;
                     json_res.result(res_val);
