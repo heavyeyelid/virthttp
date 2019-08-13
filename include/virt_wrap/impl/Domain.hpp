@@ -120,6 +120,10 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<FSInfo>(underlying, virDomainGetFSInfo, 0u);
 }
 
+[[nodiscard]] std::optional<TypedParams> Domain::getGuestVcpus() const noexcept {
+    return TPImpl::wrap_oparm_tp(underlying, virDomainGetGuestVcpus, 0);
+}
+
 [[nodiscard]] inline UniqueZstring Domain::getHostname() const noexcept { return UniqueZstring{virDomainGetHostname(underlying, 0)}; }
 
 [[nodiscard]] inline std::string Domain::extractHostname() const noexcept { return {virDomainGetHostname(underlying, 0)}; }
@@ -145,7 +149,13 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     return virDomainGetJobInfo(underlying, &*ret) == 0 ? ret : std::nullopt;
 }
 
+[[nodiscard]] auto Domain::getLaunchSecurityInfo() const noexcept { return TPImpl::wrap_oparm_tp(underlying, virDomainGetLaunchSecurityInfo, 0); }
+
 [[nodiscard]] int Domain::getMaxVcpus() const noexcept { return virDomainGetMaxVcpus(underlying); }
+
+[[nodiscard]] auto Domain::getMemoryParameters(unsigned int flags) const noexcept {
+    return TPImpl::wrap_oparm_tp(underlying, virDomainGetMemoryParameters, to_integral(flags));
+}
 
 [[nodiscard]] UniqueZstring Domain::getMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlag flags) const noexcept {
     return UniqueZstring{virDomainGetMetadata(underlying, to_integral(type), ns, to_integral(flags))};
@@ -156,6 +166,10 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 }
 
 [[nodiscard]] inline gsl::czstring<> Domain::getName() const noexcept { return virDomainGetName(underlying); }
+
+[[nodiscard]] auto Domain::getNumaParameters(unsigned int flags) const noexcept {
+    return TPImpl::wrap_oparm_tp(underlying, virDomainGetNumaParameters, to_integral(flags));
+}
 
 [[nodiscard]] inline unsigned Domain::getID() const noexcept { return virDomainGetID(underlying); }
 
@@ -246,6 +260,12 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] inline unsigned long Domain::getMaxMemory() const noexcept { return virDomainGetMaxMemory(underlying); }
 
+[[nodiscard]] auto Domain::getPerfEvents(unsigned int flags) const noexcept {
+    return TPImpl::wrap_oparm_tp(underlying, virDomainGetPerfEvents, to_integral(flags));
+} // Proxy flags
+
+[[nodiscard]] auto Domain::getSchedulerParameters() const noexcept { return TPImpl::wrap_oparm_tp(underlying, virDomainGetSchedulerParameters); }
+
 [[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>> {
     return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
         underlying, [&](decltype(underlying) u) -> int { return getInfo().nrVirtCpu; },
@@ -319,8 +339,8 @@ bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffe
 }
 
 auto Domain::memoryStats(unsigned int nr_stats) const noexcept {
-    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
-        underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats, 0u);
+    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats,
+                                                                   0u);
 }
 
 [[nodiscard]] auto Domain::migrateGetCompressionCache() const noexcept -> std::optional<unsigned long long> {
@@ -364,7 +384,27 @@ inline bool Domain::reset() { return virDomainReset(underlying, 0) == 0; }
 
 inline bool Domain::resume() noexcept { return virDomainResume(underlying) == 0; }
 
+inline bool Domain::save(gsl::czstring<> to) noexcept { return virDomainSave(underlying, to) == 0; }
+
+inline bool Domain::save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept {
+    return virDomainSaveFlags(underlying, to, dxml, to_integral(flags)) == 0;
+}
+
 inline bool Domain::setAutoStart(bool as) { return virDomainSetAutostart(underlying, as ? 1 : 0) == 0; }
+
+inline bool Domain::setTime(long long seconds, unsigned int nseconds, Domain::SetTimeFlag flags) noexcept {
+    return virDomainSetTime(underlying, seconds, nseconds, to_integral(flags));
+}
+
+inline bool Domain::setUserPassword(gsl::czstring<> user, gsl::czstring<> password, Domain::SetUserPasswordFlag flags) noexcept {
+    return virDomainSetUserPassword(underlying, user, password, to_integral(flags));
+}
+
+inline bool Domain::setVcpus(unsigned int nvcpus) noexcept { return virDomainSetVcpus(underlying, nvcpus) == 0; }
+
+inline bool Domain::setVcpus(unsigned int nvcpus, Domain::VCpuFlag flags) noexcept {
+    return virDomainSetVcpusFlags(underlying, nvcpus, to_integral(flags)) == 0;
+}
 
 inline bool Domain::shutdown() noexcept { return virDomainShutdown(underlying) == 0; }
 

@@ -244,6 +244,10 @@ class Connection {
     NodeDevice deviceLookupByName(gsl::czstring<> name) const noexcept;
 
     NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;
+
+    bool restore(gsl::czstring<> from) noexcept;
+
+    bool restore(gsl::czstring<> from, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept;
 };
 
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;

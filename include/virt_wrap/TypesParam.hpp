@@ -30,6 +30,7 @@ class TypedParams {
     friend Connection;
     friend Domain;
     friend TypedParameter;
+    friend TPImpl;
 
     struct Element;
     struct Iterator;
@@ -94,4 +95,14 @@ class TypedParams::Iterator {
     constexpr bool operator!=(const Iterator& oth) const noexcept { return it != oth.it; }
 };
 
-}
+} // namespace virt
+
+struct TPImpl {
+    template <class Fcn, class U, class... Args> static auto wrap_oparm_tp(U* underlying, Fcn fcn, Args... args) -> std::optional<virt::TypedParams> {
+        std::optional<virt::TypedParams> ret{};
+        auto& tp = ret.emplace();
+        const auto res = fcn(underlying, &tp.underlying, reinterpret_cast<unsigned*>(&tp.size), args...);
+        tp.capacity = tp.size;
+        return res == 0 ? ret : std::nullopt;
+    }
+};

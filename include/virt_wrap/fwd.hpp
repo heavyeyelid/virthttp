@@ -3,6 +3,7 @@
 //
 
 #pragma once
+class TPImpl;
 
 namespace virt {
 class Connection;
