@@ -29,9 +29,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
     std::string key_str{};
 
     auto error = [&](auto... args) { return json_res.error(args...); };
-
     auto getSearchKey = [&](const std::string& type) {
-        auto key_start = std::string{"/libvirt/" + type}.length();
+        auto key_start = "/libvirt/"sv.length() + type.size();
         if (target.getPath().substr(key_start, 8).compare("/by-uuid") == 0) {
             search_key = SearchKey::by_uuid;
             if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
