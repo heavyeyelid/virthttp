@@ -312,6 +312,12 @@ NodeDevice Connection::deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czst
     return NodeDevice{virNodeDeviceLookupSCSIHostByWWN(underlying, wwnn, wwpn, 0)};
 }
 
+inline bool Connection::restore(gsl::czstring<> from) noexcept { return virDomainRestore(underlying, from) == 0; }
+
+inline bool Connection::restore(gsl::czstring<> from, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept {
+    return virDomainRestoreFlags(underlying, from, dxml, to_integral(flags)) == 0;
+}
+
 constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept {
     return Connection::Flags(to_integral(lhs) | to_integral(rhs));
 }

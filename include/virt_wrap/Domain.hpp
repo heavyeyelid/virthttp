@@ -101,18 +101,9 @@ int virDomainGetBlockJobInfo(virDomainPtr dom, const char* disk, virDomainBlockJ
 int virDomainGetCPUStats(virDomainPtr domain, virTypedParameterPtr params, unsigned int nparams, int start_cpu, unsigned int ncpus,
                          unsigned int flags);
 
-int virDomainGetGuestVcpus(virDomainPtr domain, virTypedParameterPtr* params, unsigned int* nparams, unsigned int flags);
-
 int virDomainGetInterfaceParameters(virDomainPtr domain, const char* device, virTypedParameterPtr params, int* nparams, unsigned int flags);
 
 int virDomainGetJobStats(virDomainPtr domain, int* type, virTypedParameterPtr* params, int* nparams, unsigned int flags);
-int virDomainGetLaunchSecurityInfo(virDomainPtr domain, virTypedParameterPtr* params, int* nparams, unsigned int flags);
-
-int virDomainGetMemoryParameters(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
-
-int virDomainGetNumaParameters(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
-int virDomainGetPerfEvents(virDomainPtr domain, virTypedParameterPtr* params, int* nparams, unsigned int flags);
-int virDomainGetSchedulerParameters(virDomainPtr domain, virTypedParameterPtr params, int* nparams);
 int virDomainGetSchedulerParametersFlags(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
 
 virDomainPtr virDomainMigrate(virDomainPtr domain, virConnectPtr dconn, unsigned long flags, const char* dname, const char* uri,
@@ -138,10 +129,6 @@ int virDomainPinIOThread(virDomainPtr domain, unsigned int iothread_id, unsigned
 int virDomainPinVcpu(virDomainPtr domain, unsigned int vcpu, unsigned char* cpumap, int maplen);
 int virDomainPinVcpuFlags(virDomainPtr domain, unsigned int vcpu, unsigned char* cpumap, int maplen, unsigned int flags);
 
-int virDomainRestore(virConnectPtr conn, const char* from);
-int virDomainRestoreFlags(virConnectPtr conn, const char* from, const char* dxml, unsigned int flags);
-int virDomainSave(virDomainPtr domain, const char* to);
-int virDomainSaveFlags(virDomainPtr domain, const char* to, const char* dxml, unsigned int flags);
 int virDomainSaveImageDefineXML(virConnectPtr conn, const char* file, const char* dxml, unsigned int flags);
 char* virDomainSaveImageGetXMLDesc(virConnectPtr conn, const char* file, unsigned int flags);
 
@@ -166,11 +153,7 @@ int virDomainSetPerfEvents(virDomainPtr domain, virTypedParameterPtr params, int
 int virDomainSetSchedulerParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams);
 int virDomainSetSchedulerParametersFlags(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
 
-int virDomainSetTime(virDomainPtr dom, long long seconds, unsigned int nseconds, unsigned int flags);
-int virDomainSetUserPassword(virDomainPtr dom, const char* user, const char* password, unsigned int flags);
 int virDomainSetVcpu(virDomainPtr domain, const char* vcpumap, int state, unsigned int flags);
-int virDomainSetVcpus(virDomainPtr domain, unsigned int nvcpus);
-int virDomainSetVcpusFlags(virDomainPtr domain, unsigned int nvcpus, unsigned int flags);
 int virDomainUpdateDeviceFlags(virDomainPtr domain, const char* xml, unsigned int flags);
 
 /*
@@ -440,6 +423,12 @@ class Domain {
         LIVE = VIR_DOMAIN_AFFECT_LIVE,       /* Affect running domain state.  */
         CONFIG = VIR_DOMAIN_AFFECT_CONFIG,   /* Affect persistent domain state.  */
     };
+    enum class SetTimeFlag {
+        SYNC = VIR_DOMAIN_TIME_SYNC, /* Re-sync domain time from domain's RTC */
+    };
+    enum class SetUserPasswordFlag {
+        ENCRYPTED = VIR_DOMAIN_PASSWORD_ENCRYPTED, /* the password is already encrypted */
+    };
     enum class VCpuFlag {
         /* See ModificationImpactFlag for these flags.  */
         CURRENT = VIR_DOMAIN_VCPU_CURRENT,
@@ -569,6 +558,10 @@ class Domain {
 
     [[nodiscard]] std::vector<FSInfo> extractFSInfo() const;
 
+    [[nodiscard]] auto getSchedulerParameters() const noexcept;
+
+    [[nodiscard]] std::optional<TypedParams> getGuestVcpus() const noexcept;
+
     [[nodiscard]] UniqueZstring getHostname() const noexcept;
 
     [[nodiscard]] std::string extractHostname() const noexcept;
@@ -583,7 +576,11 @@ class Domain {
 
     [[nodiscard]] std::optional<JobInfo> getJobInfo() const noexcept;
 
+    [[nodiscard]] auto getLaunchSecurityInfo() const noexcept;
+
     [[nodiscard]] int getMaxVcpus() const noexcept;
+
+    [[nodiscard]] auto getMemoryParameters(unsigned int flags) const noexcept; // Proxy flags
 
     [[nodiscard]] UniqueZstring getMetadata(MetadataType type, gsl::czstring<> ns,
                                             ModificationImpactFlag flags = ModificationImpactFlag::CURRENT) const noexcept;
@@ -592,6 +589,8 @@ class Domain {
                                               ModificationImpactFlag flags = ModificationImpactFlag::CURRENT) const;
 
     [[nodiscard]] gsl::czstring<> getName() const noexcept;
+
+    [[nodiscard]] auto getNumaParameters(unsigned int flags) const noexcept; // Proxy flags
 
     [[nodiscard]] int getNumVcpus(VCpuFlag flags) const noexcept;
 
@@ -618,6 +617,8 @@ class Domain {
     [[nodiscard]] auto getOSType() const;
 
     [[nodiscard]] unsigned long getMaxMemory() const noexcept;
+
+    [[nodiscard]] auto getPerfEvents(unsigned int flags) const noexcept; // Proxy flags
 
     [[nodiscard]] auto getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>>;
 
@@ -685,7 +686,20 @@ class Domain {
 
     bool resume() noexcept;
 
+    bool save(gsl::czstring<> to) noexcept;
+
+    bool save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
+
     bool setAutoStart(bool);
+
+    bool setTime(long long seconds, unsigned int nseconds, SetTimeFlag flags) noexcept;
+
+    bool setUserPassword(gsl::czstring<> user, gsl::czstring<> password, SetUserPasswordFlag flags) noexcept;
+
+    bool setVcpus(unsigned int nvcpus) noexcept;
+
+    bool setVcpus(unsigned int nvcpus, VCpuFlag flags) noexcept;
+
     bool shutdown() noexcept;
 
     bool shutdown(ShutdownFlag flag) noexcept;
