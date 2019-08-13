@@ -42,7 +42,7 @@ class DomainHandlers : HandlerContext {
         const auto os_type = dom.getOSType();
         res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
         res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
-        res_val.AddMember("id", dom.isActive() ? dom.getID() : -1, json_res.GetAllocator());
+        res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
         res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
         res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
         res_val.AddMember("ram", memory, json_res.GetAllocator());
