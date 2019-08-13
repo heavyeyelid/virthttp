@@ -19,6 +19,7 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 
 constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
+constexpr boost::string_view stdsv2bsv(std::string_view sv) noexcept { return {sv.data(), sv.length()}; }
 
 template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const http::request<Body, http::basic_fields<Allocator>>& req) {
     auto target = TargetParser{bsv2stdsv(req.target())};
@@ -30,21 +31,26 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
 
     auto error = [&](auto... args) { return json_res.error(args...); };
     auto getSearchKey = [&](const std::string& type) {
-        auto key_start = "/libvirt/"sv.length() + type.size();
-        if (target.getPath().substr(key_start, 8).compare("/by-uuid") == 0) {
+        const auto key_start = "/libvirt/"sv.length() + type.size();
+        const auto path = stdsv2bsv(target.getPath().substr(key_start)); // C++2a: use std::string_view all the way
+        const auto sv_by_uuid = "/by-uuid"sv;
+        const auto sv_by_name = "/by-name"sv;
+        if (path.starts_with(stdsv2bsv(sv_by_uuid))) {
             search_key = SearchKey::by_uuid;
-            if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
+            const auto post_skey = path.substr(sv_by_uuid.length());
+            if (post_skey.empty() || post_skey.substr(1).empty())
                 return error(102), false;
             else
                 key_str = target.getPath().substr(key_start + 9);
-        } else if (target.getPath().substr(key_start, 8).compare("/by-name") == 0) {
+        } else if (path.starts_with(stdsv2bsv(sv_by_name))) {
             search_key = SearchKey::by_name;
-            if (target.getPath().substr(key_start + 8).empty() || target.getPath().substr(key_start + 9).empty())
+            const auto post_skey = path.substr(sv_by_name.length());
+            if (post_skey.empty() || post_skey.substr(1).empty())
                 return error(103), false;
             else
-                key_str = target.getPath().substr(key_start + 9);
-        } else if (!target.getPath().substr(key_start).empty() && !target.getPath().substr(key_start + 1).empty()) {
-            key_str = target.getPath().substr(key_start + 1);
+                key_str = bsv2stdsv(post_skey.substr(1));
+        } else if (!path.empty() && !path.substr(1).empty()) {
+            key_str = bsv2stdsv(path.substr(1));
             search_key = SearchKey::by_name;
         }
         return true;
