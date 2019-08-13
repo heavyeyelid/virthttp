@@ -143,7 +143,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                     const auto info = dom.getInfo();
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
-                    res_val.AddMember("id", dom.getID(), json_res.GetAllocator());
+                    res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
                     res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
                     /* Manual filters application */
                     if (!tag_name.empty() && tag_name != dom.getName())
