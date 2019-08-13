@@ -70,6 +70,8 @@ class TypedParams {
     template <typename T> T get(gsl::czstring<> name) const;
 
     template <typename T> T& get(gsl::czstring<> name);
+
+    constexpr operator bool() const noexcept { return underlying != nullptr; }
 };
 
 class TypedParams::Iterator {
