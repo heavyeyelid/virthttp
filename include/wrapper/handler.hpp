@@ -40,15 +40,13 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             const auto post_skey = path.substr(sv_by_uuid.length());
             if (post_skey.empty() || post_skey.substr(1).empty())
                 return error(102), false;
-            else
-                key_str = target.getPath().substr(key_start + 9);
+            key_str = target.getPath().substr(key_start + 9);
         } else if (path.starts_with(stdsv2bsv(sv_by_name))) {
             search_key = SearchKey::by_name;
             const auto post_skey = path.substr(sv_by_name.length());
             if (post_skey.empty() || post_skey.substr(1).empty())
                 return error(103), false;
-            else
-                key_str = bsv2stdsv(post_skey.substr(1));
+            key_str = bsv2stdsv(post_skey.substr(1));
         } else if (!path.empty() && !path.substr(1).empty()) {
             key_str = bsv2stdsv(path.substr(1));
             search_key = SearchKey::by_name;
@@ -90,7 +88,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                 if (json_req.IsArray())
                     return (void)handle_depends(json_req, json_res, [&](const auto& action) { return hdls.modification(action); });
                 return error(3);
-            } break;
+            }
             case http::verb::get: {
                 return (void)hdls.query(json_req);
             }
@@ -100,58 +98,18 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         } else {
             switch (req.method()) {
             case http::verb::get: {
-                /* Filters extraction */
-                auto flags = virt::Connection::List::Domains::Flags::DEFAULT;
-                if (auto activity = target.getBool("active"); activity)
-                    flags |= *activity ? virt::Connection::List::Domains::Flags::ACTIVE : virt::Connection::List::Domains::Flags::INACTIVE;
-                if (auto persistence = target.getBool("persistent"); persistence)
-                    flags |= *persistence ? virt::Connection::List::Domains::Flags::PERSISTENT : virt::Connection::List::Domains::Flags::TRANSIENT;
-                if (auto savemgmt = target.getBool("managed_save"); savemgmt)
-                    flags |= *savemgmt ? virt::Connection::List::Domains::Flags::MANAGEDSAVE : virt::Connection::List::Domains::Flags::NO_MANAGEDSAVE;
-                if (auto autostart = target.getBool("autostart"); autostart)
-                    flags |= *autostart ? virt::Connection::List::Domains::Flags::AUTOSTART : virt::Connection::List::Domains::Flags::NO_AUTOSTART;
-                if (auto snapshot = target.getBool("has_snapshot"); snapshot)
-                    flags |= *snapshot ? virt::Connection::List::Domains::Flags::HAS_SNAPSHOT : virt::Connection::List::Domains::Flags::NO_SNAPSHOT;
-
-                auto [tag_name, tag_uuid, tag_status] = std::make_tuple(target["name"], target["uuid"], target["status"]);
-                if (!tag_status.empty()) {
-                    virt::Domain::State status;
-                    if (const auto v = virt::Domain::States[tag_status]; v)
-                        status = *v;
-                    else
-                        return error(301);
-                    switch (status) {
-                    case virt::Domain::State::RUNNING:
-                        flags |= virt::Connection::List::Domains::Flags::RUNNING;
-                        tag_status = {};
-                        break;
-                    case virt::Domain::State::PAUSED:
-                        flags |= virt::Connection::List::Domains::Flags::PAUSED;
-                        tag_status = {};
-                        break;
-                    case virt::Domain::State::SHUTOFF:
-                        flags |= virt::Connection::List::Domains::Flags::SHUTOFF;
-                        tag_status = {};
-                        break;
-                    default:
-                        flags |= virt::Connection::List::Domains::Flags::OTHER;
-                    }
-                }
+                const auto flags_opt = hdls.query_all_flags(target);
+                if (!flags_opt)
+                    return;
+                const auto flags = *flags_opt;
                 for (const auto& dom : conn.listAllDomains(flags)) {
+                    const auto info = dom.getInfo();
                     rapidjson::Value res_val;
                     res_val.SetObject();
-                    const auto info = dom.getInfo();
                     res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
                     res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
                     res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
                     res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
-                    /* Manual filters application */
-                    if (!tag_name.empty() && tag_name != dom.getName())
-                        continue;
-                    if (!tag_uuid.empty() && tag_uuid != dom.extractUUIDString())
-                        break;
-                    if (!tag_status.empty() && (tag_status != virt::Domain::States[info.state] && tag_status != std::to_string(info.state)))
-                        continue;
                     json_res.result(res_val);
                 }
             } break;
@@ -165,7 +123,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                 if (json_req.IsArray())
                     return (void)handle_depends(json_req, json_res, [&](const rapidjson::Value& obj) { return hdls.creation(obj); });
                 return error(0);
-            } break;
+            }
             default: {
             }
             }
