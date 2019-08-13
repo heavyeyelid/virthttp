@@ -35,4 +35,21 @@ class DomainHandlers : HandlerContext {
         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
         return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
     }
+    DependsOutcome query(const rapidjson::Value& action) {
+        rapidjson::Value res_val;
+        res_val.SetObject();
+        const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
+        const auto os_type = dom.getOSType();
+        res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
+        res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
+        res_val.AddMember("id", dom.isActive() ? dom.getID() : -1, json_res.GetAllocator());
+        res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
+        res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
+        res_val.AddMember("ram", memory, json_res.GetAllocator());
+        res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
+        res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
+
+        json_res.result(std::move(res_val));
+        return DependsOutcome::SUCCESS;
+    }
 };
