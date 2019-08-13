@@ -6,9 +6,9 @@
 #include <vector>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
-#include "type_ops.hpp"
 #include "Domain.hpp"
 #include "fwd.hpp"
+#include "type_ops.hpp"
 #include "utility.hpp"
 
 namespace virt {
@@ -89,6 +89,12 @@ class Connection {
 
                 HAS_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_HAS_SNAPSHOT,
                 NO_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_NO_SNAPSHOT,
+            };
+            class FlagsC : public EnumSetHelper<FlagsC, Flags> {
+                using Base = EnumSetHelper<FlagsC, Flags>;
+                friend Base;
+                constexpr static std::array values = {"active", "inactive", "persistent", "transient",    "running",
+                                                      "paused", "shutoff",  "other",      "managed_save", ""};
             };
         };
         struct Devices {
