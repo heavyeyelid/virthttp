@@ -83,6 +83,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                     return (void)hdls.modification(json_req);
                 if (json_req.IsArray())
                     return (void)handle_depends(json_req, json_res, [&](const auto& action) { return hdls.modification(action); });
+                return error(3);
             } break;
             case http::verb::get: {
                 rapidjson::Value res_val;
