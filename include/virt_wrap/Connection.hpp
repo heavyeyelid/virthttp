@@ -68,7 +68,7 @@ class Connection {
     };
     struct List {
         struct Domains {
-            enum class Flags : unsigned {
+            enum class Flag : unsigned {
                 DEFAULT = 0,
                 ACTIVE = VIR_CONNECT_LIST_DOMAINS_ACTIVE,
                 INACTIVE = VIR_CONNECT_LIST_DOMAINS_INACTIVE,
@@ -90,12 +90,14 @@ class Connection {
                 HAS_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_HAS_SNAPSHOT,
                 NO_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_NO_SNAPSHOT,
             };
-            class FlagsC : public EnumSetHelper<FlagsC, Flags> {
-                using Base = EnumSetHelper<FlagsC, Flags>;
+            class FlagsC : public EnumSetHelper<FlagsC, Flag> {
+                using Base = EnumSetHelper<FlagsC, Flag>;
                 friend Base;
-                constexpr static std::array values = {"active", "inactive", "persistent", "transient",    "running",
-                                                      "paused", "shutoff",  "other",      "managed_save", ""};
+                constexpr static std::array values = {"active",    "inactive",     "persistent",   "transient",    "running",
+                                                      "paused",    "shutoff",      "other",        "managed_save", "no_managed_save",
+                                                      "autostart", "no_autostart", "has_snapshot", "no_snapshot"};
             };
+            constexpr static FlagsC Flags;
         };
         struct Devices {
             enum class Flags : unsigned {
@@ -172,59 +174,60 @@ class Connection {
 
     void setKeepAlive(int interval, unsigned count);
 
-    inline gsl::zstring<> getCapabilities() const noexcept;
+    [[nodiscard]] inline gsl::zstring<> getCapabilities() const noexcept;
 
-    inline gsl::zstring<> getHostname() const noexcept;
+    [[nodiscard]] inline gsl::zstring<> getHostname() const noexcept;
 
-    unsigned long getLibVersion() const;
+    [[nodiscard]] unsigned long getLibVersion() const;
 
-    int getMaxVcpus(gsl::czstring<> type) const noexcept;
+    [[nodiscard]] int getMaxVcpus(gsl::czstring<> type) const noexcept;
 
-    passive<gsl::zstring<>> getSysInfo(unsigned flags) const noexcept;
+    [[nodiscard]] passive<gsl::zstring<>> getSysInfo(unsigned flags) const noexcept;
 
-    gsl::czstring<> getType() const noexcept;
+    [[nodiscard]] gsl::czstring<> getType() const noexcept;
 
-    passive<gsl::zstring<>> getURI() const noexcept;
+    [[nodiscard]] passive<gsl::zstring<>> getURI() const noexcept;
 
-    inline bool isAlive() const noexcept;
+    [[nodiscard]] inline bool isAlive() const noexcept;
 
-    inline bool isEncrypted() const noexcept;
+    [[nodiscard]] inline bool isEncrypted() const noexcept;
 
-    inline bool isSecure() const noexcept;
+    [[nodiscard]] inline bool isSecure() const noexcept;
 
-    inline int numOfDomains() const noexcept;
+    [[nodiscard]] inline int numOfDomains() const noexcept;
 
-    inline int numOfDefinedDomains() const noexcept;
+    [[nodiscard]] inline int numOfDefinedDomains() const noexcept;
 
-    auto listDomains() const -> std::vector<int>;
+    [[nodiscard]] auto listDomains() const -> std::vector<int>;
 
-    template <typename StrT> auto listDefinedDomains() const = delete;
+    template <typename StrT>[[nodiscard]] auto listDefinedDomains() const = delete;
 
-    auto listAllDomains(List::Domains::Flags flags = List::Domains::Flags::DEFAULT) const -> std::vector<Domain>;
+    [[nodiscard]] auto listAllDomains(List::Domains::Flag flags = List::Domains::Flag::DEFAULT) const -> std::vector<Domain>;
 
-    auto getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags) -> std::vector<Domain::Stats::Record>;
+    [[nodiscard]] auto getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags)
+        -> std::vector<Domain::Stats::Record>;
 
-    Domain domainLookupByID(int) const noexcept;
+    [[nodiscard]] Domain domainLookupByID(int) const noexcept;
 
-    Domain domainLookupByName(gsl::czstring<>) const noexcept;
+    [[nodiscard]] Domain domainLookupByName(gsl::czstring<>) const noexcept;
 
-    Domain domainLookupByUUID(gsl::basic_zstring<const unsigned char>) const noexcept;
+    [[nodiscard]] Domain domainLookupByUUID(gsl::basic_zstring<const unsigned char>) const noexcept;
 
-    Domain domainLookupByUUIDString(gsl::czstring<>) const noexcept;
+    [[nodiscard]] Domain domainLookupByUUIDString(gsl::czstring<>) const noexcept;
 
-    virNodeInfo nodeGetInfo() const;
+    [[nodiscard]] virNodeInfo nodeGetInfo() const;
 
-    unsigned long long nodeGetFreeMemory() const;
+    [[nodiscard]] unsigned long long nodeGetFreeMemory() const;
 
-    std::vector<unsigned long long> nodeGetCellsFreeMemory() const;
+    [[nodiscard]] std::vector<unsigned long long> nodeGetCellsFreeMemory() const;
 
     constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
 
-    Network networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept;
+    [[nodiscard]] Network networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept;
 
-    Network networkLookupByName(gsl::czstring<> name) const noexcept;
+    [[nodiscard]] Network networkLookupByName(gsl::czstring<> name) const noexcept;
 
-    Network networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept;
+    [[nodiscard]] Network networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept;
     /**
      * (Light) List all networks
      * @param active
@@ -232,37 +235,34 @@ class Connection {
      * @param autostart
      * @return std:unique_ptr<Network[], ?>: A wrapped array of networks extended with begin() and end(), or {nullptr} in case of error
      * */
-    auto listAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
-                         std::optional<bool> autostart = std::nullopt) const noexcept;
-    inline auto listDefinedNetworksNames() const noexcept;
-    inline auto listNetworksNames() const noexcept;
-    std::vector<Network> extractAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
-                                            std::optional<bool> autostart = std::nullopt) const;
-    std::vector<std::string> extractDefinedNetworksNames() const;
-    std::vector<std::string> extractNetworksNames() const;
+    [[nodiscard]] auto listAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
+                                       std::optional<bool> autostart = std::nullopt) const noexcept;
+    [[nodiscard]] inline auto listDefinedNetworksNames() const noexcept;
+    [[nodiscard]] inline auto listNetworksNames() const noexcept;
+    [[nodiscard]] std::vector<Network> extractAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
+                                                          std::optional<bool> autostart = std::nullopt) const;
+    [[nodiscard]] std::vector<std::string> extractDefinedNetworksNames() const;
+    [[nodiscard]] std::vector<std::string> extractNetworksNames() const;
 
-    auto listAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const noexcept;
-    std::vector<NodeDevice> extractAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const;
+    [[nodiscard]] auto listAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const noexcept;
+    [[nodiscard]] std::vector<NodeDevice> extractAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const;
 
-    auto listDevicesNames(const std::string& capability) const noexcept;
-    std::vector<std::string> extractDevicesNames(const std::string& capability) const;
+    [[nodiscard]] auto listDevicesNames(const std::string& capability) const noexcept;
+    [[nodiscard]] std::vector<std::string> extractDevicesNames(const std::string& capability) const;
 
-    NodeDevice deviceLookupByName(gsl::czstring<> name) const noexcept;
+    [[nodiscard]] NodeDevice deviceLookupByName(gsl::czstring<> name) const noexcept;
 
-    NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;
-
-    bool restore(gsl::czstring<> from) noexcept;
-
-    bool restore(gsl::czstring<> from, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept;
+    [[nodiscard]] NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;
 };
 
-constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
+[[nodiscard]] constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
 
-constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Domains::Flags lhs, Connection::List::Domains::Flags rhs) noexcept;
-constexpr inline Connection::List::Domains::Flags& operator|=(Connection::List::Domains::Flags& lhs, Connection::List::Domains::Flags rhs) noexcept;
+[[nodiscard]] constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Domains::Flag lhs,
+                                                                         Connection::List::Domains::Flag rhs) noexcept;
+constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept;
 
-constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
-                                                                   Connection::GetAllDomains::Stats::Flags rhs) noexcept;
+[[nodiscard]] constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
+                                                                                 Connection::GetAllDomains::Stats::Flags rhs) noexcept;
 
 constexpr inline Connection::List::Devices::Flags operator|(Connection::List::Devices::Flags lhs, Connection::List::Devices::Flags rhs) noexcept;
 }
