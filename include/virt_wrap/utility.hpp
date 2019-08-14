@@ -34,6 +34,35 @@ template <typename T> inline void freeany(T ptr) {
     std::free(ptr);
 }
 
+template <class... Es> class EnumSetTie {
+    using Underlying = std::common_type_t<std::underlying_type_t<Es>...>;
+    Underlying underlying;
+
+  public:
+    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
+    constexpr EnumSetTie(E v) : underlying(v) {}
+    friend constexpr auto to_integral(EnumSetTie est) { return est.underlying; }
+};
+
+template <class... Es> constexpr EnumSetTie<Es...> operator|(EnumSetTie<Es...> lhs, EnumSetTie<Es...> rhs) noexcept {
+    return {to_integral(lhs) | to_integral(rhs)};
+}
+template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
+constexpr EnumSetTie<Es...> operator|(EnumSetTie<Es...> lhs, E rhs) noexcept {
+    return {to_integral(lhs) | to_integral(rhs)};
+}
+template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
+constexpr EnumSetTie<Es...> operator|(E lhs, EnumSetTie<Es...> rhs) noexcept {
+    return {to_integral(lhs) | to_integral(rhs)};
+}
+template <class... Es> constexpr EnumSetTie<Es...>& operator|=(EnumSetTie<Es...>& lhs, EnumSetTie<Es...> rhs) noexcept {
+    return lhs = {to_integral(lhs) | to_integral(rhs)};
+}
+template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
+constexpr EnumSetTie<Es...>& operator|=(EnumSetTie<Es...>& lhs, E rhs) noexcept {
+    return lhs = {to_integral(lhs) | to_integral(rhs)};
+}
+
 template <class CRTP, class E, class V = gsl::czstring<>> class EnumHelper {
     using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
 

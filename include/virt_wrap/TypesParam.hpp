@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <optional>
 #include <string>
 #include <variant>
@@ -48,6 +49,8 @@ class TypedParams {
     virTypedParameterPtr underlying{};
     int size = 0;
     int capacity = 0;
+    bool needs_free = false;
+    bool needs_dealloc = false;
 
   public:
     inline ~TypedParams() noexcept;
@@ -98,11 +101,38 @@ class TypedParams::Iterator {
 } // namespace virt
 
 struct TPImpl {
-    template <class Fcn, class U, class... Args> static auto wrap_oparm_tp(U* underlying, Fcn fcn, Args... args) -> std::optional<virt::TypedParams> {
+    template <class Fcn, class U, class... Args>
+    static auto wrap_oparm_set_tp(U* underlying, Fcn fcn, Args... args) -> std::optional<virt::TypedParams> {
         std::optional<virt::TypedParams> ret{};
         auto& tp = ret.emplace();
-        const auto res = fcn(underlying, &tp.underlying, reinterpret_cast<unsigned*>(&tp.size), args...);
+        const auto res = fcn(underlying, &tp.underlying, &tp.size, args...);
         tp.capacity = tp.size;
+        return res == 0 ? ret : std::nullopt;
+    }
+    template <class U, class CountFcn, class DataFcn, class... Args,
+              class = std::enable_if_t<std::is_invocable_v<DataFcn, U*, virTypedParameterPtr, int*, Args...>>>
+    static auto wrap_oparm_fill_tp(U* underlying, CountFcn count_fcn, DataFcn data_fcn, Args... args) -> std::optional<virt::TypedParams> {
+        std::optional<virt::TypedParams> ret{};
+        auto& tp = ret.emplace();
+        if (count_fcn(underlying, nullptr, &tp.size, args...) == 0)
+            return std::nullopt;
+        tp.capacity = tp.size;
+        tp.underlying = new virTypedParameter[tp.size];
+        tp.needs_dealloc = true;
+        const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
+        return res == 0 ? ret : std::nullopt;
+    }
+    template <class U, class DataFcn, class... Args>
+    static auto wrap_oparm_fill_tp(U* underlying, DataFcn data_fcn, Args... args) -> std::optional<virt::TypedParams> {
+        std::optional<virt::TypedParams> ret{};
+        auto& tp = ret.emplace();
+        const auto count_res = data_fcn(underlying, nullptr, &tp.size, args...);
+        if (count_res == 0)
+            return std::nullopt;
+        tp.capacity = tp.size;
+        tp.underlying = new virTypedParameter[tp.size];
+        tp.needs_dealloc = true;
+        const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
         return res == 0 ? ret : std::nullopt;
     }
 };
