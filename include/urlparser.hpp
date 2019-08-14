@@ -72,19 +72,19 @@ class TargetParser {
         parse();
     }
 
-    constexpr std::string_view getPath() const noexcept { return path; }
+    [[nodiscard]] constexpr std::string_view getPath() const noexcept { return path; }
 
-    constexpr std::string_view getURL() const noexcept { return url; }
+    [[nodiscard]] constexpr std::string_view getURL() const noexcept { return url; }
 
-    constexpr const flatmap<std::string_view, std::string_view>& getQueries() const noexcept { return queries; }
+    [[nodiscard]] constexpr const flatmap<std::string_view, std::string_view>& getQueries() const noexcept { return queries; }
 
-    constexpr std::string_view operator[](std::string_view key) const noexcept {
+    [[nodiscard]] constexpr std::string_view operator[](std::string_view key) const noexcept {
         if (auto it = queries.find(key); it != queries.end())
             return it->second;
         return {};
     }
 
-    constexpr std::optional<bool> getBool(std::string_view key) const noexcept {
+    [[nodiscard]] constexpr std::optional<bool> getBool(std::string_view key) const noexcept {
         const auto val = (*this)[key];
         if (val.data() == nullptr)
             return std::nullopt;
@@ -147,12 +147,37 @@ class URLParser : public TargetParser {
         parse_all();
     }
 
-    constexpr std::string_view getScheme() const noexcept { return scheme; }
+    [[nodiscard]] constexpr std::string_view getScheme() const noexcept { return scheme; }
 
-    constexpr std::string_view getHost() const noexcept { return host; }
+    [[nodiscard]] constexpr std::string_view getHost() const noexcept { return host; }
 
     /**
      * Returns the port used in the URL; 0 if no explicit one
      * */
-    constexpr unsigned short getPort() const noexcept { return port; }
+    [[nodiscard]] constexpr unsigned short getPort() const noexcept { return port; }
+};
+
+struct CSVIterator {
+    std::string_view sv;
+
+    constexpr CSVIterator& operator++() noexcept {
+        const auto it = cexpr::find(sv.begin(), sv.end(), ',');
+        sv.remove_prefix(it != sv.end() ? std::distance(sv.begin(), it) + 1 : sv.size());
+        return *this;
+    }
+    constexpr CSVIterator operator++(int) noexcept {
+        const auto it = cexpr::find(sv.begin(), sv.end(), ',');
+        if (sv.empty())
+            UNREACHABLE;
+        if (it == sv.end())
+            return {sv.substr(0, sv.size())};
+        return {sv.substr(0, std::distance(sv.begin(), it) + 1)};
+    }
+    [[nodiscard]] constexpr std::string_view operator*() const noexcept {
+        const auto it = cexpr::find(sv.begin(), sv.end(), ',');
+        return sv.substr(0, std::distance(sv.begin(), it) + 1);
+    }
+    constexpr bool operator==(const CSVIterator& oth) const noexcept { return sv == oth.sv; }
+    constexpr bool operator!=(const CSVIterator& oth) const noexcept { return sv != oth.sv; }
+    constexpr CSVIterator end() const noexcept { return {sv.substr(sv.size(), 0)}; }
 };

@@ -187,7 +187,7 @@ template <> auto Connection::listDefinedDomains<std::string>() const {
     return ret;
 }
 
-auto Connection::listAllDomains(List::Domains::Flags flags) const -> std::vector<Domain> {
+auto Connection::listAllDomains(List::Domains::Flag flags) const -> std::vector<Domain> {
     std::vector<Domain> ret;
     gsl::owner<virDomainPtr*> domains;
 
@@ -322,10 +322,10 @@ constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::
     return Connection::Flags(to_integral(lhs) | to_integral(rhs));
 }
 
-constexpr inline Connection::List::Domains::Flags operator|(Connection::List::Domains::Flags lhs, Connection::List::Domains::Flags rhs) noexcept {
-    return Connection::List::Domains::Flags(to_integral(lhs) | to_integral(rhs));
+constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Domains::Flag lhs, Connection::List::Domains::Flag rhs) noexcept {
+    return Connection::List::Domains::Flag(to_integral(lhs) | to_integral(rhs));
 }
-constexpr inline Connection::List::Domains::Flags& operator|=(Connection::List::Domains::Flags& lhs, Connection::List::Domains::Flags rhs) noexcept {
+constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept {
     return lhs = lhs | rhs;
 }
 constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,

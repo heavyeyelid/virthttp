@@ -6,7 +6,7 @@
 
 class DomainHandlers : HandlerContext {
 
-    template <class... Args> auto error(Args... args) { return json_res.error(args...); };
+    template <class... Args> auto error(Args... args) const noexcept { return json_res.error(args...); };
 
     virt::Domain& dom;
 
@@ -34,6 +34,31 @@ class DomainHandlers : HandlerContext {
         const auto& [action_name, action_val] = action_obj;
         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
         return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
+    }
+    [[nodiscard]] auto query_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
+        auto flags = virt::Connection::List::Domains::Flag::DEFAULT;
+        if (auto activity = target.getBool("active"); activity)
+            flags |= *activity ? virt::Connection::List::Domains::Flag::ACTIVE : virt::Connection::List::Domains::Flag::INACTIVE;
+        if (auto persistence = target.getBool("persistent"); persistence)
+            flags |= *persistence ? virt::Connection::List::Domains::Flag::PERSISTENT : virt::Connection::List::Domains::Flag::TRANSIENT;
+        if (auto savemgmt = target.getBool("managed_save"); savemgmt)
+            flags |= *savemgmt ? virt::Connection::List::Domains::Flag::MANAGEDSAVE : virt::Connection::List::Domains::Flag::NO_MANAGEDSAVE;
+        if (auto autostart = target.getBool("autostart"); autostart)
+            flags |= *autostart ? virt::Connection::List::Domains::Flag::AUTOSTART : virt::Connection::List::Domains::Flag::NO_AUTOSTART;
+        if (auto snapshot = target.getBool("has_snapshot"); snapshot)
+            flags |= *snapshot ? virt::Connection::List::Domains::Flag::HAS_SNAPSHOT : virt::Connection::List::Domains::Flag::NO_SNAPSHOT;
+
+        const auto tag_status = target["status"];
+        if (!tag_status.empty()) {
+            CSVIterator state_it{tag_status};
+            for (; state_it != state_it.end(); ++state_it) {
+                const auto v = virt::Connection::List::Domains::Flags[*state_it];
+                if (!v)
+                    return error(301), std::nullopt;
+                flags |= *v;
+            }
+        }
+        return {flags};
     }
     DependsOutcome query(const rapidjson::Value& action) {
         rapidjson::Value res_val;
