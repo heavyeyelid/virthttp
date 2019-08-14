@@ -35,41 +35,27 @@ class DomainHandlers : HandlerContext {
         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
         return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
     }
-    [[nodiscard]] auto query_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flags> {
-        auto flags = virt::Connection::List::Domains::Flags::DEFAULT;
+    [[nodiscard]] auto query_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
+        auto flags = virt::Connection::List::Domains::Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
-            flags |= *activity ? virt::Connection::List::Domains::Flags::ACTIVE : virt::Connection::List::Domains::Flags::INACTIVE;
+            flags |= *activity ? virt::Connection::List::Domains::Flag::ACTIVE : virt::Connection::List::Domains::Flag::INACTIVE;
         if (auto persistence = target.getBool("persistent"); persistence)
-            flags |= *persistence ? virt::Connection::List::Domains::Flags::PERSISTENT : virt::Connection::List::Domains::Flags::TRANSIENT;
+            flags |= *persistence ? virt::Connection::List::Domains::Flag::PERSISTENT : virt::Connection::List::Domains::Flag::TRANSIENT;
         if (auto savemgmt = target.getBool("managed_save"); savemgmt)
-            flags |= *savemgmt ? virt::Connection::List::Domains::Flags::MANAGEDSAVE : virt::Connection::List::Domains::Flags::NO_MANAGEDSAVE;
+            flags |= *savemgmt ? virt::Connection::List::Domains::Flag::MANAGEDSAVE : virt::Connection::List::Domains::Flag::NO_MANAGEDSAVE;
         if (auto autostart = target.getBool("autostart"); autostart)
-            flags |= *autostart ? virt::Connection::List::Domains::Flags::AUTOSTART : virt::Connection::List::Domains::Flags::NO_AUTOSTART;
+            flags |= *autostart ? virt::Connection::List::Domains::Flag::AUTOSTART : virt::Connection::List::Domains::Flag::NO_AUTOSTART;
         if (auto snapshot = target.getBool("has_snapshot"); snapshot)
-            flags |= *snapshot ? virt::Connection::List::Domains::Flags::HAS_SNAPSHOT : virt::Connection::List::Domains::Flags::NO_SNAPSHOT;
+            flags |= *snapshot ? virt::Connection::List::Domains::Flag::HAS_SNAPSHOT : virt::Connection::List::Domains::Flag::NO_SNAPSHOT;
 
         const auto tag_status = target["status"];
         if (!tag_status.empty()) {
             CSVIterator state_it{tag_status};
             for (; state_it != state_it.end(); ++state_it) {
-                virt::Domain::State status;
-                if (const auto v = virt::Domain::States[*state_it]; v)
-                    status = *v;
-                else
+                const auto v = virt::Connection::List::Domains::Flags[*state_it];
+                if (!v)
                     return error(301), std::nullopt;
-                switch (status) {
-                case virt::Domain::State::RUNNING:
-                    flags |= virt::Connection::List::Domains::Flags::RUNNING;
-                    break;
-                case virt::Domain::State::PAUSED:
-                    flags |= virt::Connection::List::Domains::Flags::PAUSED;
-                    break;
-                case virt::Domain::State::SHUTOFF:
-                    flags |= virt::Connection::List::Domains::Flags::SHUTOFF;
-                    break;
-                default:
-                    flags |= virt::Connection::List::Domains::Flags::OTHER;
-                }
+                flags |= *v;
             }
         }
         return {flags};
