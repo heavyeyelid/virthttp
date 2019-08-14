@@ -121,7 +121,9 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 }
 
 [[nodiscard]] std::optional<TypedParams> Domain::getGuestVcpus() const noexcept {
-    return TPImpl::wrap_oparm_tp(underlying, virDomainGetGuestVcpus, 0);
+    return TPImpl::wrap_oparm_set_tp(
+        underlying,
+        [](auto& u, auto ls, auto pcnt, auto... args) { return virDomainGetGuestVcpus(u, ls, reinterpret_cast<unsigned*>(pcnt), args...); }, 0);
 }
 
 [[nodiscard]] inline UniqueZstring Domain::getHostname() const noexcept { return UniqueZstring{virDomainGetHostname(underlying, 0)}; }
@@ -149,12 +151,12 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     return virDomainGetJobInfo(underlying, &*ret) == 0 ? ret : std::nullopt;
 }
 
-[[nodiscard]] auto Domain::getLaunchSecurityInfo() const noexcept { return TPImpl::wrap_oparm_tp(underlying, virDomainGetLaunchSecurityInfo, 0); }
+[[nodiscard]] auto Domain::getLaunchSecurityInfo() const noexcept { return TPImpl::wrap_oparm_set_tp(underlying, virDomainGetLaunchSecurityInfo, 0); }
 
 [[nodiscard]] int Domain::getMaxVcpus() const noexcept { return virDomainGetMaxVcpus(underlying); }
 
-[[nodiscard]] auto Domain::getMemoryParameters(unsigned int flags) const noexcept {
-    return TPImpl::wrap_oparm_tp(underlying, virDomainGetMemoryParameters, to_integral(flags));
+[[nodiscard]] auto Domain::getMemoryParameters(MITPFlags flags) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetMemoryParameters, to_integral(flags));
 }
 
 [[nodiscard]] UniqueZstring Domain::getMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlag flags) const noexcept {
@@ -167,8 +169,8 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] inline gsl::czstring<> Domain::getName() const noexcept { return virDomainGetName(underlying); }
 
-[[nodiscard]] auto Domain::getNumaParameters(unsigned int flags) const noexcept {
-    return TPImpl::wrap_oparm_tp(underlying, virDomainGetNumaParameters, to_integral(flags));
+[[nodiscard]] auto Domain::getNumaParameters(MITPFlags flags) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetNumaParameters, to_integral(flags));
 }
 
 [[nodiscard]] inline unsigned Domain::getID() const noexcept { return virDomainGetID(underlying); }
@@ -260,11 +262,11 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] inline unsigned long Domain::getMaxMemory() const noexcept { return virDomainGetMaxMemory(underlying); }
 
-[[nodiscard]] auto Domain::getPerfEvents(unsigned int flags) const noexcept {
-    return TPImpl::wrap_oparm_tp(underlying, virDomainGetPerfEvents, to_integral(flags));
-} // Proxy flags
+[[nodiscard]] auto Domain::getPerfEvents(MITPFlags flags) const noexcept {
+    return TPImpl::wrap_oparm_set_tp(underlying, virDomainGetPerfEvents, to_integral(flags));
+}
 
-[[nodiscard]] auto Domain::getSchedulerParameters() const noexcept { return TPImpl::wrap_oparm_tp(underlying, virDomainGetSchedulerParameters); }
+[[nodiscard]] auto Domain::getSchedulerParameters() const noexcept { return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetSchedulerParameters); }
 
 [[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>> {
     return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
@@ -339,8 +341,8 @@ bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffe
 }
 
 auto Domain::memoryStats(unsigned int nr_stats) const noexcept {
-    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats,
-                                                                   0u);
+    return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
+        underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats, 0u);
 }
 
 [[nodiscard]] auto Domain::migrateGetCompressionCache() const noexcept -> std::optional<unsigned long long> {

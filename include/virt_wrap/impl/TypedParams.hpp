@@ -41,8 +41,10 @@ TypedParameter::TypedParameter(const virTypedParameter& from, virt::TypedParamet
 TypedParameter::TypedParameter(const virTypedParameter& from) : TypedParameter(from, no_name_tag{}) { first = +from.field; }
 
 inline TypedParams::~TypedParams() noexcept {
-    if (underlying)
+    if (underlying && needs_free)
         virTypedParamsFree(underlying, size);
+    if (underlying && needs_dealloc)
+        delete[] underlying;
 }
 
 void TypedParams::add(gsl::czstring<> name, int i) { virTypedParamsAddInt(&underlying, &size, &capacity, name, i); }

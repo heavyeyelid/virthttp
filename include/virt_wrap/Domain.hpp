@@ -11,6 +11,8 @@
 #include <gsl/gsl>
 #include "../cexpr_algs.hpp"
 #include <libvirt/libvirt-domain.h>
+#include "GFlags.hpp"
+#include "decls.hpp"
 #include "fwd.hpp"
 #include "tfe.hpp"
 #include "utility.hpp"
@@ -491,6 +493,8 @@ class Domain {
         KEEP_NVRAM = VIR_DOMAIN_UNDEFINE_KEEP_NVRAM,                 /* Keep nvram file */
     };
 
+    using MITPFlags = EnumSetTie<ModificationImpactFlag, TypedParameterFlag>;
+
     constexpr inline explicit Domain(virDomainPtr ptr = nullptr) noexcept;
 
     Domain(const Domain&) = delete;
@@ -580,7 +584,7 @@ class Domain {
 
     [[nodiscard]] int getMaxVcpus() const noexcept;
 
-    [[nodiscard]] auto getMemoryParameters(unsigned int flags) const noexcept; // Proxy flags
+    [[nodiscard]] auto getMemoryParameters(MITPFlags flags) const noexcept;
 
     [[nodiscard]] UniqueZstring getMetadata(MetadataType type, gsl::czstring<> ns,
                                             ModificationImpactFlag flags = ModificationImpactFlag::CURRENT) const noexcept;
@@ -590,7 +594,7 @@ class Domain {
 
     [[nodiscard]] gsl::czstring<> getName() const noexcept;
 
-    [[nodiscard]] auto getNumaParameters(unsigned int flags) const noexcept; // Proxy flags
+    [[nodiscard]] auto getNumaParameters(MITPFlags flags) const noexcept;
 
     [[nodiscard]] int getNumVcpus(VCpuFlag flags) const noexcept;
 
@@ -618,7 +622,7 @@ class Domain {
 
     [[nodiscard]] unsigned long getMaxMemory() const noexcept;
 
-    [[nodiscard]] auto getPerfEvents(unsigned int flags) const noexcept; // Proxy flags
+    [[nodiscard]] auto getPerfEvents(MITPFlags flags) const noexcept;
 
     [[nodiscard]] auto getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>>;
 
