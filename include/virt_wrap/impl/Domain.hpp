@@ -13,7 +13,7 @@
 
 namespace virt {
 constexpr inline Domain::Domain(virDomainPtr ptr) noexcept : underlying(ptr) {}
-constexpr inline Domain::Domain(Domain&& dom) noexcept : underlying(dom.underlying) {}
+constexpr inline Domain::Domain(Domain&& dom) noexcept : underlying(dom.underlying) { dom.underlying = nullptr; }
 
 inline Domain& Domain::operator=(Domain&& d) noexcept {
     this->~Domain();
