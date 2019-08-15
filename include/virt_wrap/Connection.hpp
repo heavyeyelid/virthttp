@@ -215,10 +215,12 @@ class Connection {
     [[nodiscard]] Domain domainLookupByID(int) const noexcept;
 
     [[nodiscard]] Domain domainLookupByName(gsl::czstring<>) const noexcept;
+    [[nodiscard]] Domain domainLookupByName(const std::string&) const noexcept;
 
     [[nodiscard]] Domain domainLookupByUUID(gsl::basic_zstring<const unsigned char>) const noexcept;
 
     [[nodiscard]] Domain domainLookupByUUIDString(gsl::czstring<>) const noexcept;
+    [[nodiscard]] Domain domainLookupByUUIDString(const std::string&) const noexcept;
 
     [[nodiscard]] virNodeInfo nodeGetInfo() const;
 

@@ -4,8 +4,8 @@
 #include <string_view>
 #include <gsl/gsl>
 #include "cexpr_algs.hpp"
-#include "json_utils.hpp"
 #include "depends.hpp"
+#include "json_utils.hpp"
 #include "utils.hpp"
 
 #define PM_LIFT(mem_fn) [&](auto... args) { return mem_fn(args...); }
@@ -22,8 +22,24 @@ constexpr auto action_scope = [](auto&&... actions) {
     return DependsOutcome::SKIPPED;
 };
 
-class DomainActionsTable {
+template <class CRTP, class Hdl> class NamedCallTable {
+    constexpr auto& keys() const noexcept { return static_cast<const CRTP&>(*this).keys; }
+    constexpr auto& fcns() const noexcept { return static_cast<const CRTP&>(*this).fcns; }
+
+  public:
+    constexpr Hdl operator[](std::string_view sv) const noexcept {
+        const auto it = cexpr::find(keys().begin(), keys().end(), sv);
+        if (it == keys().end())
+            return nullptr;
+        const auto idx = std::distance(keys().begin(), it);
+        return fcns()[idx];
+    }
+};
+
+using DomainActionsHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str);
+class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActionsHdl> {
   private:
+    friend NamedCallTable<DomainActionsTable, DomainActionsHdl>;
     template <typename Flag, typename Flags>
     constexpr static const auto getFlag = [](const rapidjson::Value& json_flag, auto error) {
         if (auto v = Flags{}[std::string_view{json_flag.GetString(), json_flag.GetStringLength()}]; v)
@@ -58,10 +74,11 @@ class DomainActionsTable {
         return {flagset};
     }
 
-    using ActionHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str);
+    using Hdl = DomainActionsHdl;
+
     constexpr static std::array<std::string_view, 5> keys = {"power_mgt", "name", "memory", "max_memory", "autostart"};
-    constexpr static std::array<ActionHdl, 5> fcns = {
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+    constexpr static std::array<Hdl, 5> fcns = {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             auto pm_message = [&](gsl::czstring<> name, gsl::czstring<> value) {
                 rapidjson::Value msg_val{};
@@ -144,7 +161,7 @@ class DomainActionsTable {
                        PM_PREREQ(if (dom_state != virt::Domain::State::PAUSED) return error(211);)),
                 [&]() { return error(300); });
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsString())
                 return error(0);
@@ -152,7 +169,7 @@ class DomainActionsTable {
                 return error(205);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsInt())
                 return error(0);
@@ -160,7 +177,7 @@ class DomainActionsTable {
                 return error(206);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsInt())
                 return error(0);
@@ -168,7 +185,7 @@ class DomainActionsTable {
                 return error(207);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, const std::string& key_str) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsBool())
                 return error(0);
@@ -177,29 +194,4 @@ class DomainActionsTable {
             return DependsOutcome::SUCCESS;
         },
     };
-
-  public:
-    constexpr ActionHdl operator[](std::string_view sv) const {
-        const auto it = cexpr::find(keys.begin(), keys.end(), sv);
-        if (it == keys.end())
-            return nullptr;
-        const auto idx = std::distance(keys.begin(), it);
-        return fcns[idx];
-    }
-} constexpr static const domain_actions_table;
-
-class DomainQueryTable {
-  private:
-    using ActionHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, const virt::Domain& dom, const std::string& key_str);
-    constexpr static std::array<std::string_view, 0> keys = {};
-    constexpr static std::array<ActionHdl, 0> fcns = {};
-
-  public:
-    constexpr ActionHdl operator[](std::string_view sv) const {
-        const auto it = cexpr::find(keys.begin(), keys.end(), sv);
-        if (it == keys.end())
-            return nullptr;
-        const auto idx = std::distance(keys.begin(), it);
-        return fcns[idx];
-    }
-} constexpr static const domain_query_table;
+} constexpr static const domain_actions_table{};
