@@ -6,7 +6,6 @@
 #include <vector>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
-#include "type_ops.hpp"
 #include "Domain.hpp"
 #include "fwd.hpp"
 #include "type_ops.hpp"
@@ -121,6 +120,20 @@ class Connection {
                 CCW = VIR_CONNECT_LIST_NODE_DEVICES_CAP_CCW_DEV,
             };
         };
+        struct Networks {
+            enum class Flag : unsigned {
+                DEFAULT = 0,
+
+                INACTIVE = VIR_CONNECT_LIST_NETWORKS_INACTIVE,
+                ACTIVE = VIR_CONNECT_LIST_NETWORKS_ACTIVE,
+
+                PERSISTENT = VIR_CONNECT_LIST_NETWORKS_PERSISTENT,
+                TRANSIENT = VIR_CONNECT_LIST_NETWORKS_TRANSIENT,
+
+                AUTOSTART = VIR_CONNECT_LIST_NETWORKS_AUTOSTART,
+                NO_AUTOSTART = VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART,
+            };
+        };
     };
     struct GetAllDomains {
         struct Stats {
@@ -233,8 +246,9 @@ class Connection {
     [[nodiscard]] Network networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept;
 
     [[nodiscard]] Network networkLookupByName(gsl::czstring<> name) const noexcept;
-
+    [[nodiscard]] Network networkLookupByName(const std::string& name) const noexcept;
     [[nodiscard]] Network networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept;
+    [[nodiscard]] Network networkLookupByUUIDString(const std::string& uuid_str) const noexcept;
     /**
      * (Light) List all networks
      * @param active
@@ -242,12 +256,10 @@ class Connection {
      * @param autostart
      * @return std:unique_ptr<Network[], ?>: A wrapped array of networks extended with begin() and end(), or {nullptr} in case of error
      * */
-    [[nodiscard]] auto listAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
-                                       std::optional<bool> autostart = std::nullopt) const noexcept;
+    [[nodiscard]] auto listAllNetworks(List::Networks::Flag) const noexcept;
     [[nodiscard]] inline auto listDefinedNetworksNames() const noexcept;
     [[nodiscard]] inline auto listNetworksNames() const noexcept;
-    [[nodiscard]] std::vector<Network> extractAllNetworks(std::optional<bool> active = std::nullopt, std::optional<bool> persistent = std::nullopt,
-                                                          std::optional<bool> autostart = std::nullopt) const;
+    [[nodiscard]] std::vector<Network> extractAllNetworks(List::Networks::Flag) const;
     [[nodiscard]] std::vector<std::string> extractDefinedNetworksNames() const;
     [[nodiscard]] std::vector<std::string> extractNetworksNames() const;
 
@@ -267,6 +279,9 @@ class Connection {
 [[nodiscard]] constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Domains::Flag lhs,
                                                                          Connection::List::Domains::Flag rhs) noexcept;
 constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept;
+[[nodiscard]] constexpr inline Connection::List::Networks::Flag operator|(Connection::List::Networks::Flag lhs,
+                                                                          Connection::List::Networks::Flag rhs) noexcept;
+constexpr inline Connection::List::Networks::Flag& operator|=(Connection::List::Networks::Flag& lhs, Connection::List::Networks::Flag rhs) noexcept;
 
 [[nodiscard]] constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
                                                                                  Connection::GetAllDomains::Stats::Flags rhs) noexcept;

@@ -6,6 +6,7 @@
 
 #include <boost/beast/http/message.hpp>
 #include <rapidjson/document.h>
+#include "wrapper/handlers/network.hpp"
 #include "virt_wrap.hpp"
 
 #include "handlers/domain.hpp"
@@ -62,6 +63,15 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                                                   }},
                                        [](HandlerContext& hc, auto flags) { return hc.conn.listAllDomains(flags); }};
 
+    constexpr Resolver network_resolver{tp<virt::Network, NetworkUnawareHandlers>, "networks", std::array{"by-name"sv, "by-uuid"sv},
+                                        std::array{+[](const HandlerContext& hc, std::string_view sv) {
+                                                       return hc.conn.networkLookupByName({sv.data(), sv.length()});
+                                                   },
+                                                   +[](const HandlerContext& hc, std::string_view sv) {
+                                                       return hc.conn.networkLookupByUUIDString({sv.data(), sv.length()});
+                                                   }},
+                                        [](HandlerContext& hc, auto flags) { return hc.conn.extractAllNetworks(flags); }};
+
     auto domains = [&](virt::Connection&& conn) {
         HandlerContext hdl_ctx{conn, json_res, key_str};
         virt::Domain dom{};
@@ -80,87 +90,20 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
     };
 
     auto networks = [&](virt::Connection&& conn) {
-        if (!getSearchKey("networks"))
-            return;
-        switch (req.method()) {
-        case http::verb::get: {
-            if (search_key != SearchKey::none) {
-                virt::Network nw{};
-                if (search_key == SearchKey::by_name) {
-                    logger.debug("Network by name");
-                    nw = conn.networkLookupByName(key_str.c_str());
-                    if (!nw) {
-                        logger.error("Cannot find network with a such name");
-                        return error(501);
-                    }
-                } else if (search_key == SearchKey::by_uuid) {
-                    logger.debug("Network by UUID");
-                    nw = conn.networkLookupByUUIDString(key_str.c_str());
-                    if (!nw) {
-                        logger.error("Cannot find network with a such name");
-                        return error(502);
-                    }
-                }
+        HandlerContext hdl_ctx{conn, json_res, key_str};
+        virt::Network nw{};
+        NetworkHandlers hdls{hdl_ctx, nw};
 
-                rapidjson::Value nw_json{};
-                nw_json.SetObject();
+        const auto nws = network_resolver(target, hdl_ctx);
+        const auto idx = HandlerMethods::verb_to_idx(req.method());
+        if (idx < 0)
+            return error(3);
+        const auto mth = HandlerMethods::methods[idx];
+        rapidjson::Document json_req{};
+        json_req.Parse(req.body().data());
 
-                rapidjson::Value jsAS{};
-                TFE nwAS = nw.getAutostart();
-                if (!nwAS.err()) {
-                    if (nwAS)
-                        jsAS.SetBool(true);
-                    else
-                        jsAS.SetBool(false);
-                } else {
-                    logger.error("Error occurred while getting network autostart");
-                    return error(503);
-                }
-
-                TFE nwActive = nw.isActive();
-                rapidjson::Value jsonActive;
-                if (!nwActive.err()) {
-                    if (nwActive)
-                        jsonActive.SetBool(true);
-                    else
-                        jsonActive.SetBool(false);
-                } else {
-                    logger.error("Error occurred while getting network status");
-                    return error(500);
-                }
-
-                nw_json.AddMember("name", nw.extractName(), json_res.GetAllocator());
-                nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
-                nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
-                nw_json.AddMember("autostart", jsAS, json_res.GetAllocator());
-                json_res.result(nw_json);
-
-            } else {
-                logger.debug("Listing all networks");
-                for (const auto& nw : conn.extractAllNetworks()) {
-                    TFE nwActive = nw.isActive();
-                    rapidjson::Value jsonActive;
-                    if (!nwActive.err()) {
-                        if (nwActive)
-                            jsonActive.SetBool(true);
-                        else
-                            jsonActive.SetBool(false);
-                    } else {
-                        logger.error("Error occurred while getting network status");
-                        return error(500);
-                    }
-                    rapidjson::Value nw_json;
-                    nw_json.SetObject();
-                    nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-                    nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
-                    nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
-                    json_res.result(nw_json);
-                }
-            }
-        } break;
-        default: {
-        }
-        }
+        auto exec = domain_jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
+        exec(hdls);
     };
 
     [&] {
