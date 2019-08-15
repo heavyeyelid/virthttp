@@ -57,7 +57,7 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
         auto error = [&](auto... args) { return hc.json_res.error(args...); };
 
         const auto [idx, search_value] = getSearchKey(target);
-        if (search_value == nullptr)
+        if (search_value.data() == nullptr)
             return error(-999), Ret{}; // Basically happens when: 1. there's an unknown key 2. there's a known key but no value
 
         Ret ret;
