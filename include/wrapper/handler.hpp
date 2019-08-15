@@ -31,10 +31,10 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         using Object = typename decltype(resolver)::O;
         using Handlers = typename decltype(t_hdls)::Type;
         HandlerContext hdl_ctx{conn, json_res, key_str};
-        Object dom{};
-        Handlers hdls{hdl_ctx, dom};
+        Object obj{};
+        Handlers hdls{hdl_ctx, obj};
 
-        const auto doms = resolver(target, hdl_ctx);
+        const auto objs = resolver(target, hdl_ctx);
         const auto idx = HandlerMethods::verb_to_idx(req.method());
         if (idx < 0)
             return error(3);
@@ -43,7 +43,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         json_req.Parse(req.body().data());
 
         auto exec = jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
-        exec(hdls);
+        for (auto v : objs)
+            obj = std::move(v), exec(hdls);
     };
 
     constexpr Resolver domain_resolver{tp<virt::Domain, DomainUnawareHandlers>, "domains", std::array{"by-name"sv, "by-uuid"sv},
@@ -70,14 +71,16 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                        std::bind(object, std::placeholders::_1, network_resolver, network_jdispatchers, t_<NetworkHandlers>)};
 
     [&] {
-        if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
-            return error(1);
+        // if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
+        //    return error(1);
         logger.debug("Opening connection to ", iniConfig.getConnURI());
         virt::Connection conn{iniConfig.connURI.c_str()};
+        /*
         if (!conn) {
             logger.error("Failed to open connection to ", iniConfig.getConnURI());
             return error(10);
         }
+         */
         auto i = 0;
 
         for (const auto key : keys) {
