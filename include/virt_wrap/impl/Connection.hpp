@@ -234,10 +234,11 @@ Network Connection::networkLookupByUUID(gsl::basic_zstring<const unsigned char> 
 }
 
 Network Connection::networkLookupByName(gsl::czstring<> name) const noexcept { return Network{virNetworkLookupByName(underlying, name)}; }
-
+Network Connection::networkLookupByName(const std::string& name) const noexcept { return networkLookupByName(name.c_str()); }
 Network Connection::networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept {
     return Network{virNetworkLookupByUUIDString(underlying, uuid_str)};
 }
+Network Connection::networkLookupByUUIDString(const std::string& uuid_str) const noexcept { return networkLookupByUUIDString(uuid_str.c_str()); }
 
 virNodeInfo Connection::nodeGetInfo() const {
     virNodeInfo ret{};
@@ -256,12 +257,8 @@ std::vector<unsigned long long> Connection::nodeGetCellsFreeMemory() const {
     return ret;
 }
 
-auto Connection::listAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const noexcept {
-    auto flags = 0u;
-    flags |= active ? (*active ? VIR_CONNECT_LIST_NETWORKS_ACTIVE : VIR_CONNECT_LIST_NETWORKS_INACTIVE) : 0u;
-    flags |= persistent ? (*persistent ? VIR_CONNECT_LIST_NETWORKS_PERSISTENT : VIR_CONNECT_LIST_NETWORKS_TRANSIENT) : 0u;
-    flags |= autostart ? (*autostart ? VIR_CONNECT_LIST_NETWORKS_AUTOSTART : VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART) : 0u;
-    return virt::meta::light::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, flags);
+[[nodiscard]] auto Connection::listAllNetworks(Connection::List::Networks::Flag flags) const noexcept {
+    return virt::meta::light::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, to_integral(flags));
 }
 
 inline auto Connection::listDefinedNetworksNames() const noexcept {
@@ -281,12 +278,8 @@ auto Connection::extractNetworksNames() const -> std::vector<std::string> {
     return virt::meta::heavy::wrap_oparm_owning_fill_freeable_arr<std::string>(underlying, virConnectNumOfNetworks, virConnectListNetworks);
 }
 
-std::vector<Network> Connection::extractAllNetworks(std::optional<bool> active, std::optional<bool> persistent, std::optional<bool> autostart) const {
-    auto flags = 0u;
-    flags |= active ? (*active ? VIR_CONNECT_LIST_NETWORKS_ACTIVE : VIR_CONNECT_LIST_NETWORKS_INACTIVE) : 0u;
-    flags |= persistent ? (*persistent ? VIR_CONNECT_LIST_NETWORKS_PERSISTENT : VIR_CONNECT_LIST_NETWORKS_TRANSIENT) : 0u;
-    flags |= autostart ? (*autostart ? VIR_CONNECT_LIST_NETWORKS_AUTOSTART : VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART) : 0u;
-    return virt::meta::heavy::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, flags);
+std::vector<Network> Connection::extractAllNetworks(List::Networks::Flag flags) const {
+    return virt::meta::heavy::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, to_integral(flags));
 }
 
 auto Connection::listAllDevices(List::Devices::Flags flags) const noexcept {
@@ -328,6 +321,13 @@ constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Dom
     return Connection::List::Domains::Flag(to_integral(lhs) | to_integral(rhs));
 }
 constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept {
+    return lhs = lhs | rhs;
+}
+[[nodiscard]] constexpr inline Connection::List::Networks::Flag operator|(Connection::List::Networks::Flag lhs,
+                                                                          Connection::List::Networks::Flag rhs) noexcept {
+    return Connection::List::Networks::Flag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr inline Connection::List::Networks::Flag& operator|=(Connection::List::Networks::Flag& lhs, Connection::List::Networks::Flag rhs) noexcept {
     return lhs = lhs | rhs;
 }
 constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,

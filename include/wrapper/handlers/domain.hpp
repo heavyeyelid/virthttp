@@ -21,7 +21,7 @@ class DomainUnawareHandlers : public HandlerContext {
   public:
     explicit DomainUnawareHandlers(HandlerContext& ctx) : HandlerContext(ctx) {}
 
-    [[nodiscard]] auto search_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
+    [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
         auto flags = virt::Connection::List::Domains::Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
             flags |= *activity ? virt::Connection::List::Domains::Flag::ACTIVE : virt::Connection::List::Domains::Flag::INACTIVE;
@@ -46,8 +46,6 @@ class DomainUnawareHandlers : public HandlerContext {
         }
         return {flags};
     }
-
-    [[nodiscard]] static auto getAllMth() noexcept { return &virt::Connection::listAllDomains; }
 };
 
 class DomainHandlers : public HandlerMethods {
