@@ -10,16 +10,15 @@
 
 #include "handlers/domain.hpp"
 #include "actions_table.hpp"
+#include "dispatch.hpp"
 #include "fwd.hpp"
 #include "json_utils.hpp"
 #include "logger.hpp"
+#include "solver.hpp"
 #include "urlparser.hpp"
 
 namespace beast = boost::beast;
 namespace http = beast::http;
-
-constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
-constexpr boost::string_view stdsv2bsv(std::string_view sv) noexcept { return {sv.data(), sv.length()}; }
 
 template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const http::request<Body, http::basic_fields<Allocator>>& req) {
     auto target = TargetParser{bsv2stdsv(req.target())};
@@ -54,80 +53,30 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         return true;
     };
 
+    constexpr Resolver domain_resolver{tp<virt::Domain, DomainUnawareHandlers>, "domains", std::array{"by-name"sv, "by-uuid"sv},
+                                       std::array{+[](const HandlerContext& hc, std::string_view sv) {
+                                                      return hc.conn.domainLookupByName({sv.data(), sv.length()});
+                                                  },
+                                                  +[](const HandlerContext& hc, std::string_view sv) {
+                                                      return hc.conn.domainLookupByUUIDString({sv.data(), sv.length()});
+                                                  }},
+                                       [](HandlerContext& hc, auto flags) { return hc.conn.listAllDomains(flags); }};
+
     auto domains = [&](virt::Connection&& conn) {
         HandlerContext hdl_ctx{conn, json_res, key_str};
         virt::Domain dom{};
         DomainHandlers hdls{hdl_ctx, dom};
 
-        if (!getSearchKey("domains"))
-            return;
+        const auto doms = domain_resolver(target, hdl_ctx);
+        const auto idx = HandlerMethods::verb_to_idx(req.method());
+        if (idx < 0)
+            return error(3);
+        const auto mth = HandlerMethods::methods[idx];
+        rapidjson::Document json_req{};
+        json_req.Parse(req.body().data());
 
-        if (search_key != SearchKey::none) {
-
-            if (search_key == SearchKey::by_name) {
-                logger.debug("Getting domain by name");
-                dom = conn.domainLookupByName(key_str.c_str());
-                if (!dom) {
-                    logger.error("Cannot find domain with name: ", key_str);
-                    return error(100);
-                }
-            } else if (search_key == SearchKey::by_uuid) {
-                logger.debug("Getting domain by uuid");
-                dom = conn.domainLookupByUUIDString(key_str.c_str());
-                if (!dom) {
-                    logger.error("Cannot find domain with UUID: ", key_str);
-                    return error(101);
-                }
-            }
-            rapidjson::Document json_req{};
-            json_req.Parse(req.body().data());
-            switch (req.method()) {
-            case http::verb::patch: {
-                if (json_req.IsObject())
-                    return (void)hdls.modification(json_req);
-                if (json_req.IsArray())
-                    return (void)handle_depends(json_req, json_res, [&](const auto& action) { return hdls.modification(action); });
-                return error(3);
-            }
-            case http::verb::get: {
-                return (void)hdls.query(json_req);
-            }
-            default: {
-            }
-            }
-        } else {
-            switch (req.method()) {
-            case http::verb::get: {
-                const auto flags_opt = hdls.query_all_flags(target);
-                if (!flags_opt)
-                    return;
-                const auto flags = *flags_opt;
-                for (const auto& dom : conn.listAllDomains(flags)) {
-                    const auto info = dom.getInfo();
-                    rapidjson::Value res_val;
-                    res_val.SetObject();
-                    res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-                    res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
-                    res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
-                    res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[info.state]), json_res.GetAllocator());
-                    json_res.result(res_val);
-                }
-            } break;
-            case http::verb::post: {
-                rapidjson::Document json_req{};
-                json_req.Parse(req.body().data());
-                if (json_req.IsString())
-                    return (void)hdls.creation(json_req, true);
-                if (json_req.IsObject())
-                    return (void)hdls.creation(json_req, false, true);
-                if (json_req.IsArray())
-                    return (void)handle_depends(json_req, json_res, [&](const rapidjson::Value& obj) { return hdls.creation(obj); });
-                return error(0);
-            }
-            default: {
-            }
-            }
-        }
+        auto exec = domain_jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
+        exec(hdls);
     };
 
     auto networks = [&](virt::Connection&& conn) {

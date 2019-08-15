@@ -218,6 +218,7 @@ auto Connection::getAllDomainStats(Domain::Stats::Types stats, Connection::GetAl
 Domain Connection::domainLookupByID(int id) const noexcept { return Domain{virDomainLookupByID(underlying, id)}; }
 
 Domain Connection::domainLookupByName(gsl::czstring<> name) const noexcept { return Domain{virDomainLookupByName(underlying, name)}; }
+Domain Connection::domainLookupByName(const std::string& name) const noexcept { return domainLookupByName(name.c_str()); }
 
 Domain Connection::domainLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
     return Domain{virDomainLookupByUUID(underlying, uuid)};
@@ -226,6 +227,7 @@ Domain Connection::domainLookupByUUID(gsl::basic_zstring<const unsigned char> uu
 Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept {
     return Domain{virDomainLookupByUUIDString(underlying, uuid_str)};
 }
+Domain Connection::domainLookupByUUIDString(const std::string& uuid_str) const noexcept { return domainLookupByUUIDString(uuid_str.c_str()); }
 
 Network Connection::networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
     return Network{virNetworkLookupByUUID(underlying, uuid)};

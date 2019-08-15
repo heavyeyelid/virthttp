@@ -1,41 +1,27 @@
 #pragma once
+#include <tuple>
+#include <rapidjson/rapidjson.h>
 #include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
+#include "wrapper/dispatch.hpp"
 #include "base.hpp"
+#include "hdl_ctx.hpp"
 #include "virt_wrap.hpp"
 
-class DomainHandlers : HandlerContext {
+using DomainJDispatcherVals =
+    std::tuple<JDispatchVals<JTypeList<rapidjson::kStringType, rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>,
+               JDispatchVals<JTypeList<rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>>;
+constexpr DomainJDispatcherVals domain_jdispatcher_vals{};
 
+constexpr std::array<JDispatch, std::tuple_size_v<DomainJDispatcherVals>> domain_jdispatchers = gen_jdispatchers(domain_jdispatcher_vals);
+
+class DomainUnawareHandlers : public HandlerContext {
     template <class... Args> auto error(Args... args) const noexcept { return json_res.error(args...); };
 
-    virt::Domain& dom;
-
   public:
-    explicit DomainHandlers(HandlerContext& ctx, virt::Domain& dom) : HandlerContext(ctx), dom(dom) {}
+    explicit DomainUnawareHandlers(HandlerContext& ctx) : HandlerContext(ctx) {}
 
-    DependsOutcome creation(const rapidjson::Value& obj, bool known_str = false, bool known_obj = false) {
-        if (known_str || obj.IsString()) {
-            dom = virt::Domain::createXML(conn, obj.GetString());
-            if (!dom)
-                return error(105), DependsOutcome::FAILURE;
-            rapidjson::Value res_val;
-            res_val.SetObject();
-            res_val.AddMember("created", true, json_res.GetAllocator());
-            json_res.result(std::move(res_val));
-            return DependsOutcome::SUCCESS;
-        }
-        if (obj.IsObject())
-            return error(-1), DependsOutcome::FAILURE;
-        return error(0), DependsOutcome::FAILURE;
-    }
-
-    DependsOutcome modification(const rapidjson::Value& action) {
-        const auto& action_obj = *action.MemberBegin();
-        const auto& [action_name, action_val] = action_obj;
-        const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-        return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
-    }
-    [[nodiscard]] auto query_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
+    [[nodiscard]] auto search_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
         auto flags = virt::Connection::List::Domains::Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
             flags |= *activity ? virt::Connection::List::Domains::Flag::ACTIVE : virt::Connection::List::Domains::Flag::INACTIVE;
@@ -60,7 +46,34 @@ class DomainHandlers : HandlerContext {
         }
         return {flags};
     }
-    DependsOutcome query(const rapidjson::Value& action) {
+
+    [[nodiscard]] static auto getAllMth() noexcept { return &virt::Connection::listAllDomains; }
+};
+
+class DomainHandlers : public HandlerMethods {
+    template <class... Args> auto error(Args... args) const noexcept { return json_res.error(args...); };
+    virt::Domain& dom;
+
+  public:
+    explicit DomainHandlers(HandlerContext& ctx, virt::Domain& dom) : HandlerMethods(ctx), dom(dom) {}
+
+    DependsOutcome create(const rapidjson::Value& obj) override {
+        if (obj.IsString()) {
+            dom = virt::Domain::createXML(conn, obj.GetString());
+            if (!dom)
+                return error(105), DependsOutcome::FAILURE;
+            rapidjson::Value res_val;
+            res_val.SetObject();
+            res_val.AddMember("created", true, json_res.GetAllocator());
+            json_res.result(std::move(res_val));
+            return DependsOutcome::SUCCESS;
+        }
+        if (obj.IsObject())
+            return error(-1), DependsOutcome::FAILURE;
+        return error(0), DependsOutcome::FAILURE;
+    }
+
+    DependsOutcome query(const rapidjson::Value& action) override {
         rapidjson::Value res_val;
         res_val.SetObject();
         const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
@@ -77,4 +90,11 @@ class DomainHandlers : HandlerContext {
         json_res.result(std::move(res_val));
         return DependsOutcome::SUCCESS;
     }
+    DependsOutcome alter(const rapidjson::Value& action) override {
+        const auto& action_obj = *action.MemberBegin();
+        const auto& [action_name, action_val] = action_obj;
+        const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
+        return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
+    }
+    DependsOutcome vacuum(const rapidjson::Value& action) override { return error(-1), DependsOutcome::FAILURE; }
 };

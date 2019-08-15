@@ -50,6 +50,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/type_ops.hpp
             include/virt_wrap/utility.hpp
             include/virt_wrap/Error.hpp
+            include/virt_wrap/GFlags.hpp
             include/virt_wrap/Network.hpp
             include/virt_wrap/NodeDevice.hpp
             include/virt_wrap/impl/Connection.hpp
@@ -65,15 +66,21 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/wrapper/actions_table.hpp
             include/wrapper/config.hpp
             include/wrapper/depends.hpp
+            include/wrapper/dispatch.hpp
             include/wrapper/error_msg.hpp
             include/wrapper/handler.hpp
+            include/wrapper/handlers.hpp
+            include/wrapper/solver.hpp
+            include/wrapper/handlers/base.hpp
+            include/wrapper/handlers/domain.hpp
+            include/wrapper/handlers/hdl_ctx.hpp
             include/virt_wrap.hpp
             include/logger.hpp
             include/fwd.hpp
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp include/wrapper/handlers.hpp include/wrapper/handlers/domain.hpp include/wrapper/handlers/base.hpp include/virt_wrap/GFlags.hpp)
+            include/urlparser.hpp)
 
     target_link_libraries(HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
