@@ -34,7 +34,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         Object obj{};
         Handlers hdls{hdl_ctx, obj};
 
-        const auto objs = resolver(target, hdl_ctx);
+        auto objs = resolver(target, hdl_ctx);
         const auto idx = HandlerMethods::verb_to_idx(req.method());
         if (idx < 0)
             return error(3);
@@ -43,7 +43,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         json_req.Parse(req.body().data());
 
         auto exec = jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
-        for (auto v : objs)
+        for (auto&& v : objs)
             obj = std::move(v), exec(hdls);
     };
 
