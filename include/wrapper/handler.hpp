@@ -27,24 +27,6 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
     auto error = [&](auto... args) { return json_res.error(args...); };
     auto target = TargetParser{bsv2stdsv(req.target())};
 
-    constexpr Resolver domain_resolver{tp<virt::Domain, DomainUnawareHandlers>, "domains", std::array{"by-name"sv, "by-uuid"sv},
-                                       std::array{+[](const HandlerContext& hc, std::string_view sv) {
-                                                      return hc.conn.domainLookupByName({sv.data(), sv.length()});
-                                                  },
-                                                  +[](const HandlerContext& hc, std::string_view sv) {
-                                                      return hc.conn.domainLookupByUUIDString({sv.data(), sv.length()});
-                                                  }},
-                                       [](HandlerContext& hc, auto flags) { return hc.conn.listAllDomains(flags); }};
-
-    constexpr Resolver network_resolver{tp<virt::Network, NetworkUnawareHandlers>, "networks", std::array{"by-name"sv, "by-uuid"sv},
-                                        std::array{+[](const HandlerContext& hc, std::string_view sv) {
-                                                       return hc.conn.networkLookupByName({sv.data(), sv.length()});
-                                                   },
-                                                   +[](const HandlerContext& hc, std::string_view sv) {
-                                                       return hc.conn.networkLookupByUUIDString({sv.data(), sv.length()});
-                                                   }},
-                                        [](HandlerContext& hc, auto flags) { return hc.conn.extractAllNetworks(flags); }};
-
     auto object = [&](virt::Connection&& conn, auto resolver, auto jdispatchers, auto t_hdls) -> void {
         using Object = typename decltype(resolver)::O;
         using Handlers = typename decltype(t_hdls)::Type;
@@ -63,6 +45,25 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         auto exec = jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
         exec(hdls);
     };
+
+    constexpr Resolver domain_resolver{tp<virt::Domain, DomainUnawareHandlers>, "domains", std::array{"by-name"sv, "by-uuid"sv},
+                                       std::array{+[](const HandlerContext& hc, std::string_view sv) {
+                                                      return hc.conn.domainLookupByName({sv.data(), sv.length()});
+                                                  },
+                                                  +[](const HandlerContext& hc, std::string_view sv) {
+                                                      return hc.conn.domainLookupByUUIDString({sv.data(), sv.length()});
+                                                  }},
+                                       [](HandlerContext& hc, auto flags) { return hc.conn.listAllDomains(flags); }};
+
+    constexpr Resolver network_resolver{tp<virt::Network, NetworkUnawareHandlers>, "networks", std::array{"by-name"sv, "by-uuid"sv},
+                                        std::array{+[](const HandlerContext& hc, std::string_view sv) {
+                                                       return hc.conn.networkLookupByName({sv.data(), sv.length()});
+                                                   },
+                                                   +[](const HandlerContext& hc, std::string_view sv) {
+                                                       return hc.conn.networkLookupByUUIDString({sv.data(), sv.length()});
+                                                   }},
+                                        [](HandlerContext& hc, auto flags) { return hc.conn.extractAllNetworks(flags); }};
+
 
     constexpr static std::array keys = {"/libvirt/domains"sv, "/libvirt/networks"sv};
     std::tuple fcns = {std::bind(object, std::placeholders::_1, domain_resolver, domain_jdispatchers, t_<DomainHandlers>),
