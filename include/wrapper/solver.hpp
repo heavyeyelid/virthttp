@@ -17,9 +17,11 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
     FcnsT sfcns;
     ListFcn list_fcn;
 
+  public:
     using O = typename TPOUH::First;
     using UH = typename TPOUH::Second;
 
+  private:
     [[nodiscard]] constexpr std::pair<int, std::string_view> getSearchKey(const TargetParser& target) const noexcept {
         const auto key_start = "/libvirt/"sv.length() + type.size();
         const auto path = stdsv2bsv(target.getPath().substr(key_start)); // C++2a: use std::string_view all the way

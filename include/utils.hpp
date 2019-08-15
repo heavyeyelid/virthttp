@@ -7,6 +7,9 @@
 #include <type_traits>
 #include "virt_wrap/utility.hpp"
 
+template <class T> struct TypeVal { using Type = T; };
+template <class T> TypeVal<T> t_{};
+
 template <class T, class U> struct TypePair {
     using First = T;
     using Second = U;
