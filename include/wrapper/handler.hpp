@@ -22,37 +22,10 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 
 template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const http::request<Body, http::basic_fields<Allocator>>& req) {
-    auto target = TargetParser{bsv2stdsv(req.target())};
-
-    enum class SearchKey { by_name, by_uuid, none } search_key = SearchKey::none;
-
     JsonRes json_res{};
     std::string key_str{};
-
     auto error = [&](auto... args) { return json_res.error(args...); };
-    auto getSearchKey = [&](const std::string& type) {
-        const auto key_start = "/libvirt/"sv.length() + type.size();
-        const auto path = stdsv2bsv(target.getPath().substr(key_start)); // C++2a: use std::string_view all the way
-        const auto sv_by_uuid = "/by-uuid"sv;
-        const auto sv_by_name = "/by-name"sv;
-        if (path.starts_with(stdsv2bsv(sv_by_uuid))) {
-            search_key = SearchKey::by_uuid;
-            const auto post_skey = path.substr(sv_by_uuid.length());
-            if (post_skey.empty() || post_skey.substr(1).empty())
-                return error(102), false;
-            key_str = target.getPath().substr(key_start + 9);
-        } else if (path.starts_with(stdsv2bsv(sv_by_name))) {
-            search_key = SearchKey::by_name;
-            const auto post_skey = path.substr(sv_by_name.length());
-            if (post_skey.empty() || post_skey.substr(1).empty())
-                return error(103), false;
-            key_str = bsv2stdsv(post_skey.substr(1));
-        } else if (!path.empty() && !path.substr(1).empty()) {
-            key_str = bsv2stdsv(path.substr(1));
-            search_key = SearchKey::by_name;
-        }
-        return true;
-    };
+    auto target = TargetParser{bsv2stdsv(req.target())};
 
     constexpr Resolver domain_resolver{tp<virt::Domain, DomainUnawareHandlers>, "domains", std::array{"by-name"sv, "by-uuid"sv},
                                        std::array{+[](const HandlerContext& hc, std::string_view sv) {
@@ -72,12 +45,14 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                                                    }},
                                         [](HandlerContext& hc, auto flags) { return hc.conn.extractAllNetworks(flags); }};
 
-    auto domains = [&](virt::Connection&& conn) {
+    auto object = [&](virt::Connection&& conn, auto resolver, auto jdispatchers, auto t_hdls) {
+        using Object = typename decltype(resolver)::O;
+        using Handlers = typename decltype(t_hdls)::Type;
         HandlerContext hdl_ctx{conn, json_res, key_str};
-        virt::Domain dom{};
-        DomainHandlers hdls{hdl_ctx, dom};
+        Object dom{};
+        Handlers hdls{hdl_ctx, dom};
 
-        const auto doms = domain_resolver(target, hdl_ctx);
+        const auto doms = resolver(target, hdl_ctx);
         const auto idx = HandlerMethods::verb_to_idx(req.method());
         if (idx < 0)
             return error(3);
@@ -85,26 +60,12 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         rapidjson::Document json_req{};
         json_req.Parse(req.body().data());
 
-        auto exec = domain_jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
+        auto exec = jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
         exec(hdls);
     };
 
-    auto networks = [&](virt::Connection&& conn) {
-        HandlerContext hdl_ctx{conn, json_res, key_str};
-        virt::Network nw{};
-        NetworkHandlers hdls{hdl_ctx, nw};
-
-        const auto nws = network_resolver(target, hdl_ctx);
-        const auto idx = HandlerMethods::verb_to_idx(req.method());
-        if (idx < 0)
-            return error(3);
-        const auto mth = HandlerMethods::methods[idx];
-        rapidjson::Document json_req{};
-        json_req.Parse(req.body().data());
-
-        auto exec = domain_jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
-        exec(hdls);
-    };
+    auto domains = std::bind(object, std::placeholders::_1, domain_resolver, domain_jdispatchers, t_<DomainHandlers>);
+    auto networks = std::bind(object, std::placeholders::_1, network_resolver, network_jdispatchers, t_<NetworkHandlers>);
 
     [&] {
         if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)

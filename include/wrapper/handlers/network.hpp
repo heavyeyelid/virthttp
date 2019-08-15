@@ -13,6 +13,8 @@
 using NetworkJDispatcherVals = std::tuple<JDispatchVals<JAll>, JDispatchVals<JAll>, JDispatchVals<JAll>, JDispatchVals<JAll>>;
 constexpr NetworkJDispatcherVals network_jdispatcher_vals{};
 
+constexpr auto network_jdispatchers = gen_jdispatchers(network_jdispatcher_vals);
+
 class NetworkUnawareHandlers : public HandlerContext {
     template <class... Args> auto error(Args... args) const noexcept { return json_res.error(args...); };
 
