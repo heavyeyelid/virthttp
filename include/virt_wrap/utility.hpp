@@ -66,7 +66,7 @@ constexpr EnumSetTie<Es...>& operator|=(EnumSetTie<Es...>& lhs, E rhs) noexcept 
 template <class CRTP, class E, class V = gsl::czstring<>> class EnumHelper {
     using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
 
-    constexpr decltype(auto) values() const noexcept { return static_cast<const CRTP&>(*this).values; }
+    constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
   public:
     [[nodiscard]] constexpr V operator[](E val) const noexcept { return values()[to_integral(val)]; }
