@@ -194,4 +194,5 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
             return DependsOutcome::SUCCESS;
         },
     };
+    static_assert(keys.size() == fcns.size());
 } constexpr static const domain_actions_table{};
