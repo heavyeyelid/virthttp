@@ -42,7 +42,7 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
 
         const auto idx = std::distance(skeys.begin(), it);
         const auto sk = skeys[idx];
-        const auto s_val = bsv2stdsv(path.substr(0, sk.length() + 2)); // 2 because two forward-slashes
+        const auto s_val = bsv2stdsv(path.substr(sk.length() + 2)); // 2 because two forward-slashes
         if (s_val.empty())
             return {std::numeric_limits<int>::min(), nullptr};
         return {idx, s_val};
