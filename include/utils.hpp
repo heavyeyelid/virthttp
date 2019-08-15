@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <tuple>
 #include <type_traits>
 #include "virt_wrap/utility.hpp"
 
@@ -36,4 +37,10 @@ constexpr unsigned strntou(const char* str, std::size_t len) {
 template <typename Container, typename T> unsigned reverse_search(const Container& c, const T& e) {
     const auto it = std::find(c.begin(), c.end(), e);
     return static_cast<unsigned>(std::distance(c.begin(), it));
+}
+
+template <typename T, typename V, size_t... I> void visit_impl(T&& t, V&& v, std::index_sequence<I...>) { (..., v(std::get<I>(t))); }
+
+template <typename T, typename V> void visit(T&& t, V&& v) {
+    visit_impl(std::forward<T>(t), std::forward<V>(v), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>());
 }

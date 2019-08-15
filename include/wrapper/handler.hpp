@@ -4,12 +4,11 @@
 
 #pragma once
 
+#include <utility>
 #include <boost/beast/http/message.hpp>
 #include <rapidjson/document.h>
-#include "wrapper/handlers/network.hpp"
-#include "virt_wrap.hpp"
-
 #include "handlers/domain.hpp"
+#include "wrapper/handlers/network.hpp"
 #include "actions_table.hpp"
 #include "dispatch.hpp"
 #include "fwd.hpp"
@@ -17,6 +16,7 @@
 #include "logger.hpp"
 #include "solver.hpp"
 #include "urlparser.hpp"
+#include "virt_wrap.hpp"
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -45,7 +45,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                                                    }},
                                         [](HandlerContext& hc, auto flags) { return hc.conn.extractAllNetworks(flags); }};
 
-    auto object = [&](virt::Connection&& conn, auto resolver, auto jdispatchers, auto t_hdls) {
+    auto object = [&](virt::Connection&& conn, auto resolver, auto jdispatchers, auto t_hdls) -> void {
         using Object = typename decltype(resolver)::O;
         using Handlers = typename decltype(t_hdls)::Type;
         HandlerContext hdl_ctx{conn, json_res, key_str};
@@ -64,8 +64,9 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         exec(hdls);
     };
 
-    auto domains = std::bind(object, std::placeholders::_1, domain_resolver, domain_jdispatchers, t_<DomainHandlers>);
-    auto networks = std::bind(object, std::placeholders::_1, network_resolver, network_jdispatchers, t_<NetworkHandlers>);
+    constexpr static std::array keys = {"/libvirt/domains"sv, "/libvirt/networks"sv};
+    std::tuple fcns = {std::bind(object, std::placeholders::_1, domain_resolver, domain_jdispatchers, t_<DomainHandlers>),
+                       std::bind(object, std::placeholders::_1, network_resolver, network_jdispatchers, t_<NetworkHandlers>)};
 
     [&] {
         if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
@@ -76,12 +77,17 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             logger.error("Failed to open connection to ", iniConfig.getConnURI());
             return error(10);
         }
-        if (req.target().starts_with("/libvirt/domains"))
-            return domains(std::move(conn));
-        else if (req.target().starts_with("/libvirt/networks"))
-            return networks(std::move(conn));
-        else
-            return error(2);
+        auto i = 0;
+
+        for (const auto key : keys) {
+            if (req.target().starts_with(stdsv2bsv(key)))
+                return visit(fcns, [&](const auto& e) {
+                    if (i-- == 0)
+                        e(std::move(conn));
+                });
+            ++i;
+        }
+        return error(2);
     }();
 
     rapidjson::StringBuffer buffer;
