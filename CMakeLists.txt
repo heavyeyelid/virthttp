@@ -69,7 +69,6 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/wrapper/dispatch.hpp
             include/wrapper/error_msg.hpp
             include/wrapper/handler.hpp
-            include/wrapper/handlers.hpp
             include/wrapper/solver.hpp
             include/wrapper/handlers/base.hpp
             include/wrapper/handlers/domain.hpp
