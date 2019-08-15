@@ -71,8 +71,7 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
             if (!flags_opt)
                 return error(-999), Ret{}; // Happens when flags cause failure
             const auto flags = *flags_opt;
-            auto list_res = list_fcn(hc, flags);
-            std::move(list_res.begin(), list_res.end(), std::back_inserter(ret));
+            ret = list_fcn(hc, flags);
         }
         return ret;
     }
