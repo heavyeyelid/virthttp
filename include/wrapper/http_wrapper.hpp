@@ -19,7 +19,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <urlparser.hpp>
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <boost/config.hpp>
@@ -27,7 +26,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include "virt_wrap.hpp"
+#include <urlparser.hpp>
 #include "virt_wrap/Connection.hpp"
 #include "virt_wrap/Domain.hpp"
 #include "virt_wrap/TypesParam.hpp"
@@ -36,6 +35,7 @@
 #include "virt_wrap/impl/TypedParams.hpp"
 #include "fwd.hpp"
 #include "handler.hpp"
+#include "virt_wrap.hpp"
 
 namespace beast = boost::beast;   // from <boost/beast.hpp>
 namespace http = beast::http;     // from <boost/beast/http.hpp>
@@ -162,7 +162,7 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
 
     // Make sure we can handle the method
     if (req.method() != http::verb::get && req.method() != http::verb::patch && req.method() != http::verb::post && req.method() != http::verb::put &&
-        req.method() != http::verb::head)
+        req.method() != http::verb::head && req.method() != http::verb::delete_)
         return send(bad_request("Unknown HTTP-method"));
 
     // Request path must be absolute and not contain "..".
