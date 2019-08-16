@@ -34,7 +34,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         Object obj{};
         Handlers hdls{hdl_ctx, obj};
 
-        auto objs = resolver(hdl_ctx);
+        auto skip_resolve = req.method() == http::verb::post;
+        auto objs = skip_resolve ? resolver(hdl_ctx) : std::vector<Object>{};
         const auto idx = HandlerMethods::verb_to_idx(req.method());
         if (idx < 0)
             return error(3);
@@ -43,8 +44,11 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         json_req.Parse(req.body().data());
 
         auto exec = jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
-        for (auto&& v : objs)
-            obj = std::move(v), exec(hdls);
+        if (skip_resolve)
+            exec(hdls);
+        else
+            for (auto&& v : objs)
+                obj = std::move(v), exec(hdls);
     };
 
     constexpr Resolver domain_resolver{tp<virt::Domain, DomainUnawareHandlers>, "domains", std::array{"by-name"sv, "by-uuid"sv},
