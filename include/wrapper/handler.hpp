@@ -30,7 +30,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
     auto object = [&](virt::Connection&& conn, auto resolver, auto jdispatchers, auto t_hdls) -> void {
         using Object = typename decltype(resolver)::O;
         using Handlers = typename decltype(t_hdls)::Type;
-        HandlerContext hdl_ctx{conn, json_res, key_str};
+        HandlerContext hdl_ctx{conn, json_res, target, key_str};
         Object obj{};
         Handlers hdls{hdl_ctx, obj};
 
