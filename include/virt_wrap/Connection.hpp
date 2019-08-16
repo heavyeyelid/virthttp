@@ -208,6 +208,10 @@ class Connection {
 
     [[nodiscard]] inline bool isSecure() const noexcept;
 
+    bool restore(gsl::czstring<> from) noexcept;
+
+    bool restore(gsl::czstring<> from, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept;
+
     [[nodiscard]] inline int numOfDomains() const noexcept;
 
     [[nodiscard]] inline int numOfDefinedDomains() const noexcept;
