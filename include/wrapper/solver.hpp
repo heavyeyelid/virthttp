@@ -52,7 +52,8 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
     constexpr Resolver(TPOUH, std::string_view type, KeysT skeys, FcnsT sfcns, ListFcn list_fcn) noexcept
         : type(type), skeys(skeys), sfcns(sfcns), list_fcn(list_fcn) {}
 
-    auto operator()(const TargetParser& target, HandlerContext& hc) const -> std::vector<O> {
+    auto operator()(HandlerContext& hc) const -> std::vector<O> {
+        const TargetParser& target = hc.target;
         using Ret = std::vector<O>;
         auto error = [&](auto... args) { return hc.json_res.error(args...); };
 
