@@ -6,6 +6,7 @@
 #include "wrapper/dispatch.hpp"
 #include "base.hpp"
 #include "hdl_ctx.hpp"
+#include "urlparser.hpp"
 #include "virt_wrap.hpp"
 
 using DomainJDispatcherVals =
@@ -36,8 +37,7 @@ class DomainUnawareHandlers : public HandlerContext {
 
         const auto tag_status = target["status"];
         if (!tag_status.empty()) {
-            CSVIterator state_it{tag_status};
-            for (; state_it != state_it.end(); ++state_it) {
+            for (CSVIterator state_it{tag_status}; state_it != state_it.end(); ++state_it) {
                 const auto v = virt::Connection::List::Domains::Flags[*state_it];
                 if (!v)
                     return error(301), std::nullopt;

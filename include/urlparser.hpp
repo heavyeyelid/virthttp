@@ -165,19 +165,14 @@ struct CSVIterator {
         sv.remove_prefix(it != sv.end() ? std::distance(sv.begin(), it) + 1 : sv.size());
         return *this;
     }
-    constexpr CSVIterator operator++(int) noexcept {
-        const auto it = cexpr::find(sv.begin(), sv.end(), ',');
-        if (sv.empty())
-            UNREACHABLE;
-        if (it == sv.end())
-            return {sv.substr(0, sv.size())};
-        return {sv.substr(0, std::distance(sv.begin(), it) + 1)};
-    }
     [[nodiscard]] constexpr std::string_view operator*() const noexcept {
-        const auto it = cexpr::find(sv.begin(), sv.end(), ',');
-        return sv.substr(0, std::distance(sv.begin(), it) + 1);
+        auto csv = sv;
+        while (!csv.empty() && csv[0] == ',')
+            csv.remove_prefix(1);
+        const auto it = cexpr::find(csv.begin(), csv.end(), ',');
+        return sv.substr(0, std::distance(sv.begin(), it));
     }
-    constexpr bool operator==(const CSVIterator& oth) const noexcept { return sv == oth.sv; }
-    constexpr bool operator!=(const CSVIterator& oth) const noexcept { return sv != oth.sv; }
-    constexpr CSVIterator end() const noexcept { return {sv.substr(sv.size(), 0)}; }
+    [[nodiscard]] constexpr bool operator==(const CSVIterator& oth) const noexcept { return sv == oth.sv; }
+    [[nodiscard]] constexpr bool operator!=(const CSVIterator& oth) const noexcept { return sv != oth.sv; }
+    [[nodiscard]] constexpr CSVIterator end() const noexcept { return {sv.substr(sv.size(), 0)}; }
 };
