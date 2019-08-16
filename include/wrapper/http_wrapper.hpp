@@ -26,7 +26,6 @@
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include <urlparser.hpp>
 #include "virt_wrap/Connection.hpp"
 #include "virt_wrap/Domain.hpp"
 #include "virt_wrap/TypesParam.hpp"
@@ -160,9 +159,9 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
         return res;
     };
 
+    std::array supported_methods = {http::verb::get, http::verb::patch, http::verb::post, http::verb::delete_};
     // Make sure we can handle the method
-    if (req.method() != http::verb::get && req.method() != http::verb::patch && req.method() != http::verb::post && req.method() != http::verb::put &&
-        req.method() != http::verb::head && req.method() != http::verb::delete_)
+    if (std::find(supported_methods.begin(), supported_methods.end(), req.method()) == supported_methods.end())
         return send(bad_request("Unknown HTTP-method"));
 
     // Request path must be absolute and not contain "..".
