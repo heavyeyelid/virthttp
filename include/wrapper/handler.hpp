@@ -65,22 +65,21 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                                                    }},
                                         [](HandlerContext& hc, auto flags) { return hc.conn.extractAllNetworks(flags); }};
 
-
     constexpr static std::array keys = {"/libvirt/domains"sv, "/libvirt/networks"sv};
     std::tuple fcns = {std::bind(object, std::placeholders::_1, domain_resolver, domain_jdispatchers, t_<DomainHandlers>),
                        std::bind(object, std::placeholders::_1, network_resolver, network_jdispatchers, t_<NetworkHandlers>)};
 
     [&] {
-        // if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
-        //    return error(1);
+        if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
+            return error(1);
         logger.debug("Opening connection to ", iniConfig.getConnURI());
         virt::Connection conn{iniConfig.connURI.c_str()};
-        /*
+
         if (!conn) {
             logger.error("Failed to open connection to ", iniConfig.getConnURI());
             return error(10);
         }
-         */
+
         auto i = 0;
 
         for (const auto key : keys) {
