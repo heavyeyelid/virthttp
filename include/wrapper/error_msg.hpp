@@ -40,8 +40,6 @@ class ErrorMessages {
         P{300, "Invalid power management value"sv},
         P{301, "Invalid flag"sv},
         P{500, "Error occurred while getting network status"sv},
-        P{501, "Cannot find network with a such name"sv},
-        P{502, "Cannot find network with a such UUID"sv},
         P{503, "Error occurred while getting network autostart"sv},
     };
 
