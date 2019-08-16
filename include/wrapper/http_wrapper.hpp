@@ -159,7 +159,7 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
         return res;
     };
 
-    std::array supported_methods = {http::verb::get, http::verb::patch, http::verb::post, http::verb::delete_};
+    constexpr std::array supported_methods = {http::verb::get, http::verb::patch, http::verb::post, http::verb::delete_};
     // Make sure we can handle the method
     if (std::find(supported_methods.begin(), supported_methods.end(), req.method()) == supported_methods.end())
         return send(bad_request("Unknown HTTP-method"));
