@@ -25,7 +25,7 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
     [[nodiscard]] constexpr std::pair<int, std::string_view> getSearchKey(const TargetParser& target) const noexcept {
         const auto key_start = "/libvirt/"sv.length() + type.size();
         const auto path = stdsv2bsv(target.getPath().substr(key_start)); // C++2a: use std::string_view all the way
-        if (path.empty())
+        if (path.empty() || path == "/")
             return {-1, ""};
         const auto it = cexpr::find_if(skeys.begin(), skeys.end(), [=](std::string_view sv) {
             auto l_path = path;
@@ -38,13 +38,13 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
             return l_path.starts_with('/');
         });
         if (it == skeys.end())
-            return {std::numeric_limits<int>::min(), nullptr};
+            return {std::numeric_limits<int>::min(), std::string_view{}};
 
         const auto idx = std::distance(skeys.begin(), it);
         const auto sk = skeys[idx];
         const auto s_val = bsv2stdsv(path.substr(sk.length() + 2)); // 2 because two forward-slashes
         if (s_val.empty())
-            return {std::numeric_limits<int>::min(), nullptr};
+            return {std::numeric_limits<int>::min(), std::string_view{}};
         return {idx, s_val};
     }
 
@@ -58,7 +58,7 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
 
         const auto [idx, search_value] = getSearchKey(target);
         if (search_value.data() == nullptr)
-            return error(-999), Ret{}; // Basically happens when: 1. there's an unknown key 2. there's a known key but no value
+            return error(101), Ret{}; // Basically happens when: 1. there's an unknown key 2. there's a known key but no value
 
         Ret ret;
         if (idx >= 0) {
@@ -69,7 +69,7 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
         } else {
             const auto flags_opt = UH{hc}.search_all_flags(target);
             if (!flags_opt)
-                return error(-999), Ret{}; // Happens when flags cause failure
+                return error(102), Ret{}; // Happens when flags cause failure
             const auto flags = *flags_opt;
             ret = list_fcn(hc, flags);
         }
