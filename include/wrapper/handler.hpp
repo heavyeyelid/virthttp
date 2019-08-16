@@ -34,7 +34,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         Object obj{};
         Handlers hdls{hdl_ctx, obj};
 
-        auto objs = resolver(target, hdl_ctx);
+        auto objs = resolver(hdl_ctx);
         const auto idx = HandlerMethods::verb_to_idx(req.method());
         if (idx < 0)
             return error(3);
