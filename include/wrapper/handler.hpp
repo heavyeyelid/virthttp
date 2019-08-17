@@ -92,7 +92,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             return error(10);
         }
 
-        const auto it = std::find(keys.begin(), keys.end(), stdsv2bsv(path_parts[1]));
+        const auto it = std::find(keys.begin(), keys.end(), path_parts[1]);
         if (it == keys.end())
             return error(2);
 
