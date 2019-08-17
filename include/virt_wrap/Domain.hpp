@@ -486,12 +486,18 @@ class Domain {
         constexpr static std::array values = {"bypass_cache", "running", "paused"};
     };
     constexpr static SaveRestoreFlagsC SaveRestoreFlags{};
-    enum class UndefineFlags {
+    enum class UndefineFlag {
         MANAGED_SAVE = VIR_DOMAIN_UNDEFINE_MANAGED_SAVE,             /* Also remove any managed save */
         SNAPSHOTS_METADATA = VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA, /* If last use of domain, then also remove any snapshot metadata */
         NVRAM = VIR_DOMAIN_UNDEFINE_NVRAM,                           /* Also remove any nvram file */
         KEEP_NVRAM = VIR_DOMAIN_UNDEFINE_KEEP_NVRAM,                 /* Keep nvram file */
     };
+    class UndefineFlagsC : public EnumSetHelper<UndefineFlagsC, UndefineFlag> {
+        using Base = EnumSetHelper<UndefineFlagsC, UndefineFlag>;
+        friend Base;
+        constexpr static std::array values = {"managed_save", "snapshots_metadata", "nvram", "keep_nvram"};
+    };
+    constexpr static UndefineFlagsC UndefineFlags;
 
     using MITPFlags = EnumSetTie<ModificationImpactFlag, TypedParameterFlag>;
 
@@ -712,7 +718,7 @@ class Domain {
 
     bool undefine() noexcept;
 
-    bool undefine(UndefineFlags) noexcept;
+    bool undefine(UndefineFlag) noexcept;
 
     [[nodiscard]] static Domain createXML(Connection&, gsl::czstring<> xml, CreateFlag flags = CreateFlag::NONE);
 
@@ -962,6 +968,9 @@ constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::St
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept;
 constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
+
+constexpr inline Domain::UndefineFlag operator|(virt::Domain::UndefineFlag lhs, virt::Domain::UndefineFlag rhs) noexcept;
+constexpr inline Domain::UndefineFlag operator|=(virt::Domain::UndefineFlag& lhs, virt::Domain::UndefineFlag rhs) noexcept;
 
 constexpr unsigned to_integral(virt::Domain::SaveRestoreFlag f) noexcept { return virt::impl_to_integral(f); }
 } // namespace virt

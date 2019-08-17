@@ -1,6 +1,7 @@
 #pragma once
 #include <tuple>
 #include <rapidjson/rapidjson.h>
+#include <virt_wrap/Error.hpp>
 #include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
 #include "wrapper/dispatch.hpp"
@@ -94,5 +95,30 @@ class DomainHandlers : public HandlerMethods {
         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
         return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
     }
-    DependsOutcome vacuum(const rapidjson::Value& action) override { return error(-1), DependsOutcome::FAILURE; }
+    DependsOutcome vacuum(const rapidjson::Value& action) override {
+        auto success = [&] {
+            rapidjson::Value res_val;
+            res_val.SetObject();
+            res_val.AddMember("deleted", true, json_res.GetAllocator());
+            json_res.result(std::move(res_val));
+            return DependsOutcome::SUCCESS;
+        };
+        const auto d_opts = target["options"];
+        if (d_opts.empty()) {
+            if (!dom.undefine())
+                return error(-999), DependsOutcome::FAILURE;
+            success();
+            return success();
+        }
+        virt::Domain::UndefineFlag flags{};
+        for (CSVIterator flag_it{d_opts}; flag_it != flag_it.end(); ++flag_it) {
+            const auto v = virt::Domain::UndefineFlags[*flag_it];
+            if (!v)
+                return error(301), DependsOutcome::FAILURE;
+            flags |= *v;
+        }
+        if (!dom.undefine(flags))
+            return error(-999), DependsOutcome::FAILURE;
+        return success();
+    }
 };

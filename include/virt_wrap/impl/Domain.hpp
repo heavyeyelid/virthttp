@@ -416,7 +416,7 @@ inline bool Domain::suspend() { return virDomainSuspend(underlying) == 0; }
 
 inline bool Domain::undefine() noexcept { return virDomainUndefine(underlying) == 0; }
 
-inline bool Domain::undefine(UndefineFlags flags) noexcept { return virDomainUndefineFlags(underlying, to_integral(flags)) == 0; }
+inline bool Domain::undefine(UndefineFlag flags) noexcept { return virDomainUndefineFlags(underlying, to_integral(flags)) == 0; }
 
 inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept : dom(from.dom) {
     params.reserve(static_cast<std::size_t>(from.nparams));
@@ -426,6 +426,13 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
 
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept {
     return Domain::CoreDump::Flag{to_integral(lhs) | to_integral(rhs)};
+}
+
+constexpr inline Domain::UndefineFlag operator|(virt::Domain::UndefineFlag lhs, virt::Domain::UndefineFlag rhs) noexcept {
+    return Domain::UndefineFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr inline Domain::UndefineFlag operator|=(virt::Domain::UndefineFlag& lhs, virt::Domain::UndefineFlag rhs) noexcept {
+    return lhs = Domain::UndefineFlag{to_integral(lhs) | to_integral(rhs)};
 }
 
 [[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs,
