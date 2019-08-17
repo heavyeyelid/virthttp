@@ -17,6 +17,7 @@ constexpr auto target_pattern = ctll::fixed_string{R"(^($|/[^#?\s]+)?(.*?)?(#[A-
 static constexpr auto target_match(std::string_view sv) noexcept { return ctre::match<target_pattern>(sv); }
 
 constexpr auto target_queries = ctll::fixed_string{R"([&;]?([^=&;]*)=([^=&;]*))"};
+constexpr auto target_path_parts = ctll::fixed_string{R"(/([^/]+))"};
 
 #ifndef HE_WA_CTRE_URL_SPLIT
 constexpr auto url_pattern = ctll::fixed_string{R"(^(?:(http[s]?|ftp)://)?([^/]+?)(?::(\d+))?(?:$|/)([^#?\s]+)?(.*?)?(#[A-Za-z_\-]+)?$)"};
@@ -35,8 +36,9 @@ static constexpr auto url_match(std::string_view sv) noexcept { return ctre::mat
 class TargetParser {
   protected:
     std::string_view url{};
+    std::string_view path{};
 
-    std::string_view path;
+    std::vector<std::string_view> path_parts = {};
     flatmap<std::string_view, std::string_view> queries = {};
 
     constexpr std::string_view match() noexcept {
@@ -48,11 +50,12 @@ class TargetParser {
 
     void parse_queries(std::string_view sv_query) noexcept {
         queries.clear();
+        for (auto [s_match, s_val] : ctre::range<target_path_parts>(path))
+            path_parts.emplace_back(s_val);
         if (sv_query.length() > 0)
             sv_query.remove_prefix(1); // strip leading '?'
-        for (auto [s_match, s_name, s_value] : ctre::range<target_queries>(sv_query)) {
+        for (auto [s_match, s_name, s_value] : ctre::range<target_queries>(sv_query))
             queries.emplace(s_name, s_value);
-        }
     }
 
     void parse() noexcept { parse_queries(match()); }
@@ -77,6 +80,7 @@ class TargetParser {
     [[nodiscard]] constexpr std::string_view getURL() const noexcept { return url; }
 
     [[nodiscard]] constexpr const flatmap<std::string_view, std::string_view>& getQueries() const noexcept { return queries; }
+    [[nodiscard]] constexpr const std::vector<std::string_view>& getPathParts() const noexcept { return path_parts; }
 
     [[nodiscard]] constexpr std::string_view operator[](std::string_view key) const noexcept {
         if (auto it = queries.find(key); it != queries.end())

@@ -23,29 +23,19 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
 
   private:
     [[nodiscard]] constexpr std::pair<int, std::string_view> getSearchKey(const TargetParser& target) const noexcept {
-        const auto key_start = "/libvirt/"sv.length() + type.size();
-        const auto path = stdsv2bsv(target.getPath().substr(key_start)); // C++2a: use std::string_view all the way
-        if (path.empty() || path == "/")
+        const auto& path_parts = target.getPathParts();
+        if (path_parts.size() < 3)
             return {-1, ""};
-        const auto it = cexpr::find_if(skeys.begin(), skeys.end(), [=](std::string_view sv) {
-            auto l_path = path;
-            if (!l_path.starts_with('/'))
-                return false;
-            l_path.remove_prefix(1);
-            if (!l_path.starts_with(stdsv2bsv(sv)))
-                return false;
-            l_path.remove_prefix(sv.size());
-            return l_path.starts_with('/');
-        });
+        if (path_parts.size() < 4)
+            return {std::numeric_limits<int>::min(), std::string_view{}};
+
+        const auto path_part = path_parts[2]; // C++2a: use std::string_view all the way
+        const auto it = cexpr::find(skeys.begin(), skeys.end(), path_part);
         if (it == skeys.end())
             return {std::numeric_limits<int>::min(), std::string_view{}};
 
         const auto idx = std::distance(skeys.begin(), it);
-        const auto sk = skeys[idx];
-        const auto s_val = bsv2stdsv(path.substr(sk.length() + 2)); // 2 because two forward-slashes
-        if (s_val.empty())
-            return {std::numeric_limits<int>::min(), std::string_view{}};
-        return {idx, s_val};
+        return {idx, path_parts[3]};
     }
 
   public:

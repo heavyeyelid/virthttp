@@ -69,13 +69,21 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                                                    }},
                                         [](HandlerContext& hc, auto flags) { return hc.conn.extractAllNetworks(flags); }};
 
-    constexpr static std::array keys = {"/libvirt/domains"sv, "/libvirt/networks"sv};
+    constexpr static std::array keys = {"domains"sv, "networks"sv};
     std::tuple fcns = {std::bind(object, std::placeholders::_1, domain_resolver, domain_jdispatchers, t_<DomainHandlers>),
                        std::bind(object, std::placeholders::_1, network_resolver, network_jdispatchers, t_<NetworkHandlers>)};
 
     [&] {
         if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
             return error(1);
+        auto path_parts = target.getPathParts();
+        if (path_parts.empty())
+            return error(-999); // Empty request (/)
+        if (path_parts.front() != "libvirt")
+            return error(-999); // Path does not start by /libvirt
+        if (path_parts.size() <= 1)
+            return error(-999); // Path is only /libvirt
+
         logger.debug("Opening connection to ", iniConfig.getConnURI());
         virt::Connection conn{iniConfig.connURI.c_str()};
 
@@ -84,17 +92,15 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
             return error(10);
         }
 
-        auto i = 0;
+        const auto it = std::find(keys.begin(), keys.end(), stdsv2bsv(path_parts[1]));
+        if (it == keys.end())
+            return error(2);
 
-        for (const auto key : keys) {
-            if (req.target().starts_with(stdsv2bsv(key)))
-                return visit(fcns, [&](const auto& e) {
-                    if (i-- == 0)
-                        e(std::move(conn));
-                });
-            ++i;
-        }
-        return error(2);
+        int i = std::distance(keys.begin(), it);
+        return visit(fcns, [&](const auto& e) {
+            if (i-- == 0)
+                e(std::move(conn));
+        });
     }();
 
     rapidjson::StringBuffer buffer;
