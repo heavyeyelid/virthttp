@@ -6,6 +6,7 @@
 #include "wrapper/depends.hpp"
 #include "wrapper/dispatch.hpp"
 #include "base.hpp"
+#include "flagwork.hpp"
 #include "hdl_ctx.hpp"
 #include "urlparser.hpp"
 #include "virt_wrap.hpp"
@@ -36,16 +37,11 @@ class DomainUnawareHandlers : public HandlerContext {
         if (auto snapshot = target.getBool("has_snapshot"); snapshot)
             flags |= *snapshot ? virt::Connection::List::Domains::Flag::HAS_SNAPSHOT : virt::Connection::List::Domains::Flag::NO_SNAPSHOT;
 
-        const auto tag_status = target["status"];
-        if (!tag_status.empty()) {
-            for (CSVIterator state_it{tag_status}; state_it != state_it.end(); ++state_it) {
-                const auto v = virt::Connection::List::Domains::Flags[*state_it];
-                if (!v)
-                    return error(301), std::nullopt;
-                flags |= *v;
-            }
-        }
-        return {flags};
+        const auto opt_flags =
+            target_get_composable_flag<virt::Connection::List::Domains::Flag, virt::Connection::List::Domains::FlagsC>(target, "status");
+        if (!opt_flags)
+            return error(301), std::nullopt;
+        return {flags | *opt_flags};
     }
 };
 
@@ -88,16 +84,10 @@ class DomainHandlers : public HandlerMethods {
             res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
             res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
         } else if (path_parts.size() == 5 && path_parts[4] == "xml_desc") {
-            auto flags = virt::Domain::XmlFlag::DEFAULT;
-            if (auto csv = target["options"]; !csv.empty()) {
-                for (CSVIterator state_it{csv}; state_it != state_it.end(); ++state_it) {
-                    const auto v = virt::Domain::XmlFlags[*state_it];
-                    if (!v)
-                        return error(301), DependsOutcome::FAILURE;
-                    flags |= *v;
-                }
-            }
-            res_val = rapidjson::Value(dom.getXMLDesc(flags), json_res.GetAllocator());
+            const auto opt_flags = target_get_composable_flag<virt::Domain::XmlFlag, virt::Domain::XmlFlagsC>(target, "options");
+            if (!opt_flags)
+                return error(301), DependsOutcome::FAILURE;
+            res_val = rapidjson::Value(dom.getXMLDesc(*opt_flags), json_res.GetAllocator());
         }
         json_res.result(std::move(res_val));
         return DependsOutcome::SUCCESS;
@@ -123,16 +113,9 @@ class DomainHandlers : public HandlerMethods {
             json_res.message(std::move(msg_val));
             return error(216), DependsOutcome::FAILURE;
         };
-        const auto d_opts = target["options"];
-        if (d_opts.empty())
-            return dom.undefine() ? success() : failure();
-        virt::Domain::UndefineFlag flags{};
-        for (CSVIterator flag_it{d_opts}; flag_it != flag_it.end(); ++flag_it) {
-            const auto v = virt::Domain::UndefineFlags[*flag_it];
-            if (!v)
-                return error(301), DependsOutcome::FAILURE;
-            flags |= *v;
-        }
-        return dom.undefine(flags) ? success() : failure();
+        const auto opt_flags = target_get_composable_flag<virt::Domain::UndefineFlag, virt::Domain::UndefineFlagsC>(target, "options");
+        if (!opt_flags)
+            return error(301), DependsOutcome::FAILURE;
+        return dom.undefine(*opt_flags) ? success() : failure();
     }
 };
