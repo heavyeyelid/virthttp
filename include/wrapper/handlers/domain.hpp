@@ -74,18 +74,31 @@ class DomainHandlers : public HandlerMethods {
 
     DependsOutcome query(const rapidjson::Value& action) override {
         rapidjson::Value res_val;
-        res_val.SetObject();
-        const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
-        const auto os_type = dom.getOSType();
-        res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-        res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
-        res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
-        res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
-        res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
-        res_val.AddMember("ram", memory, json_res.GetAllocator());
-        res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
-        res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
-
+        auto& path_parts = target.getPathParts();
+        if (path_parts.size() < 5) {
+            res_val.SetObject();
+            const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
+            const auto os_type = dom.getOSType();
+            res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
+            res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
+            res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
+            res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
+            res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
+            res_val.AddMember("ram", memory, json_res.GetAllocator());
+            res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
+            res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
+        } else if (path_parts.size() == 5 && path_parts[4] == "xml_desc") {
+            auto flags = virt::Domain::XmlFlag::DEFAULT;
+            if (auto csv = target["options"]; !csv.empty()) {
+                for (CSVIterator state_it{csv}; state_it != state_it.end(); ++state_it) {
+                    const auto v = virt::Domain::XmlFlags[*state_it];
+                    if (!v)
+                        return error(301), DependsOutcome::FAILURE;
+                    flags |= *v;
+                }
+            }
+            res_val = rapidjson::Value(dom.getXMLDesc(flags), json_res.GetAllocator());
+        }
         json_res.result(std::move(res_val));
         return DependsOutcome::SUCCESS;
     }

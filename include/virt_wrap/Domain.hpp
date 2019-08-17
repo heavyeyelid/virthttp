@@ -449,6 +449,11 @@ class Domain {
         UPDATE_CPU = VIR_DOMAIN_XML_UPDATE_CPU, /* update guest CPU requirements according to host CPU */
         MIGRATABLE = VIR_DOMAIN_XML_MIGRATABLE, /* dump XML suitable for migration */
     };
+    class XmlFlagsC : public EnumSetHelper<XmlFlagsC, XmlFlag> {
+        using Base = EnumSetHelper<XmlFlagsC, XmlFlag>;
+        friend Base;
+        constexpr static std::array values = {"secure", "inactive", "update_cpu", "migratable"};
+    } constexpr static XmlFlags{};
     enum class State : int {
         NOSTATE = VIR_DOMAIN_NOSTATE,         /* no state */
         RUNNING = VIR_DOMAIN_RUNNING,         /* the domain is running */
@@ -966,7 +971,7 @@ constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::St
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
                                                                         Domain::ModificationImpactFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept;
-constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept;
+constexpr inline Domain::VCpuFlag& operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
 
 constexpr inline Domain::UndefineFlag operator|(virt::Domain::UndefineFlag lhs, virt::Domain::UndefineFlag rhs) noexcept;

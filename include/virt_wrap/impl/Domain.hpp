@@ -462,10 +462,16 @@ constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::St
     return Domain::ModificationImpactFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept {
-    return Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::VCpuFlag operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept {
     return lhs = Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr inline Domain::VCpuFlag& operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept {
+    return lhs = Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr inline Domain::XmlFlag operator|(Domain::XmlFlag lhs, Domain::XmlFlag rhs) noexcept {
+    return lhs = Domain::XmlFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr inline Domain::XmlFlag& operator|=(Domain::XmlFlag& lhs, Domain::XmlFlag rhs) noexcept {
+    return lhs = Domain::XmlFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept {
     return Domain::Stats::Types(to_integral(lhs) | to_integral(rhs));
