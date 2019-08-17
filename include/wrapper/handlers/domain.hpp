@@ -103,16 +103,16 @@ class DomainHandlers : public HandlerMethods {
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         };
-        auto err_tmp = [&] {
+        auto failure = [&] {
             rapidjson::Value msg_val;
             msg_val.SetObject();
-            msg_val.AddMember("libvirt", rapidjson::Value(virt::getLastError().message(), json_res.GetAllocator()), json_res.GetAllocator());
+            msg_val.AddMember("libvirt", rapidjson::Value(virt::extractLastError().message, json_res.GetAllocator()), json_res.GetAllocator());
             json_res.message(std::move(msg_val));
             return error(216), DependsOutcome::FAILURE;
         };
         const auto d_opts = target["options"];
         if (d_opts.empty())
-            return dom.undefine() ? success() : err_tmp();
+            return dom.undefine() ? success() : failure();
         virt::Domain::UndefineFlag flags{};
         for (CSVIterator flag_it{d_opts}; flag_it != flag_it.end(); ++flag_it) {
             const auto v = virt::Domain::UndefineFlags[*flag_it];
@@ -120,6 +120,6 @@ class DomainHandlers : public HandlerMethods {
                 return error(301), DependsOutcome::FAILURE;
             flags |= *v;
         }
-        return dom.undefine(flags) ? success() : (error(216), DependsOutcome::FAILURE);
+        return dom.undefine(flags) ? success() : failure();
     }
 };
