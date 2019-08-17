@@ -35,7 +35,7 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         Handlers hdls{hdl_ctx, obj};
 
         auto skip_resolve = req.method() == http::verb::post;
-        auto objs = skip_resolve ? resolver(hdl_ctx) : std::vector<Object>{};
+        auto objs = !skip_resolve ? resolver(hdl_ctx) : std::vector<Object>{};
         const auto idx = HandlerMethods::verb_to_idx(req.method());
         if (idx < 0)
             return error(3);
