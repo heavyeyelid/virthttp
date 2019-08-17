@@ -36,6 +36,7 @@ class ErrorMessages {
         P{213, "Cannot reboot the domain"sv},
         P{214, "Cannot reset the domain"sv},
         P{215, "Cannot suspend the domain"sv},
+        P{216, "Cannot delete the domain"sv},
         P{298, "PATCH data has to be an array of actions"sv},
         P{300, "Invalid power management value"sv},
         P{301, "Invalid flag"sv},

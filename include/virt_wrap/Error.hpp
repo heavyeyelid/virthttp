@@ -5,7 +5,7 @@
 #include <libvirt/virterror.h>
 
 namespace virt {
-class Error;
+struct Error;
 class ErrorRef;
 
 ErrorRef getLastError() noexcept;
@@ -14,15 +14,15 @@ Error extractLastError();
 class ErrorRef {
     virErrorPtr underlying;
     constexpr explicit ErrorRef(virErrorPtr&& u) : underlying(u) {}
-    inline ~ErrorRef() noexcept { virFreeError(underlying); }
     friend ErrorRef getLastError() noexcept;
     friend Error extractLastError();
 
   public:
+    inline ~ErrorRef() noexcept { virFreeError(underlying); }
     [[nodiscard]] constexpr gsl::czstring<> message() const noexcept { return underlying->message; };
 };
 
-class Error {
+struct Error {
     using Code = virErrorNumber;
     using Level = virErrorLevel;
     Code code;
