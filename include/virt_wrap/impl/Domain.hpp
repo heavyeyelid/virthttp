@@ -431,7 +431,7 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
 constexpr inline Domain::UndefineFlag operator|(virt::Domain::UndefineFlag lhs, virt::Domain::UndefineFlag rhs) noexcept {
     return Domain::UndefineFlag{to_integral(lhs) | to_integral(rhs)};
 }
-constexpr inline Domain::UndefineFlag operator|=(virt::Domain::UndefineFlag& lhs, virt::Domain::UndefineFlag rhs) noexcept {
+constexpr inline Domain::UndefineFlag& operator|=(virt::Domain::UndefineFlag& lhs, virt::Domain::UndefineFlag rhs) noexcept {
     return lhs = Domain::UndefineFlag{to_integral(lhs) | to_integral(rhs)};
 }
 
@@ -446,7 +446,7 @@ constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainSt
 [[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept {
     return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
 }
-constexpr inline Domain::ShutdownFlag operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept {
+constexpr inline Domain::ShutdownFlag& operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept {
     return lhs = Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept {

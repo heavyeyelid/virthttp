@@ -104,12 +104,8 @@ class DomainHandlers : public HandlerMethods {
             return DependsOutcome::SUCCESS;
         };
         const auto d_opts = target["options"];
-        if (d_opts.empty()) {
-            if (!dom.undefine())
-                return error(-999), DependsOutcome::FAILURE;
-            success();
-            return success();
-        }
+        if (d_opts.empty())
+            return dom.undefine() ? success() : (error(-999), DependsOutcome::FAILURE);
         virt::Domain::UndefineFlag flags{};
         for (CSVIterator flag_it{d_opts}; flag_it != flag_it.end(); ++flag_it) {
             const auto v = virt::Domain::UndefineFlags[*flag_it];
@@ -117,8 +113,6 @@ class DomainHandlers : public HandlerMethods {
                 return error(301), DependsOutcome::FAILURE;
             flags |= *v;
         }
-        if (!dom.undefine(flags))
-            return error(-999), DependsOutcome::FAILURE;
-        return success();
+        return dom.undefine(flags) ? success() : (error(-999), DependsOutcome::FAILURE);
     }
 };
