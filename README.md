@@ -1,6 +1,6 @@
 # HeavyEyelid
 
-The purpose of this project is to provide a WEB HTTP based frontend to libvirt. We use beast, a minimal C++ HTTP server that is used to communicate between the WEB and the libvirt daemon. We use JSon to transmit data through the server and the client.
+The purpose of this project is to provide a WEB HTTP based frontend to libvirt. We use beast, a minimal C++ HTTP server that is used to communicate between the WEB and the libvirt daemon. We use JSon to transmit data between the server and the client.
 
 We also created a C++ binding API for libvirt, and using this to communicate with libvirt.
 
