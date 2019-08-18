@@ -1,8 +1,8 @@
 # HeavyEyelid
 
-The purpose of this project is to provide a WEB HTTP based frontend to libvirt. We use beast, a minimal C++ HTTP server that is used to communicate between the WEB and the libvirt daemon. We use JSon to transmit data between the server and the client.
+The purpose of this project is to provide a web HTTP based frontend to libvirt. We use Boost.Beast, a minimal C++ HTTP server that is used to communicate between the web and the libvirt daemon. We use JSON to transmit data between the server and the client.
 
-We also created a C++ binding API for libvirt, and using this to communicate with libvirt.
+We also created a C++ binding for libvirt, and use it to interface with libvirt.
 
 ### Few usage examples
 
@@ -47,7 +47,7 @@ curl -X GET "http://localhost:8081/libvirt/domains" \
 }
 ```
 
-For more examples and usages references, see the [API documentation](https://github.com/ShinoYasx/HeavyEyelid/wiki/API-documentation)
+For more examples and a usage reference, see the [API documentation](https://github.com/ShinoYasx/HeavyEyelid/wiki/API-documentation)
 
 ## Building
 ### Dependencies *(debian packages)*
