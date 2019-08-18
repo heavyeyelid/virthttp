@@ -35,7 +35,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
         add_compile_options("-g")
     endif ()
 
-    add_executable(HE_debug
+    add_executable(virthttp
             main.cpp
             src/wrapper/depends.cpp
             include/wrapper/http_wrapper.hpp
@@ -81,8 +81,8 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/json_utils.hpp
             include/urlparser.hpp include/wrapper/handlers/network.hpp include/wrapper/handlers/flagwork.hpp)
 
-    target_link_libraries(HE_debug ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
+    target_link_libraries(virthttp ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
-        target_link_libraries(HE_debug Ws2_32.lib WSock32.lib)
+        target_link_libraries(virthttp Ws2_32.lib WSock32.lib)
     endif ()
 endif ()
