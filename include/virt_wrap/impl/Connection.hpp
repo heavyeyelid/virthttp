@@ -283,7 +283,8 @@ std::vector<Network> Connection::extractAllNetworks(List::Networks::Flag flags) 
 }
 
 auto Connection::listAllDevices(List::Devices::Flags flags) const noexcept {
-    return meta::light::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));
+    return meta::light::wrap_opram_owning_set_destroyable_arr<NodeDevice, UniqueNullTerminatedSpan>(underlying, virConnectListAllNodeDevices,
+                                                                                                    to_integral(flags));
 }
 std::vector<NodeDevice> Connection::extractAllDevices(List::Devices::Flags flags) const {
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));

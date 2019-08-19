@@ -113,7 +113,7 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 }
 
 [[nodiscard]] auto Domain::getFSInfo() const noexcept {
-    return meta::light::wrap_opram_owning_set_destroyable_arr<virDomainFSInfo, virDomainFSInfoFree>(underlying, virDomainGetFSInfo, 0u);
+    return meta::light::wrap_opram_owning_set_destroyable_arr<virDomainFSInfo, UniqueSpan, virDomainFSInfoFree>(underlying, virDomainGetFSInfo, 0u);
 }
 
 [[nodiscard]] auto Domain::extractFSInfo() const -> std::vector<FSInfo> {
@@ -297,7 +297,8 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 [[nodiscard]] bool Domain::injectNMI() noexcept { return virDomainInjectNMI(underlying, 0) == 0; }
 
 [[nodiscard]] auto Domain::interfaceAddressesView(InterfaceAddressesSource source) const noexcept {
-    return meta::light::wrap_opram_owning_set_autodestroyable_arr<InterfaceView>(underlying, virDomainInterfaceAddresses, to_integral(source), 0u);
+    return meta::light::wrap_opram_owning_set_destroyable_arr<InterfaceView, UniqueSpan>(underlying, virDomainInterfaceAddresses, to_integral(source),
+                                                                                         0u);
 }
 
 [[nodiscard]] auto Domain::interfaceAddresses(InterfaceAddressesSource source) const -> std::vector<Interface> {

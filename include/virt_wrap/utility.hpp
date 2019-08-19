@@ -40,7 +40,7 @@ template <class... Es> class EnumSetTie {
 
   public:
     template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
-    constexpr EnumSetTie(E v) : underlying(v) {}
+    constexpr explicit EnumSetTie(E v) : underlying(v) {}
     friend constexpr auto to_integral(EnumSetTie est) { return est.underlying; }
 };
 
@@ -211,6 +211,14 @@ template <typename T> struct NoallocWFree : private std::allocator<gsl::owner<T>
     inline void destroy(gsl::owner<T>* ptr) const noexcept { freeany(*ptr); }
 };
 
+template <typename T, typename D> struct UniqueSpan : std::unique_ptr<T[], D> {
+    UniqueSpan(T* p, D d) noexcept : std::unique_ptr<T[], D>(p, d) {}
+    inline auto begin() const noexcept { return this->get(); }
+    inline auto end() const noexcept { return this->get() + this->get_deleter()(nullptr); }
+    inline auto cbegin() const noexcept { return this->get(); }
+    inline auto cend() const noexcept { return this->get() + this->get_deleter()(nullptr); }
+};
+
 template <typename T, typename D> struct UniqueNullTerminatedSpan : public std::unique_ptr<T[], D> {
     constexpr UniqueNullTerminatedSpan() noexcept = default;
     UniqueNullTerminatedSpan(T* p, D d) noexcept : std::unique_ptr<T[], D>(p, d) {}
@@ -311,39 +319,35 @@ auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF d
     return ret;
 }
 
-template <typename Wrap, typename U, typename DataFRet, typename T, typename... DataFArgs>
-auto wrap_opram_owning_set_autodestroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args)
-    -> UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)> { // This one can shadow
-    using RetType = UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)>;
+template <typename Wrap, template <class, class> typename Span = UniqueSpan, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U,
+          typename DataFRet, typename T, typename... DataFArgs>
+decltype(auto) wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
     Wrap* lease_arr;
     auto res = data_fcn(underlying, reinterpret_cast<T**>(&lease_arr), data_f_args...);
-    if (res == -1)
-        return {nullptr, nullptr};
-    return {lease_arr, [](auto arr) {
-                auto it = arr;
-                while (it)
-                    (it++)->~Wrap();
-                freeany(arr);
-            }};
-}
+    auto deleter = [=](Wrap* arr) {
+        if (arr == nullptr)
+            return res;
 
-template <typename Wrap, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U, typename DataFRet, typename T, typename... DataFArgs>
-auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
-    if constexpr (dtroy == std::destroy_at<Wrap>) { // GNU WARNING: FAILS TO COMPILE ON GCC < 10 DUE TO AN ICE OVER ADDRESSES OF TEMPLATED FUNCTIONS
-        return wrap_opram_owning_set_autodestroyable_arr<Wrap>(underlying, data_fcn, data_f_args...);
-    }
-
-    using RetType = UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)>;
-    Wrap* lease_arr;
-    auto res = data_fcn(underlying, reinterpret_cast<T**>(&lease_arr), data_f_args...);
-    if (res == -1)
-        return RetType{nullptr, nullptr};
-    return RetType(lease_arr, [](Wrap* arr) {
-        auto it = arr;
-        while (it)
-            dtroy(it++);
+        for (auto it = arr; it != arr + res; ++it)
+            dtroy(it);
         freeany(arr);
-    });
+        return -1;
+    };
+    using RetType = Span<Wrap, std::conditional_t<std::is_same_v<Span<char, decltype(std::free)>, UniqueSpan<char, decltype(std::free)>>,
+                                                  decltype(deleter), void (*)(Wrap*)>>;
+
+    if constexpr (std::is_same_v<RetType, UniqueSpan<Wrap, decltype(deleter)>>) {
+        return RetType{res != -1 ? lease_arr : nullptr, deleter};
+    } else {
+        if (res == -1)
+            return RetType{nullptr, nullptr};
+        return RetType{lease_arr, [](auto arr) {
+                           auto it = arr;
+                           while (it)
+                               dtroy(it++);
+                           freeany(arr);
+                       }};
+    }
 }
 } // namespace light
 namespace heavy {
