@@ -83,11 +83,48 @@ class DomainHandlers : public HandlerMethods {
             res_val.AddMember("ram", memory, json_res.GetAllocator());
             res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
             res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
-        } else if (path_parts.size() == 5 && path_parts[4] == "xml_desc") {
-            const auto opt_flags = target_get_composable_flag<virt::Domain::XmlFlag, virt::Domain::XmlFlagsC>(target, "options");
-            if (!opt_flags)
-                return error(301), DependsOutcome::FAILURE;
-            res_val = rapidjson::Value(dom.getXMLDesc(*opt_flags), json_res.GetAllocator());
+        } else if (path_parts.size() == 5) {
+            if (path_parts[4] == "xml_desc") {
+                const auto opt_flags = target_get_composable_flag<virt::Domain::XmlFlag, virt::Domain::XmlFlagsC>(target, "options");
+                if (!opt_flags)
+                    return error(301), DependsOutcome::FAILURE;
+                res_val = rapidjson::Value(dom.getXMLDesc(*opt_flags), json_res.GetAllocator());
+            }
+            auto res = parameterized_depends_scope(
+                subquery(
+                    "xml_desc", "options", SUBQ_LIFT(dom.getXMLDesc),
+                    [&](auto xml) {
+                        return xml ? std::pair{rapidjson::Value(xml, json_res.GetAllocator()), true}
+                                   : (error(-999), std::pair{rapidjson::Value{}, false});
+                    },
+                    tp<virt::Domain::XmlFlag, virt::Domain::XmlFlagsC>),
+                subquery("fs_info", SUBQ_LIFT(dom.getFSInfo),
+                         [&](auto fs_infos) {
+                             if (!fs_infos.get()) {
+                                 error(-999); // getting filesystem information failed
+                                 return std::pair{rapidjson::Value{}, false};
+                             }
+                             rapidjson::Value jvres;
+                             for (const virDomainFSInfo& fs_info : fs_infos) {
+                                 rapidjson::Value sub;
+                                 sub.AddMember("name", rapidjson::Value(fs_info.name, json_res.GetAllocator()), json_res.GetAllocator());
+                                 sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, json_res.GetAllocator()), json_res.GetAllocator());
+                                 sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, json_res.GetAllocator()), json_res.GetAllocator());
+                                 {
+                                     rapidjson::Value dev_aliases;
+                                     dev_aliases.SetArray();
+                                     for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
+                                         dev_aliases.PushBack(rapidjson::Value(dev_alias, json_res.GetAllocator()), json_res.GetAllocator());
+                                     sub.AddMember("disk_dev_aliases", dev_aliases, json_res.GetAllocator());
+                                 }
+                                 jvres.PushBack(sub, json_res.GetAllocator());
+                             }
+                             return std::pair{std::move(jvres), true};
+                         }),
+                subquery("hostname", SUBQ_LIFT(dom.getHostname), [&](std::optional<UniqueZstring> hostname) {
+                    return hostname ? std::pair{rapidjson::Value(static_cast<const char*>(*hostname), json_res.GetAllocator()), true}
+                                    : std::pair{rapidjson::Value{}, false};
+                }))(4, target, res_val, [&](auto... args) { return error(args...); });
         }
         json_res.result(std::move(res_val));
         return DependsOutcome::SUCCESS;
