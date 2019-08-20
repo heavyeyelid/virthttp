@@ -29,6 +29,8 @@ if (Boost_FOUND AND LibVirt_FOUND)
             thirdparty/ctre/include
             include)
 
+    add_compile_definitions(VIR_ENUM_SENTINELS)
+
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_compile_options("-O3")
         add_compile_options("-mtune=native")
@@ -79,7 +81,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp include/wrapper/handlers/network.hpp include/wrapper/handlers/flagwork.hpp)
+            include/urlparser.hpp include/wrapper/handlers/network.hpp include/wrapper/handlers/flagwork.hpp include/wrapper/virt2json.hpp)
 
     target_link_libraries(virthttp ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)

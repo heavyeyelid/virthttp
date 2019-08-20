@@ -9,4 +9,7 @@ struct HandlerContext {
     JsonRes& json_res;
     TargetParser& target;
     std::string_view key_str;
+
+  protected:
+    template <class... Args> auto error(Args... args) const noexcept { return json_res.error(args...); };
 };

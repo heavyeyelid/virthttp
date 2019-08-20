@@ -33,9 +33,9 @@ class TypedParams {
     friend TypedParameter;
     friend TPImpl;
 
-    struct Element;
     struct Iterator;
 
+  public:
     class Element { // TODO implement std::variant's interface
         friend Iterator;
 
@@ -44,8 +44,13 @@ class TypedParams {
         constexpr Element(virTypedParameterPtr underlying) noexcept : underlying(underlying) {}
 
       public:
+        using Type = virTypedParameterType;
+        constexpr gsl::czstring<> name() const noexcept { return underlying->field; }
+        constexpr Type type() const noexcept { return Type(underlying->type); }
+        constexpr decltype(auto) value() const noexcept { return (underlying->value); }
     };
 
+  private:
     virTypedParameterPtr underlying{};
     int size = 0;
     int capacity = 0;
@@ -54,6 +59,11 @@ class TypedParams {
 
   public:
     inline ~TypedParams() noexcept;
+
+    constexpr Iterator begin() const noexcept;
+    constexpr Iterator begin() noexcept;
+    constexpr Iterator end() const noexcept;
+    constexpr Iterator end() noexcept;
 
     void add(gsl::czstring<> name, int);
 
@@ -79,6 +89,8 @@ class TypedParams {
 };
 
 class TypedParams::Iterator {
+    friend TypedParams;
+
     virTypedParameterPtr it{};
 
     constexpr Iterator(virTypedParameterPtr it) noexcept : it(it) {}
@@ -97,6 +109,11 @@ class TypedParams::Iterator {
     constexpr bool operator==(const Iterator& oth) const noexcept { return it == oth.it; }
     constexpr bool operator!=(const Iterator& oth) const noexcept { return it != oth.it; }
 };
+
+constexpr TypedParams::Iterator TypedParams::begin() const noexcept { return Iterator{underlying}; }
+constexpr TypedParams::Iterator TypedParams::begin() noexcept { return Iterator{underlying}; }
+constexpr TypedParams::Iterator TypedParams::end() const noexcept { return Iterator{underlying + size}; }
+constexpr TypedParams::Iterator TypedParams::end() noexcept { return Iterator{underlying + size}; }
 
 } // namespace virt
 

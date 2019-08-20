@@ -27,6 +27,12 @@ template <class Lambda, class... Ts> constexpr auto test_sfinae(Lambda lambda, T
 }
 constexpr bool test_sfinae(...) { return false; }
 
+template <typename T, typename V, size_t... I> void visit_impl(T&& t, V&& v, std::index_sequence<I...>) { (..., v(std::get<I>(t))); }
+
+template <typename T, typename V> void visit(T&& t, V&& v) {
+    visit_impl(std::forward<T>(t), std::forward<V>(v), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>());
+}
+
 template <typename T> using passive = T;
 
 template <typename T> inline void freeany(T ptr) {
@@ -41,7 +47,26 @@ template <class... Es> class EnumSetTie {
   public:
     template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
     constexpr explicit EnumSetTie(E v) : underlying(v) {}
+    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
+    constexpr EnumSetTie& operator=(E v) noexcept {
+        underlying = v;
+    }
     friend constexpr auto to_integral(EnumSetTie est) { return est.underlying; }
+};
+
+template <class, class> class EnumSetCTie;
+template <class... Es, class... ECs> class EnumSetCTie<EnumSetTie<Es...>, std::tuple<ECs...>> {
+    constexpr static std::tuple<ECs...> ecs{};
+
+  public:
+    constexpr std::optional<EnumSetTie<Es...>> operator[](std::string_view sv) const noexcept {
+        std::optional<EnumSetTie<Es...>> ret{};
+        visit(ecs, [=, &ret](auto ec) {
+            if (const auto res = ec[sv]; res)
+                ret = *res;
+        });
+        return ret;
+    }
 };
 
 template <class... Es> constexpr EnumSetTie<Es...> operator|(EnumSetTie<Es...> lhs, EnumSetTie<Es...> rhs) noexcept {

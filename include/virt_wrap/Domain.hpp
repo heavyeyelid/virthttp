@@ -425,6 +425,11 @@ class Domain {
         LIVE = VIR_DOMAIN_AFFECT_LIVE,       /* Affect running domain state.  */
         CONFIG = VIR_DOMAIN_AFFECT_CONFIG,   /* Affect persistent domain state.  */
     };
+    class ModificationImpactFlagsC : public EnumSetHelper<ModificationImpactFlagsC, ModificationImpactFlag> {
+        using Base = EnumSetHelper<ModificationImpactFlagsC, ModificationImpactFlag>;
+        friend Base;
+        constexpr static std::array values = {"live", "config"};
+    } constexpr static ModificationImpactFlags{};
     enum class SetTimeFlag {
         SYNC = VIR_DOMAIN_TIME_SYNC, /* Re-sync domain time from domain's RTC */
     };
@@ -505,6 +510,7 @@ class Domain {
     constexpr static UndefineFlagsC UndefineFlags;
 
     using MITPFlags = EnumSetTie<ModificationImpactFlag, TypedParameterFlag>;
+    using MITPFlagsC = EnumSetCTie<EnumSetTie<ModificationImpactFlag, TypedParameterFlag>, std::tuple<ModificationImpactFlagsC, TypedParameterFlagC>>;
 
     constexpr inline explicit Domain(virDomainPtr ptr = nullptr) noexcept;
 
