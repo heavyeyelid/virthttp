@@ -99,7 +99,7 @@ class TypedParams::Iterator {
     constexpr Iterator& operator++() noexcept { return ++it, *this; }
     constexpr Iterator operator++(int) noexcept { return {it++}; }
     constexpr Iterator& operator--() noexcept { return --it, *this; }
-    constexpr Iterator operator--(int) noexcept { return {it++}; }
+    constexpr Iterator operator--(int) noexcept { return {it--}; }
     constexpr Iterator& operator+=(int v) noexcept { return it += v, *this; }
     constexpr Iterator& operator-=(int v) noexcept { return it -= v, *this; }
     constexpr Iterator operator+(int v) const noexcept { return {it + v}; }

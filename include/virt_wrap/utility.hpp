@@ -50,6 +50,7 @@ template <class... Es> class EnumSetTie {
     template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
     constexpr EnumSetTie& operator=(E v) noexcept {
         underlying = v;
+        return *this;
     }
     friend constexpr auto to_integral(EnumSetTie est) { return est.underlying; }
 };
