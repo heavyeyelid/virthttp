@@ -57,12 +57,12 @@ For more examples and a usage reference, see the [API documentation](https://git
 ### Build steps
 #### Getting sources
 ```
-$ git clone https://github.com/ShinoYasx/HeavyEyelid.git
+$ git clone https://github.com/HeavyEyelid/virthttp.git
 $ git submodule update --init
 ```
 #### Compiling
 ```
-$ cd HeavyEyelid/
+$ cd virthttp/
 $ mkdir build
 $ cd build/
 $ cmake ..
