@@ -1,6 +1,6 @@
 [submodule "docs"]
 	path = docs
-	url = https://github.com/ShinoYasx/HeavyEyelid.wiki.git
+	url = https://github.com/HeavyEyelid/virthttp.wiki.git
 [submodule "thirdparty/rapidxml_ns"]
 	path = thirdparty/rapidxml_ns
 	url = https://github.com/svgpp/rapidxml_ns.git
