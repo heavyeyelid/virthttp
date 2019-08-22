@@ -100,6 +100,19 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     return virDomainGetControlInfo(underlying, &info, 0) == 0 ? std::optional{info} : std::nullopt;
 }
 
+[[nodiscard]] auto Domain::getTotalCPUStats() const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(underlying, [](auto u, auto tpu, int* size) {
+        int res;
+        return (res = virDomainGetCPUStats(u, tpu, *size, -1, 1, 0)), (static_cast<bool>(tpu) ? res : (*size = res));
+    });
+}
+[[nodiscard]] auto Domain::getCPUStats(unsigned start_cpu, unsigned ncpus) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(underlying, [=](auto u, auto tpu, int* size) {
+        int res;
+        return (res = virDomainGetCPUStats(u, tpu, *size, start_cpu, ncpus, 0)), (static_cast<bool>(tpu) ? res : (*size = res));
+    });
+}
+
 [[nodiscard]] auto Domain::getDiskErrors() const noexcept {
     return meta::light::wrap_oparm_owning_fill_autodestroyable_arr<DiskError>(
         underlying, +[](decltype(underlying) u) { return virDomainGetDiskErrors(u, nullptr, 0, 0); },
@@ -144,6 +157,11 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     virDomainInfo info;
     virDomainGetInfo(underlying, &info);
     return info;
+}
+
+[[nodiscard]] auto Domain::getInterfaceParameters(gsl::czstring<> device, MITPFlags flags) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(
+        underlying, [=](auto u, auto&&... args) { return virDomainGetInterfaceParameters(u, device, args...); }, to_integral(flags));
 }
 
 [[nodiscard]] auto Domain::getJobInfo() const noexcept -> std::optional<JobInfo> {

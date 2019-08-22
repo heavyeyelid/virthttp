@@ -100,11 +100,6 @@ int virDomainGetBlockInfo(virDomainPtr domain, const char* disk, virDomainBlockI
 int virDomainGetBlockIoTune(virDomainPtr dom, const char* disk, virTypedParameterPtr params, int* nparams, unsigned int flags);
 int virDomainGetBlockJobInfo(virDomainPtr dom, const char* disk, virDomainBlockJobInfoPtr info, unsigned int flags);
 
-int virDomainGetCPUStats(virDomainPtr domain, virTypedParameterPtr params, unsigned int nparams, int start_cpu, unsigned int ncpus,
-                         unsigned int flags);
-
-int virDomainGetInterfaceParameters(virDomainPtr domain, const char* device, virTypedParameterPtr params, int* nparams, unsigned int flags);
-
 int virDomainGetJobStats(virDomainPtr domain, int* type, virTypedParameterPtr* params, int* nparams, unsigned int flags);
 int virDomainGetSchedulerParametersFlags(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
 
@@ -135,12 +130,15 @@ int virDomainSaveImageDefineXML(virConnectPtr conn, const char* file, const char
 char* virDomainSaveImageGetXMLDesc(virConnectPtr conn, const char* file, unsigned int flags);
 
 char* virDomainScreenshot(virDomainPtr domain, virStreamPtr stream, unsigned int screen, unsigned int flags);
+
 int virDomainSendKey(virDomainPtr domain, unsigned int codeset, unsigned int holdtime, unsigned int* keycodes, int nkeycodes, unsigned int flags);
 int virDomainSendProcessSignal(virDomainPtr domain, long long pid_value, unsigned int signum, unsigned int flags);
 int virDomainSetBlkioParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetBlockIoTune(virDomainPtr dom, const char* disk, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetBlockThreshold(virDomainPtr domain, const char* dev, unsigned long long threshold, unsigned int flags);
+
 int virDomainSetGuestVcpus(virDomainPtr domain, const char* cpumap, int state, unsigned int flags);
+
 int virDomainSetIOThreadParams(virDomainPtr domain, unsigned int iothread_id, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetInterfaceParameters(virDomainPtr domain, const char* device, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetLifecycleAction(virDomainPtr domain, unsigned int type, unsigned int action, unsigned int flags);
@@ -568,6 +566,10 @@ class Domain {
 
     [[nodiscard]] std::optional<virDomainControlInfo> getControlInfo() const noexcept;
 
+    [[nodiscard]] auto getTotalCPUStats() const noexcept;
+
+    [[nodiscard]] auto getCPUStats(unsigned start_cpu, unsigned ncpus) const noexcept;
+
     [[nodiscard]] auto getDiskErrors() const noexcept;
 
     [[nodiscard]] std::vector<DiskError> extractDiskErrors() const;
@@ -594,6 +596,8 @@ class Domain {
     [[nodiscard]] auto extractIOThreadInfo(ModificationImpactFlag flags) const -> std::vector<heavy::IOThreadInfo>;
 
     [[nodiscard]] Info getInfo() const noexcept;
+
+    [[nodiscard]] auto getInterfaceParameters(gsl::czstring<> device, MITPFlags flags) const noexcept;
 
     [[nodiscard]] std::optional<JobInfo> getJobInfo() const noexcept;
 

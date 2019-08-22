@@ -267,8 +267,8 @@ template <typename T, typename D> struct UniqueFalseTerminatedSpan : public std:
     UniqueFalseTerminatedSpan(T* p, D d) noexcept : std::unique_ptr<T[], D>(p, d) {}
     inline auto begin() const noexcept { return this->get(); }
     inline auto end() const noexcept { return false_it(this->get()); }
-    inline const auto cbegin() const noexcept { return this->get(); }
-    inline const auto cend() const noexcept { return false_it(this->get()); }
+    inline auto cbegin() const noexcept { return this->get(); }
+    inline auto cend() const noexcept { return false_it(this->get()); }
 };
 
 namespace virt::meta {

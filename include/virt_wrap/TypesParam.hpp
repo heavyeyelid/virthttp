@@ -137,19 +137,19 @@ struct TPImpl {
         tp.underlying = new virTypedParameter[tp.size];
         tp.needs_dealloc = true;
         const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
-        return res == 0 ? ret : std::nullopt;
+        return res >= 0 ? ret : std::nullopt;
     }
     template <class U, class DataFcn, class... Args>
     static auto wrap_oparm_fill_tp(U* underlying, DataFcn data_fcn, Args... args) -> std::optional<virt::TypedParams> {
         std::optional<virt::TypedParams> ret{};
         auto& tp = ret.emplace();
         const auto count_res = data_fcn(underlying, nullptr, &tp.size, args...);
-        if (count_res == 0)
+        if (count_res < 0)
             return std::nullopt;
         tp.capacity = tp.size;
         tp.underlying = new virTypedParameter[tp.size];
         tp.needs_dealloc = true;
         const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
-        return res == 0 ? ret : std::nullopt;
+        return res >= 0 ? ret : std::nullopt;
     }
 };
