@@ -47,7 +47,7 @@ curl -X GET "http://localhost:8081/libvirt/domains" \
 }
 ```
 
-For more examples and a usage reference, see the [API documentation](https://github.com/ShinoYasx/HeavyEyelid/wiki/API-documentation)
+For more examples and a usage reference, see the [API documentation](https://github.com/HeavyEyelid/virthttp/wiki/API-documentation)
 
 ## Building
 ### Dependencies *(debian packages)*
