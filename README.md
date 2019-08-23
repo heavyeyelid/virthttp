@@ -1,4 +1,6 @@
-# HeavyEyelid
+# virthttp
+
+![alt text](https://raw.githubusercontent.com/HeavyEyelid/virthttp/master/medias/images/virthttp-logo-256.png)
 
 The purpose of this project is to provide a web HTTP based frontend to libvirt. We use Boost.Beast, a minimal C++ HTTP server that is used to communicate between the web and the libvirt daemon. We use JSON to transmit data between the server and the client.
 
