@@ -276,14 +276,26 @@ namespace impl::any {
 // Need template lambdas to reduce bloat, as types need to be passed around
 }
 namespace light {
-template <typename U, typename CountFRet, typename DataFRet, typename T>
-auto wrap_oparm_owning_fill_static_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
+template <typename U, typename CF, typename DF> auto wrap_oparm_owning_fill_static_arr(U underlying, CF&& count_fcn, DF&& data_fcn) {
+    using CountFTraits = ext::function_traits<CF>;
+    static_assert(CountFTraits::arity == 1, "Counting function requires one argument");
+    static_assert(std::is_same_v<typename CountFTraits::template Arg_t<0>, U>, "Counting function requires the underlying ptr as argument");
+    using CountFRet = typename CountFTraits::return_type;
+
+    using DataFTraits = ext::function_traits<DF>;
+    static_assert(DataFTraits::arity == 3, "Data function requires three arguments");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<0>, U>, "Data function requires the underlying ptr as first argument");
+    static_assert(std::is_pointer_v<typename DataFTraits::template Arg_t<0>>, "Data function requires a pointer to the array as second argument");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<2>, CountFRet>,
+                  "Data function requires counting function return type as third argument");
+    using T = std::remove_pointer_t<typename DataFTraits::template Arg_t<1>>;
+
     using RetType = std::optional<std::vector<T>>;
     std::vector<T> ret{};
     ret.resize(count_fcn(underlying));
     if (!ret.empty()) {
         const auto res = data_fcn(underlying, ret.data(), ret.size());
-        if (res != 0)
+        if (res <= 0)
             return RetType{std::nullopt};
     }
     return RetType{ret};

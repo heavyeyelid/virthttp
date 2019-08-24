@@ -83,17 +83,6 @@ char* virConnectGetDomainCapabilities(virConnectPtr conn, const char* emulatorbi
                                   unsigned int flags);
                                   */
 
-int virDomainBlockCommit(virDomainPtr dom, const char* disk, const char* base, const char* top, unsigned long bandwidth, unsigned int flags);
-int virDomainBlockCopy(virDomainPtr dom, const char* disk, const char* destxml, virTypedParameterPtr params, int nparams, unsigned int flags);
-int virDomainBlockJobAbort(virDomainPtr dom, const char* disk, unsigned int flags);
-int virDomainBlockJobSetSpeed(virDomainPtr dom, const char* disk, unsigned long bandwidth, unsigned int flags);
-int virDomainBlockPeek(virDomainPtr dom, const char* disk, unsigned long long offset, size_t size, void* buffer, unsigned int flags);
-int virDomainBlockPull(virDomainPtr dom, const char* disk, unsigned long bandwidth, unsigned int flags);
-int virDomainBlockRebase(virDomainPtr dom, const char* disk, const char* base, unsigned long bandwidth, unsigned int flags);
-int virDomainBlockResize(virDomainPtr dom, const char* disk, unsigned long long size, unsigned int flags);
-int virDomainBlockStats(virDomainPtr dom, const char* disk, virDomainBlockStatsPtr stats, size_t size);
-int virDomainBlockStatsFlags(virDomainPtr dom, const char* disk, virTypedParameterPtr params, int* nparams, unsigned int flags);
-
 int virDomainGetBlkioParameters(virDomainPtr domain, virTypedParameterPtr params, int* nparams, unsigned int flags);
 
 int virDomainGetBlockInfo(virDomainPtr domain, const char* disk, virDomainBlockInfoPtr info, unsigned int flags);
@@ -131,8 +120,6 @@ char* virDomainSaveImageGetXMLDesc(virConnectPtr conn, const char* file, unsigne
 
 char* virDomainScreenshot(virDomainPtr domain, virStreamPtr stream, unsigned int screen, unsigned int flags);
 
-int virDomainSendKey(virDomainPtr domain, unsigned int codeset, unsigned int holdtime, unsigned int* keycodes, int nkeycodes, unsigned int flags);
-int virDomainSendProcessSignal(virDomainPtr domain, long long pid_value, unsigned int signum, unsigned int flags);
 int virDomainSetBlkioParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetBlockIoTune(virDomainPtr dom, const char* disk, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetBlockThreshold(virDomainPtr domain, const char* dev, unsigned long long threshold, unsigned int flags);
@@ -144,9 +131,6 @@ int virDomainSetInterfaceParameters(virDomainPtr domain, const char* device, vir
 int virDomainSetLifecycleAction(virDomainPtr domain, unsigned int type, unsigned int action, unsigned int flags);
 int virDomainSetMemoryFlags(virDomainPtr domain, unsigned long memory, unsigned int flags);
 int virDomainSetMemoryParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
-
-int virDomainSetMemoryStatsPeriod(virDomainPtr domain, int period, unsigned int flags);
-int virDomainSetMetadata(virDomainPtr domain, int type, const char* metadata, const char* key, const char* uri, unsigned int flags);
 
 int virDomainSetNumaParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetPerfEvents(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
@@ -184,6 +168,76 @@ class Domain {
 
         class Record;
     };
+    enum class BlockCommitFlag {
+        SHALLOW = VIR_DOMAIN_BLOCK_COMMIT_SHALLOW,   /* nullptr base means next backing file, not whole chain */
+        DELETE = VIR_DOMAIN_BLOCK_COMMIT_DELETE,     /* Delete any files that are now invalid after their contents have been committed */
+        ACTIVE = VIR_DOMAIN_BLOCK_COMMIT_ACTIVE,     /* Allow a two-phase commit when top is the active layer */
+        RELATIVE = VIR_DOMAIN_BLOCK_COMMIT_RELATIVE, /* keep the backing chain referenced using relative names */
+        BANDWIDTH_BYTES = VIR_DOMAIN_BLOCK_COMMIT_BANDWIDTH_BYTES, /* bandwidth in bytes/s instead of MiB/s */
+    };
+    class BlockCommitFlagsC : public EnumSetHelper<BlockCommitFlagsC, BlockCommitFlag> {
+        using Base = EnumSetHelper<BlockCommitFlagsC, BlockCommitFlag>;
+        friend Base;
+        constexpr static std::array values = {"shallow", "delete", "active", "relative", "bandwitdh_bytes"};
+    } constexpr static BlockCommitFlags;
+    enum class BlockCopyFlag {
+        SHALLOW = VIR_DOMAIN_BLOCK_COPY_SHALLOW,             /* Limit copy to top of source backing chain */
+        REUSE_EXT = VIR_DOMAIN_BLOCK_COPY_REUSE_EXT,         /* Reuse existing external file for a copy */
+        TRANSIENT_JOB = VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB, /* Don't force usage of recoverable job for the copy operation */
+    };
+    class BlockCopyFlagsC : public EnumSetHelper<BlockCopyFlagsC, BlockCopyFlag> {
+        using Base = EnumSetHelper<BlockCopyFlagsC, BlockCopyFlag>;
+        friend Base;
+        constexpr static std::array values = {"shallow", "reuse_ext", "transient_job"};
+    } constexpr static BlockCopyFlags;
+    enum class BlockJobAbortFlag {
+        ASYNC = VIR_DOMAIN_BLOCK_JOB_ABORT_ASYNC,
+        PIVOT = VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT,
+    };
+    class BlockJobAbortFlagsC : public EnumSetHelper<BlockJobAbortFlagsC, BlockJobAbortFlag> {
+        using Base = EnumSetHelper<BlockJobAbortFlagsC, BlockJobAbortFlag>;
+        friend Base;
+        constexpr static std::array values = {"async", "pivot"};
+    } constexpr static BlockJobAbortFlags{};
+    enum class BlockJobSetSpeedFlag {
+        BLOCK_JOB_SPEED_BANDWIDTH_BYTES = VIR_DOMAIN_BLOCK_JOB_SPEED_BANDWIDTH_BYTES, /* bandwidth in bytes/s instead of MiB/s */
+    };
+    class BlockJobSetSpeedFlagsC : public EnumSetHelper<BlockJobSetSpeedFlagsC, BlockJobSetSpeedFlag> {
+        using Base = EnumSetHelper<BlockJobSetSpeedFlagsC, BlockJobSetSpeedFlag>;
+        friend Base;
+        constexpr static std::array values = {"bandwidth_bytes"};
+    } constexpr static BlockJobSetSpeedFlags{};
+    enum class BlockPullFlag {
+        BLOCK_PULL_BANDWIDTH_BYTES = VIR_DOMAIN_BLOCK_PULL_BANDWIDTH_BYTES, /* bandwidth in bytes/s instead of MiB/s */
+    };
+    class BlockPullFlagsC : public EnumSetHelper<BlockPullFlagsC, BlockPullFlag> {
+        using Base = EnumSetHelper<BlockPullFlagsC, BlockPullFlag>;
+        friend Base;
+        constexpr static std::array values = {"", "", "", "", "", "", "bandwidth_bytes"};
+    } constexpr static BlockPullFlags{};
+    enum class BlockRebaseFlag {
+        SHALLOW = VIR_DOMAIN_BLOCK_REBASE_SHALLOW,                 /* Limit copy to top of source backing chain */
+        REUSE_EXT = VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT,             /* Reuse existing external file for a copy */
+        COPY_RAW = VIR_DOMAIN_BLOCK_REBASE_COPY_RAW,               /* Make destination file raw */
+        COPY = VIR_DOMAIN_BLOCK_REBASE_COPY,                       /* Start a copy job */
+        RELATIVE = VIR_DOMAIN_BLOCK_REBASE_RELATIVE,               /* Keep backing chain referenced using relative names */
+        COPY_DEV = VIR_DOMAIN_BLOCK_REBASE_COPY_DEV,               /* Treat destination as block device instead of file */
+        BANDWIDTH_BYTES = VIR_DOMAIN_BLOCK_REBASE_BANDWIDTH_BYTES, /* bandwidth in bytes/s instead of MiB/s */
+    };
+    class BlockRebaseFlagsC : public EnumSetHelper<BlockRebaseFlagsC, BlockRebaseFlag> {
+        using Base = EnumSetHelper<BlockRebaseFlagsC, BlockRebaseFlag>;
+        friend Base;
+        constexpr static std::array values = {"shallow", "reuse_ext", "copy_raw", "copy", "relative", "copy_dev", "bandwidth_bytes"};
+    } constexpr static BlockRebaseFlags{};
+    enum class BlockResizeFlag {
+        OCK_RESIZE_BYTES = VIR_DOMAIN_BLOCK_RESIZE_BYTES, /* size in bytes instead of KiB */
+    };
+    class BlockResizeFlagsC : public EnumSetHelper<BlockResizeFlagsC, BlockResizeFlag> {
+        using Base = EnumSetHelper<BlockResizeFlagsC, BlockResizeFlag>;
+        friend Base;
+        constexpr static std::array values = {"bytes"};
+    } constexpr static BlockResizeFlags{};
+
     struct CoreDump {
         enum class Flag {
             CRASH = VIR_DUMP_CRASH,               /* crash after dump */
@@ -262,6 +316,36 @@ class Domain {
         FAILED = VIR_DOMAIN_JOB_FAILED,       /* Job hit error, but isn't cleaned up */
         CANCELLED = VIR_DOMAIN_JOB_CANCELLED, /* Job was aborted, but isn't cleaned up */
     };
+    enum class KeycodeSet {
+        LINUX = VIR_KEYCODE_SET_LINUX,
+        XT = VIR_KEYCODE_SET_XT,
+        ATSET1 = VIR_KEYCODE_SET_ATSET1,
+        ATSET2 = VIR_KEYCODE_SET_ATSET2,
+        ATSET3 = VIR_KEYCODE_SET_ATSET3,
+        OSX = VIR_KEYCODE_SET_OSX,
+        KBD = VIR_KEYCODE_SET_XT_KBD,
+        USB = VIR_KEYCODE_SET_USB,
+        WIN32 = VIR_KEYCODE_SET_WIN32,
+        QNUM = VIR_KEYCODE_SET_QNUM,
+    };
+    class KeycodeSetsC : public EnumHelper<KeycodeSetsC, KeycodeSet> {
+        using Base = EnumHelper<KeycodeSetsC, KeycodeSet>;
+        friend Base;
+        constexpr static std::array values = {"linux", "xt", "atset1", "atset2", "atset3", "osx", ""};
+    } constexpr static KeycodeSets{};
+    enum class MemoryModFlag {
+        /* See virDomainModificationImpact for these flags.  */
+        LIVE = VIR_DOMAIN_MEM_LIVE,
+        CONFIG = VIR_DOMAIN_MEM_CONFIG,
+
+        /* Additionally, these flags may be bitwise-OR'd in.  */
+        MAXIMUM = VIR_DOMAIN_MEM_MAXIMUM, /* affect Max rather than current */
+    };
+    class MemoryModFlagsC : public EnumSetHelper<MemoryModFlagsC, MemoryModFlag> {
+        using Base = EnumSetHelper<MemoryModFlagsC, MemoryModFlag>;
+        friend Base;
+        constexpr static std::array values = {"live", "config", "maximum"};
+    } constexpr static MemoryModFlags{};
     enum class SaveImageXMLFlag : unsigned {
         SECURE = VIR_DOMAIN_XML_SECURE, /* dump security sensitive information too */
     };
@@ -278,8 +362,7 @@ class Domain {
         using Base = EnumSetHelper<ShutdownFlagsC, ShutdownFlag>;
         friend Base;
         constexpr static std::array values = {"acpi_power_btn", "guest_agent", "initctl", "signal", "paravirt"};
-    };
-    constexpr static ShutdownFlagsC ShutdownFlags{};
+    } constexpr static ShutdownFlags{};
     struct StateReason {
         enum class NoState {
             UNKNOWN = VIR_DOMAIN_NOSTATE_UNKNOWN, /* the reason is unknown */
@@ -418,6 +501,11 @@ class Domain {
         TITLE = VIR_DOMAIN_METADATA_TITLE,             /* Operate on <title> */
         ELEMENT = VIR_DOMAIN_METADATA_ELEMENT,         /* Operate on <metadata> */
     };
+    class MetadataTypesC : public EnumHelper<MetadataTypesC, MetadataType> {
+        using Base = EnumHelper<MetadataTypesC, MetadataType>;
+        friend Base;
+        constexpr static std::array values = {"description", "title", "element"};
+    } constexpr static MetadataTypes{};
     enum class ModificationImpactFlag {
         CURRENT = VIR_DOMAIN_AFFECT_CURRENT, /* Affect current domain state.  */
         LIVE = VIR_DOMAIN_AFFECT_LIVE,       /* Affect running domain state.  */
@@ -428,6 +516,89 @@ class Domain {
         friend Base;
         constexpr static std::array values = {"live", "config"};
     } constexpr static ModificationImpactFlags{};
+    enum class ProcessSignal {
+        NOP = VIR_DOMAIN_PROCESS_SIGNAL_NOP,   /* No constant in POSIX/Linux */
+        HUP = VIR_DOMAIN_PROCESS_SIGNAL_HUP,   /* SIGHUP */
+        INT = VIR_DOMAIN_PROCESS_SIGNAL_INT,   /* SIGINT */
+        QUIT = VIR_DOMAIN_PROCESS_SIGNAL_QUIT, /* SIGQUIT */
+        ILL = VIR_DOMAIN_PROCESS_SIGNAL_ILL,   /* SIGILL */
+        TRAP = VIR_DOMAIN_PROCESS_SIGNAL_TRAP, /* SIGTRAP */
+        ABRT = VIR_DOMAIN_PROCESS_SIGNAL_ABRT, /* SIGABRT */
+        BUS = VIR_DOMAIN_PROCESS_SIGNAL_BUS,   /* SIGBUS */
+        FPE = VIR_DOMAIN_PROCESS_SIGNAL_FPE,   /* SIGFPE */
+        KILL = VIR_DOMAIN_PROCESS_SIGNAL_KILL, /* SIGKILL */
+
+        USR1 = VIR_DOMAIN_PROCESS_SIGNAL_USR1,     /* SIGUSR1 */
+        SEGV = VIR_DOMAIN_PROCESS_SIGNAL_SEGV,     /* SIGSEGV */
+        USR2 = VIR_DOMAIN_PROCESS_SIGNAL_USR2,     /* SIGUSR2 */
+        PIPE = VIR_DOMAIN_PROCESS_SIGNAL_PIPE,     /* SIGPIPE */
+        ALRM = VIR_DOMAIN_PROCESS_SIGNAL_ALRM,     /* SIGALRM */
+        TERM = VIR_DOMAIN_PROCESS_SIGNAL_TERM,     /* SIGTERM */
+        STKFLT = VIR_DOMAIN_PROCESS_SIGNAL_STKFLT, /* Not in POSIX (SIGSTKFLT on Linux )*/
+        CHLD = VIR_DOMAIN_PROCESS_SIGNAL_CHLD,     /* SIGCHLD */
+        CONT = VIR_DOMAIN_PROCESS_SIGNAL_CONT,     /* SIGCONT */
+        STOP = VIR_DOMAIN_PROCESS_SIGNAL_STOP,     /* SIGSTOP */
+
+        TSTP = VIR_DOMAIN_PROCESS_SIGNAL_TSTP,     /* SIGTSTP */
+        TTIN = VIR_DOMAIN_PROCESS_SIGNAL_TTIN,     /* SIGTTIN */
+        TTOU = VIR_DOMAIN_PROCESS_SIGNAL_TTOU,     /* SIGTTOU */
+        URG = VIR_DOMAIN_PROCESS_SIGNAL_URG,       /* SIGURG */
+        XCPU = VIR_DOMAIN_PROCESS_SIGNAL_XCPU,     /* SIGXCPU */
+        XFSZ = VIR_DOMAIN_PROCESS_SIGNAL_XFSZ,     /* SIGXFSZ */
+        VTALRM = VIR_DOMAIN_PROCESS_SIGNAL_VTALRM, /* SIGVTALRM */
+        PROF = VIR_DOMAIN_PROCESS_SIGNAL_PROF,     /* SIGPROF */
+        WINCH = VIR_DOMAIN_PROCESS_SIGNAL_WINCH,   /* Not in POSIX (SIGWINCH on Linux) */
+        POLL = VIR_DOMAIN_PROCESS_SIGNAL_POLL,     /* SIGPOLL (also known as SIGIO on Linux) */
+
+        PWR = VIR_DOMAIN_PROCESS_SIGNAL_PWR, /* Not in POSIX (SIGPWR on Linux) */
+        SYS = VIR_DOMAIN_PROCESS_SIGNAL_SYS, /* SIGSYS (also known as SIGUNUSED on Linux) */
+        RT0 = VIR_DOMAIN_PROCESS_SIGNAL_RT0, /* SIGRTMIN */
+        RT1 = VIR_DOMAIN_PROCESS_SIGNAL_RT1, /* SIGRTMIN + 1 */
+        RT2 = VIR_DOMAIN_PROCESS_SIGNAL_RT2, /* SIGRTMIN + 2 */
+        RT3 = VIR_DOMAIN_PROCESS_SIGNAL_RT3, /* SIGRTMIN + 3 */
+        RT4 = VIR_DOMAIN_PROCESS_SIGNAL_RT4, /* SIGRTMIN + 4 */
+        RT5 = VIR_DOMAIN_PROCESS_SIGNAL_RT5, /* SIGRTMIN + 5 */
+        RT6 = VIR_DOMAIN_PROCESS_SIGNAL_RT6, /* SIGRTMIN + 6 */
+        RT7 = VIR_DOMAIN_PROCESS_SIGNAL_RT7, /* SIGRTMIN + 7 */
+
+        RT8 = VIR_DOMAIN_PROCESS_SIGNAL_RT8,   /* SIGRTMIN + 8 */
+        RT9 = VIR_DOMAIN_PROCESS_SIGNAL_RT9,   /* SIGRTMIN + 9 */
+        RT10 = VIR_DOMAIN_PROCESS_SIGNAL_RT10, /* SIGRTMIN + 10 */
+        RT11 = VIR_DOMAIN_PROCESS_SIGNAL_RT11, /* SIGRTMIN + 11 */
+        RT12 = VIR_DOMAIN_PROCESS_SIGNAL_RT12, /* SIGRTMIN + 12 */
+        RT13 = VIR_DOMAIN_PROCESS_SIGNAL_RT13, /* SIGRTMIN + 13 */
+        RT14 = VIR_DOMAIN_PROCESS_SIGNAL_RT14, /* SIGRTMIN + 14 */
+        RT15 = VIR_DOMAIN_PROCESS_SIGNAL_RT15, /* SIGRTMIN + 15 */
+        RT16 = VIR_DOMAIN_PROCESS_SIGNAL_RT16, /* SIGRTMIN + 16 */
+        RT17 = VIR_DOMAIN_PROCESS_SIGNAL_RT17, /* SIGRTMIN + 17 */
+
+        RT18 = VIR_DOMAIN_PROCESS_SIGNAL_RT18, /* SIGRTMIN + 18 */
+        RT19 = VIR_DOMAIN_PROCESS_SIGNAL_RT19, /* SIGRTMIN + 19 */
+        RT20 = VIR_DOMAIN_PROCESS_SIGNAL_RT20, /* SIGRTMIN + 20 */
+        RT21 = VIR_DOMAIN_PROCESS_SIGNAL_RT21, /* SIGRTMIN + 21 */
+        RT22 = VIR_DOMAIN_PROCESS_SIGNAL_RT22, /* SIGRTMIN + 22 */
+        RT23 = VIR_DOMAIN_PROCESS_SIGNAL_RT23, /* SIGRTMIN + 23 */
+        RT24 = VIR_DOMAIN_PROCESS_SIGNAL_RT24, /* SIGRTMIN + 24 */
+        RT25 = VIR_DOMAIN_PROCESS_SIGNAL_RT25, /* SIGRTMIN + 25 */
+        RT26 = VIR_DOMAIN_PROCESS_SIGNAL_RT26, /* SIGRTMIN + 26 */
+        RT27 = VIR_DOMAIN_PROCESS_SIGNAL_RT27, /* SIGRTMIN + 27 */
+
+        RT28 = VIR_DOMAIN_PROCESS_SIGNAL_RT28, /* SIGRTMIN + 28 */
+        RT29 = VIR_DOMAIN_PROCESS_SIGNAL_RT29, /* SIGRTMIN + 29 */
+        RT30 = VIR_DOMAIN_PROCESS_SIGNAL_RT30, /* SIGRTMIN + 30 */
+        RT31 = VIR_DOMAIN_PROCESS_SIGNAL_RT31, /* SIGRTMIN + 31 */
+        RT32 = VIR_DOMAIN_PROCESS_SIGNAL_RT32, /* SIGRTMIN + 32 / SIGRTMAX */
+    };
+    class ProcessSignalsC : public EnumHelper<ProcessSignalsC, ProcessSignal> {
+        using Base = EnumHelper<ProcessSignalsC, ProcessSignal>;
+        friend Base;
+        constexpr static std::array values = {"nop",  "hup",  "int",  "quit", "ill",    "trap",   "abrt",  "bus",  "fpe",  "kill", "usr1",
+                                              "segv", "usr2", "pipe", "alrm", "term",   "stkflt", "chld",  "cont", "stop", "tstp", "ttin",
+                                              "ttou", "urg",  "xcpu", "xfsz", "vtalrm", "prof",   "winch", "poll", "pwr",  "sys",  "rt0",
+                                              "rt1",  "rt2",  "rt3",  "rt4",  "rt5",    "rt6",    "rt7",   "rt8",  "rt9",  "rt10", "rt11",
+                                              "rt12", "rt13", "rt14", "rt15", "rt16",   "rt17",   "rt18",  "rt19", "rt20", "rt21", "rt22",
+                                              "rt23", "rt24", "rt25", "rt26", "rt27",   "rt28",   "rt29",  "rt30", "rt31", "rt32"};
+    } constexpr static ProcessSignals{};
     enum class SetTimeFlag {
         SYNC = VIR_DOMAIN_TIME_SYNC, /* Re-sync domain time from domain's RTC */
     };
@@ -507,6 +678,8 @@ class Domain {
     };
     constexpr static UndefineFlagsC UndefineFlags;
 
+    using BlockStats = virDomainBlockStatsStruct;
+
     using MITPFlags = EnumSetTie<ModificationImpactFlag, TypedParameterFlag>;
     using MITPFlagsC = EnumSetCTie<EnumSetTie<ModificationImpactFlag, TypedParameterFlag>, std::tuple<ModificationImpactFlagsC, TypedParameterFlagC>>;
 
@@ -531,6 +704,26 @@ class Domain {
     bool attachDevice(gsl::czstring<> xml) noexcept;
 
     bool attachDevice(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept;
+
+    bool blockCommit(gsl::czstring<> disk, gsl::czstring<> base, gsl::czstring<> top, unsigned long bandwidth, BlockCommitFlag flags) noexcept;
+
+    bool blockCopy(gsl::czstring<> disk, gsl::czstring<> destxml, const TypedParams& params, BlockCopyFlag flags) noexcept;
+
+    bool blockJobAbort(gsl::czstring<> disk, BlockJobAbortFlag flags) noexcept;
+
+    bool blockJobSetSpeed(gsl::czstring<> disk, unsigned long bandwidth, BlockJobSetSpeedFlag flags) noexcept;
+
+    bool blockPeek(gsl::czstring<> disk, unsigned long long offset, gsl::span<std::byte> buffer) const noexcept;
+
+    bool blockPull(gsl::czstring<> disk, unsigned long bandwidth, BlockPullFlag flags) noexcept;
+
+    bool blockRebase(gsl::czstring<> disk, gsl::czstring<> base, unsigned long bandwidth, BlockRebaseFlag flags);
+
+    bool blockResize(gsl::czstring<> disk, unsigned long long size, BlockResizeFlag flags) noexcept;
+
+    auto blockStats(gsl::czstring<> disk, size_t size) const noexcept;
+
+    auto blockStatsFlags(gsl::czstring<> disk, TypedParameterFlag flags) const noexcept;
 
     bool create() noexcept;
 
@@ -699,9 +892,15 @@ class Domain {
 
     bool migrateStartPostCopy(unsigned int flag) noexcept;
 
+    bool sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<unsigned int> keycodes) noexcept;
+
+    bool sendProcessSignal(long long pid_value, ProcessSignal signum) noexcept;
+
     bool setMaxMemory(unsigned long);
 
     bool setMemory(unsigned long);
+
+    bool setMemoryStatsPeriod(int period, MemoryModFlag flags) noexcept;
 
     bool reboot(ShutdownFlag flags = ShutdownFlag::DEFAULT);
 
@@ -716,6 +915,8 @@ class Domain {
     bool save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
 
     bool setAutoStart(bool);
+
+    bool setMetadata(MetadataType type, gsl::czstring<> metadata, gsl::czstring<> key, gsl::czstring<> uri, ModificationImpactFlag flags) noexcept;
 
     bool setTime(long long seconds, unsigned int nseconds, SetTimeFlag flags) noexcept;
 
@@ -971,6 +1172,18 @@ class Domain::heavy::IOThreadInfo {
     gsl::span<unsigned char> cpumap() noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
 };
 
+[[nodiscard]] constexpr inline Domain::BlockCommitFlag operator|(Domain::BlockCommitFlag lhs, Domain::BlockCommitFlag rhs) noexcept;
+constexpr inline Domain::BlockCommitFlag& operator|=(Domain::BlockCommitFlag& lhs, Domain::BlockCommitFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::BlockJobAbortFlag operator|(Domain::BlockJobAbortFlag lhs, Domain::BlockJobAbortFlag rhs) noexcept;
+constexpr Domain::BlockJobAbortFlag& operator|=(Domain::BlockJobAbortFlag& lhs, Domain::BlockJobAbortFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::BlockJobSetSpeedFlag operator|(Domain::BlockJobSetSpeedFlag lhs, Domain::BlockJobSetSpeedFlag rhs) noexcept;
+constexpr Domain::BlockJobSetSpeedFlag& operator|=(Domain::BlockJobSetSpeedFlag& lhs, Domain::BlockJobSetSpeedFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::BlockPullFlag operator|(Domain::BlockPullFlag lhs, Domain::BlockPullFlag rhs) noexcept;
+constexpr Domain::BlockPullFlag& operator|=(Domain::BlockPullFlag& lhs, Domain::BlockPullFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::BlockRebaseFlag operator|(Domain::BlockRebaseFlag lhs, Domain::BlockRebaseFlag rhs) noexcept;
+constexpr Domain::BlockRebaseFlag& operator|=(Domain::BlockRebaseFlag& lhs, Domain::BlockRebaseFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::BlockResizeFlag operator|(Domain::BlockResizeFlag lhs, Domain::BlockResizeFlag rhs) noexcept;
+constexpr Domain::BlockResizeFlag& operator|=(Domain::BlockResizeFlag& lhs, Domain::BlockResizeFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs, Domain::GetAllDomainStatsFlag rhs) noexcept;
 constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs, Domain::GetAllDomainStatsFlag rhs) noexcept;
@@ -978,6 +1191,8 @@ constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainSt
 constexpr inline Domain::ShutdownFlag& operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept;
 constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept;
+[[nodiscard]] constexpr inline Domain::MemoryModFlag operator|(Domain::MemoryModFlag lhs, Domain::MemoryModFlag rhs) noexcept;
+constexpr inline Domain::MemoryModFlag operator|=(Domain::MemoryModFlag& lhs, Domain::MemoryModFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
                                                                         Domain::ModificationImpactFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept;

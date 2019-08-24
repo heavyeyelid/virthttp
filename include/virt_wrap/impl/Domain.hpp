@@ -45,6 +45,50 @@ bool Domain::attachDevice(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept 
     return virDomainAttachDeviceFlags(underlying, xml, to_integral(flags)) == 0;
 }
 
+inline bool Domain::blockCommit(gsl::czstring<> disk, gsl::czstring<> base, gsl::czstring<> top, unsigned long bandwidth,
+                                BlockCommitFlag flags) noexcept {
+    return virDomainBlockCommit(underlying, disk, base, top, bandwidth, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::blockCopy(gsl::czstring<> disk, gsl::czstring<> destxml, const TypedParams& params, BlockCopyFlag flags) noexcept {
+    return virDomainBlockCopy(underlying, disk, destxml, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::blockJobAbort(gsl::czstring<> disk, BlockJobAbortFlag flags) noexcept {
+    return virDomainBlockJobAbort(underlying, disk, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::blockJobSetSpeed(gsl::czstring<> disk, unsigned long bandwidth, BlockJobSetSpeedFlag flags) noexcept {
+    return virDomainBlockJobSetSpeed(underlying, disk, bandwidth, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::blockPeek(gsl::czstring<> disk, unsigned long long offset, gsl::span<std::byte> buffer) const noexcept {
+    return virDomainBlockPeek(underlying, disk, offset, buffer.size(), buffer.data(), 0) >= 0;
+}
+
+inline bool Domain::blockPull(gsl::czstring<> disk, unsigned long bandwidth, BlockPullFlag flags) noexcept {
+    return virDomainBlockPull(underlying, disk, bandwidth, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::blockRebase(gsl::czstring<> disk, gsl::czstring<> base, unsigned long bandwidth, BlockRebaseFlag flags) {
+    return virDomainBlockRebase(underlying, disk, base, bandwidth, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::blockResize(gsl::czstring<> disk, unsigned long long size, BlockResizeFlag flags) noexcept {
+    return virDomainBlockResize(underlying, disk, size, to_integral(flags)) >= 0;
+}
+
+inline auto Domain::blockStats(gsl::czstring<> disk, size_t size) const noexcept {
+    return meta::light::wrap_oparm_owning_fill_static_arr(
+        underlying, [=](virDomainPtr) { return size; },
+        [=](virDomainPtr u, virDomainBlockStatsPtr ptr, size_t n) { return virDomainBlockStats(u, disk, ptr, n); });
+}
+
+inline auto Domain::blockStatsFlags(gsl::czstring<> disk, TypedParameterFlag flags) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(
+        underlying, [=](virDomainPtr u, virTypedParameterPtr ptr, int* n) { return virDomainBlockStatsFlags(u, disk, ptr, n, to_integral(flags)); });
+}
+
 bool inline Domain::create() noexcept { return virDomainCreate(underlying) == 0; }
 
 bool inline Domain::create(CreateFlag flags) noexcept { return virDomainCreateWithFlags(underlying, to_integral(flags)) == 0; }
@@ -383,17 +427,31 @@ bool Domain::migrateSetCompressionCache(unsigned long long cacheSize) noexcept {
     return virDomainMigrateSetCompressionCache(underlying, cacheSize, 0) == 0;
 }
 
-bool Domain::migrateSetMaxDowntime(unsigned long long downtime) noexcept { return virDomainMigrateSetMaxDowntime(underlying, downtime, 0) == 0; }
+inline bool Domain::migrateSetMaxDowntime(unsigned long long downtime) noexcept {
+    return virDomainMigrateSetMaxDowntime(underlying, downtime, 0) == 0;
+}
 
-bool Domain::migrateSetMaxSpeed(unsigned long bandwidth, unsigned int flags) noexcept {
+inline bool Domain::migrateSetMaxSpeed(unsigned long bandwidth, unsigned int flags) noexcept {
     return virDomainMigrateSetMaxSpeed(underlying, bandwidth, to_integral(flags)) == 0;
 }
 
-bool Domain::migrateStartPostCopy(unsigned int flags) noexcept { return virDomainMigrateStartPostCopy(underlying, to_integral(flags)) == 0; }
+inline bool Domain::migrateStartPostCopy(unsigned int flags) noexcept { return virDomainMigrateStartPostCopy(underlying, to_integral(flags)) == 0; }
+
+inline bool Domain::sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<unsigned int> keycodes) noexcept {
+    return virDomainSendKey(underlying, to_integral(codeset), holdtime, keycodes.data(), keycodes.size(), 0) >= 0;
+}
+
+inline bool Domain::sendProcessSignal(long long pid_value, ProcessSignal signum) noexcept {
+    return virDomainSendProcessSignal(underlying, pid_value, to_integral(signum), 0) >= 0;
+}
 
 inline bool Domain::setMaxMemory(unsigned long mem) { return virDomainSetMaxMemory(underlying, mem) == 0; }
 
 inline bool Domain::setMemory(unsigned long mem) { return virDomainSetMemory(underlying, mem) == 0; }
+
+inline bool Domain::setMemoryStatsPeriod(int period, MemoryModFlag flags) noexcept {
+    return virDomainSetMemoryStatsPeriod(underlying, period, to_integral(flags)) >= 0;
+}
 
 [[nodiscard]] inline bool Domain::isActive() const noexcept { return virDomainIsActive(underlying) != 0; }
 
@@ -412,6 +470,11 @@ inline bool Domain::save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFl
 }
 
 inline bool Domain::setAutoStart(bool as) { return virDomainSetAutostart(underlying, as ? 1 : 0) == 0; }
+
+inline bool Domain::setMetadata(MetadataType type, gsl::czstring<> metadata, gsl::czstring<> key, gsl::czstring<> uri,
+                                ModificationImpactFlag flags) noexcept {
+    return virDomainSetMetadata(underlying, to_integral(type), metadata, key, uri, to_integral(flags)) >= 0;
+}
 
 inline bool Domain::setTime(long long seconds, unsigned int nseconds, Domain::SetTimeFlag flags) noexcept {
     return virDomainSetTime(underlying, seconds, nseconds, to_integral(flags));
@@ -443,6 +506,42 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
                    [](const virTypedParameter& tp) { return TypedParameter{tp}; });
 }
 
+[[nodiscard]] constexpr inline Domain::BlockCommitFlag operator|(Domain::BlockCommitFlag lhs, Domain::BlockCommitFlag rhs) noexcept {
+    return Domain::BlockCommitFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr inline Domain::BlockCommitFlag& operator|=(Domain::BlockCommitFlag& lhs, Domain::BlockCommitFlag rhs) noexcept {
+    return lhs = Domain::BlockCommitFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::BlockJobAbortFlag operator|(Domain::BlockJobAbortFlag lhs, Domain::BlockJobAbortFlag rhs) noexcept {
+    return Domain::BlockJobAbortFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::BlockJobAbortFlag& operator|=(Domain::BlockJobAbortFlag& lhs, Domain::BlockJobAbortFlag rhs) noexcept {
+    return lhs = Domain::BlockJobAbortFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::BlockJobSetSpeedFlag operator|(Domain::BlockJobSetSpeedFlag lhs, Domain::BlockJobSetSpeedFlag rhs) noexcept {
+    return Domain::BlockJobSetSpeedFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::BlockJobSetSpeedFlag& operator|=(Domain::BlockJobSetSpeedFlag& lhs, Domain::BlockJobSetSpeedFlag rhs) noexcept {
+    return lhs = Domain::BlockJobSetSpeedFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::BlockPullFlag operator|(Domain::BlockPullFlag lhs, Domain::BlockPullFlag rhs) noexcept {
+    return Domain::BlockPullFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::BlockPullFlag& operator|=(Domain::BlockPullFlag& lhs, Domain::BlockPullFlag rhs) noexcept {
+    return lhs = Domain::BlockPullFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::BlockRebaseFlag operator|(Domain::BlockRebaseFlag lhs, Domain::BlockRebaseFlag rhs) noexcept {
+    return Domain::BlockRebaseFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::BlockRebaseFlag& operator|=(Domain::BlockRebaseFlag& lhs, Domain::BlockRebaseFlag rhs) noexcept {
+    return lhs = Domain::BlockRebaseFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::BlockResizeFlag operator|(Domain::BlockResizeFlag lhs, Domain::BlockResizeFlag rhs) noexcept {
+    return Domain::BlockResizeFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::BlockResizeFlag& operator|=(Domain::BlockResizeFlag& lhs, Domain::BlockResizeFlag rhs) noexcept {
+    return lhs = Domain::BlockResizeFlag{to_integral(lhs) | to_integral(rhs)};
+}
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept {
     return Domain::CoreDump::Flag{to_integral(lhs) | to_integral(rhs)};
 }
@@ -475,7 +574,12 @@ constexpr inline Domain::ShutdownFlag& operator|=(Domain::ShutdownFlag& lhs, Dom
 constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept {
     return lhs = Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
 }
-
+[[nodiscard]] constexpr inline Domain::MemoryModFlag operator|(Domain::MemoryModFlag lhs, Domain::MemoryModFlag rhs) noexcept {
+    return Domain::MemoryModFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr inline Domain::MemoryModFlag operator|=(Domain::MemoryModFlag& lhs, Domain::MemoryModFlag rhs) noexcept {
+    return lhs = Domain::MemoryModFlag{to_integral(lhs) | to_integral(rhs)};
+}
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
                                                                         Domain::ModificationImpactFlag rhs) noexcept {
     return Domain::ModificationImpactFlag{to_integral(lhs) | to_integral(rhs)};

@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <lift.hpp>
 #include <libvirt/libvirt.h>
+#include <lift.hpp>
 #include "../TypesParam.hpp"
 #include "../utility.hpp"
 
@@ -67,7 +67,7 @@ void TypedParams::add(const TypedParameter& tp) {
                        // //C++2a: TODO change captures to [=, this]
                        [&, this](int v) { add(name, v); }, [&, this](unsigned v) { add(name, v); }, [&, this](long long v) { add(name, v); },
                        [&, this](unsigned long long v) { add(name, v); }, [&, this](double v) { add(name, v); }, [&, this](bool v) { add(name, v); },
-                       [&, this](std::string v) { add(name, v.c_str()); }},
+                       [&, this](const std::string& v) { add(name, v.c_str()); }},
                tp.second);
 }
 
