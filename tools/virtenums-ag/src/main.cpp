@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     const auto elem_res = elem_range(str);
     const auto name_w_s = s_name.to_view();
     const auto name = name_w_s.substr(0, name_w_s.size() - 1);
-    fmt::print("enum class {} {}\n", name, '{');
+    fmt::print("enum class {} {{\n", name);
     std::vector<std::pair<std::string_view, std::string_view>> elems;
     auto pos = std::numeric_limits<int>::max();
     bool first = true;
@@ -58,8 +58,7 @@ int main(int argc, char** argv) {
         name_ch = name_ch.substr(1);
         const auto idx_first_underscore = elems[0].first.find('_');
         const auto idx_sec_underscore = elems[0].first.find('_', idx_first_underscore + 1);
-        const auto [it_name, it_el] = std::mismatch(name_ch.begin(), name_ch.end(), elems[0].first.begin() + idx_sec_underscore + 1,
-                                                    elems[0].first.end()); // FIXME this can replace the loop-mismatch as well
+        const auto [it_name, it_el] = std::mismatch(name_ch.begin(), name_ch.end(), elems[0].first.begin() + idx_sec_underscore + 1, elems[0].first.end());
         pos = std::distance(name_ch.begin(), it_name);
     }
     for (auto& [name, comm] : elems) {
@@ -69,7 +68,7 @@ int main(int argc, char** argv) {
     }
     std::cout << "};\n";
 
-    fmt::print("class {0}sC : public {1}<{0}sC, {0}> {2}\n", name, helper, '{');
+    fmt::print("class {0}sC : public {1}<{0}sC, {0}> {{\n", name, helper);
     fmt::print("\tusing Base =  {1}<{0}sC, {0}>;\n\tfriend Base;\n", name, helper);
     std::cout << "\tconstexpr static std::array values = {" << std::flush;
     auto i = elems.size() - 1;
@@ -79,13 +78,12 @@ int main(int argc, char** argv) {
         fmt::print("\"{}\"{}", s, i != 0 ? ", " : ""), --i;
     }
 
-    fmt::print("{0};\n{0} constexpr static {1}s{{}};\n", '}', name);
+    fmt::print("}};\n}} constexpr static {}s{{}};\n", name);
 
     if (helper == "EnumSetHelper"sv) {
-        fmt::print("[[nodiscard]] constexpr {0} operator|({0} lhs, {0} rhs) noexcept {1} return {0}{1}to_integral(lhs) | to_integral(rhs){2};{2}\n",
-                   name, '{', '}');
-        fmt::print("constexpr {0}& operator|=({0}& lhs, {0} rhs) noexcept {1} return lhs = {0}{1}to_integral(lhs) | to_integral(rhs){2};{2}\n", name,
-                   '{', '}');
+        fmt::print("[[nodiscard]] constexpr {0} operator|({0} lhs, {0} rhs) noexcept {{ return {0}{{to_integral(lhs) | to_integral(rhs)}};}}\n",
+                   name);
+        fmt::print("constexpr {0}& operator|=({0}& lhs, {0} rhs) noexcept {{ return lhs = {0}{{to_integral(lhs) | to_integral(rhs)}};}}\n", name);
     }
     return 0;
 }
