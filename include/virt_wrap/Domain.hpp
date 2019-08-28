@@ -120,8 +120,6 @@ char* virDomainSaveImageGetXMLDesc(virConnectPtr conn, const char* file, unsigne
 
 char* virDomainScreenshot(virDomainPtr domain, virStreamPtr stream, unsigned int screen, unsigned int flags);
 
-int virDomainSetBlkioParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
-int virDomainSetBlockIoTune(virDomainPtr dom, const char* disk, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetBlockThreshold(virDomainPtr domain, const char* dev, unsigned long long threshold, unsigned int flags);
 
 int virDomainSetGuestVcpus(virDomainPtr domain, const char* cpumap, int state, unsigned int flags);
@@ -906,6 +904,10 @@ class Domain {
     bool save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
 
     bool setAutoStart(bool);
+
+    bool setBlkioParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
+
+    bool setBlockIoTune(gsl::czstring<> disk, TypedParams params, ModificationImpactFlag flags) noexcept;
 
     bool setIOThreadParams(unsigned int iothread_id, TypedParams params, MITPFlags flags) noexcept;
 

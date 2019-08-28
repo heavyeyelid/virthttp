@@ -471,6 +471,14 @@ inline bool Domain::save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFl
 
 inline bool Domain::setAutoStart(bool as) { return virDomainSetAutostart(underlying, as ? 1 : 0) == 0; }
 
+inline bool Domain::setBlkioParameters(TypedParams params, ModificationImpactFlag flags) noexcept {
+    return virDomainSetBlkioParameters(underlying, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::setBlockIoTune(gsl::czstring<> disk, TypedParams params, ModificationImpactFlag flags) noexcept {
+    return virDomainSetBlockIoTune(underlying, disk, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
 inline bool Domain::setIOThreadParams(unsigned int iothread_id, TypedParams params, MITPFlags flags) noexcept {
     return virDomainSetIOThreadParams(underlying, iothread_id, params.underlying, params.size, to_integral(flags)) >= 0;
 }
