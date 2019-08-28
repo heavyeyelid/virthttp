@@ -471,6 +471,38 @@ inline bool Domain::save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFl
 
 inline bool Domain::setAutoStart(bool as) { return virDomainSetAutostart(underlying, as ? 1 : 0) == 0; }
 
+inline bool Domain::setIOThreadParams(unsigned int iothread_id, TypedParams params, MITPFlags flags) noexcept {
+    return virDomainSetIOThreadParams(underlying, iothread_id, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::setInterfaceParameters(gsl::czstring<> device, TypedParams params, ModificationImpactFlag flags) noexcept {
+    return virDomainSetInterfaceParameters(underlying, device, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::setMemoryFlags(unsigned long memory, MemoryModFlag flags) noexcept {
+    return virDomainSetMemoryFlags(underlying, memory, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::setMemoryParameters(TypedParams params, ModificationImpactFlag flags) noexcept {
+    return virDomainSetMemoryParameters(underlying, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::setNumaParameters(TypedParams params, ModificationImpactFlag flags) noexcept {
+    return virDomainSetNumaParameters(underlying, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::setPerfEvents(TypedParams params, ModificationImpactFlag flags) noexcept {
+    return virDomainSetPerfEvents(underlying, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::setSchedulerParameters(TypedParams params) noexcept {
+    return virDomainSetSchedulerParameters(underlying, params.underlying, params.size) >= 0;
+}
+
+inline bool Domain::setSchedulerParameters(TypedParams params, ModificationImpactFlag flags) noexcept {
+    return virDomainSetSchedulerParametersFlags(underlying, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
 inline bool Domain::setMetadata(MetadataType type, gsl::czstring<> metadata, gsl::czstring<> key, gsl::czstring<> uri,
                                 ModificationImpactFlag flags) noexcept {
     return virDomainSetMetadata(underlying, to_integral(type), metadata, key, uri, to_integral(flags)) >= 0;

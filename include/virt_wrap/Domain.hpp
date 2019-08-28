@@ -126,16 +126,7 @@ int virDomainSetBlockThreshold(virDomainPtr domain, const char* dev, unsigned lo
 
 int virDomainSetGuestVcpus(virDomainPtr domain, const char* cpumap, int state, unsigned int flags);
 
-int virDomainSetIOThreadParams(virDomainPtr domain, unsigned int iothread_id, virTypedParameterPtr params, int nparams, unsigned int flags);
-int virDomainSetInterfaceParameters(virDomainPtr domain, const char* device, virTypedParameterPtr params, int nparams, unsigned int flags);
 int virDomainSetLifecycleAction(virDomainPtr domain, unsigned int type, unsigned int action, unsigned int flags);
-int virDomainSetMemoryFlags(virDomainPtr domain, unsigned long memory, unsigned int flags);
-int virDomainSetMemoryParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
-
-int virDomainSetNumaParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
-int virDomainSetPerfEvents(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
-int virDomainSetSchedulerParameters(virDomainPtr domain, virTypedParameterPtr params, int nparams);
-int virDomainSetSchedulerParametersFlags(virDomainPtr domain, virTypedParameterPtr params, int nparams, unsigned int flags);
 
 int virDomainSetVcpu(virDomainPtr domain, const char* vcpumap, int state, unsigned int flags);
 int virDomainUpdateDeviceFlags(virDomainPtr domain, const char* xml, unsigned int flags);
@@ -915,6 +906,22 @@ class Domain {
     bool save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
 
     bool setAutoStart(bool);
+
+    bool setIOThreadParams(unsigned int iothread_id, TypedParams params, MITPFlags flags) noexcept;
+
+    bool setInterfaceParameters(gsl::czstring<> device, TypedParams params, ModificationImpactFlag flags) noexcept;
+
+    bool setMemoryFlags(unsigned long memory, MemoryModFlag flags) noexcept;
+
+    bool setMemoryParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
+
+    bool setNumaParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
+
+    bool setPerfEvents(TypedParams params, ModificationImpactFlag flags) noexcept;
+
+    bool setSchedulerParameters(TypedParams params) noexcept;
+
+    bool setSchedulerParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
 
     bool setMetadata(MetadataType type, gsl::czstring<> metadata, gsl::czstring<> key, gsl::czstring<> uri, ModificationImpactFlag flags) noexcept;
 
