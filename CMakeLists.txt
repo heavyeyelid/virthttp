@@ -81,7 +81,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp include/wrapper/handlers/network.hpp include/wrapper/handlers/flagwork.hpp include/wrapper/virt2json.hpp)
+            include/urlparser.hpp include/wrapper/handlers/network.hpp include/wrapper/handlers/flagwork.hpp include/wrapper/virt2json.hpp include/wrapper/json2virt.hpp src/wrapper/json2virt.cpp)
 
     target_link_libraries(virthttp ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)

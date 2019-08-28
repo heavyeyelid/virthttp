@@ -9,6 +9,7 @@
 #include <optional>
 #include <type_traits>
 #include <gsl/gsl>
+#include "cexpr_algs.hpp"
 
 #ifdef __GNUC__
 #define UNREACHABLE __builtin_unreachable()

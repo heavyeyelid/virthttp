@@ -58,7 +58,11 @@ class TypedParams {
     bool needs_dealloc = false;
 
   public:
-    inline ~TypedParams() noexcept;
+    constexpr TypedParams() = default;
+    constexpr TypedParams(const TypedParams&) = delete;
+    constexpr TypedParams(TypedParams&&) = default;
+    template <class Container> TypedParams(Container); /* container of TypedParam */
+    ~TypedParams() noexcept;
 
     constexpr Iterator begin() const noexcept;
     constexpr Iterator begin() noexcept;
@@ -78,6 +82,8 @@ class TypedParams {
     void add(gsl::czstring<> name, bool);
 
     void add(gsl::czstring<> name, gsl::czstring<>);
+
+    void add(gsl::czstring<> name, const std::string& s);
 
     void add(const TypedParameter&);
 
@@ -124,7 +130,7 @@ struct TPImpl {
         auto& tp = ret.emplace();
         const auto res = fcn(underlying, &tp.underlying, &tp.size, args...);
         tp.capacity = tp.size;
-        return res == 0 ? ret : std::nullopt;
+        return res == 0 ? std::move(ret) : std::nullopt;
     }
     template <class U, class CountFcn, class DataFcn, class... Args,
               class = std::enable_if_t<std::is_invocable_v<DataFcn, U*, virTypedParameterPtr, int*, Args...>>>
@@ -137,7 +143,7 @@ struct TPImpl {
         tp.underlying = new virTypedParameter[tp.size];
         tp.needs_dealloc = true;
         const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
-        return res >= 0 ? ret : std::nullopt;
+        return res >= 0 ? std::move(ret) : std::nullopt;
     }
     template <class U, class DataFcn, class... Args>
     static auto wrap_oparm_fill_tp(U* underlying, DataFcn data_fcn, Args... args) -> std::optional<virt::TypedParams> {
@@ -150,6 +156,6 @@ struct TPImpl {
         tp.underlying = new virTypedParameter[tp.size];
         tp.needs_dealloc = true;
         const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
-        return res >= 0 ? ret : std::nullopt;
+        return res >= 0 ? std::move(ret) : std::nullopt;
     }
 };
