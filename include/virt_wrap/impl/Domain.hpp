@@ -497,6 +497,14 @@ inline bool Domain::migrateSetMaxSpeed(unsigned long bandwidth, unsigned int fla
 
 inline bool Domain::migrateStartPostCopy(unsigned int flags) noexcept { return virDomainMigrateStartPostCopy(underlying, to_integral(flags)) == 0; }
 
+inline bool Domain::openGraphics(unsigned int idx, int fd, OpenGraphicsFlag flags) const noexcept {
+    return virDomainOpenGraphics(underlying, idx, fd, to_integral(flags)) >= 0;
+}
+
+[[nodiscard]] inline int Domain::openGraphicsFD(unsigned int idx, OpenGraphicsFlag flags) const noexcept {
+    return virDomainOpenGraphicsFD(underlying, idx, to_integral(flags));
+}
+
 inline bool Domain::pinEmulator(CpuMap cpumap, ModificationImpactFlag flags) noexcept {
     return virDomainPinEmulator(underlying, cpumap.underlying, cpumap.maplen, to_integral(flags)) >= 0;
 }
@@ -742,6 +750,12 @@ constexpr inline Domain::VCpuFlag& operator|=(Domain::VCpuFlag& lhs, Domain::VCp
 }
 [[nodiscard]] constexpr inline Domain::XmlFlag operator|(Domain::XmlFlag lhs, Domain::XmlFlag rhs) noexcept {
     return lhs = Domain::XmlFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::OpenGraphicsFlag operator|(Domain::OpenGraphicsFlag lhs, Domain::OpenGraphicsFlag rhs) noexcept {
+    return Domain::OpenGraphicsFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::OpenGraphicsFlag& operator|=(Domain::OpenGraphicsFlag& lhs, Domain::OpenGraphicsFlag rhs) noexcept {
+    return lhs = Domain::OpenGraphicsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 constexpr inline Domain::XmlFlag& operator|=(Domain::XmlFlag& lhs, Domain::XmlFlag rhs) noexcept {
     return lhs = Domain::XmlFlag{to_integral(lhs) | to_integral(rhs)};

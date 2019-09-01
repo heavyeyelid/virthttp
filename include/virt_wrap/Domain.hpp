@@ -87,9 +87,6 @@ char* virConnectGetDomainCapabilities(virConnectPtr conn, const char* emulatorbi
 int virDomainOpenChannel(virDomainPtr dom, const char* name, virStreamPtr st, unsigned int flags);
 int virDomainOpenConsole(virDomainPtr dom, const char* dev_name, virStreamPtr st, unsigned int flags);
 
-int virDomainOpenGraphics(virDomainPtr dom, unsigned int idx, int fd, unsigned int flags);
-int virDomainOpenGraphicsFD(virDomainPtr dom, unsigned int idx, unsigned int flags);
-
 char* virDomainScreenshot(virDomainPtr domain, virStreamPtr stream, unsigned int screen, unsigned int flags);
 
 /*
@@ -342,6 +339,14 @@ class Domain {
         friend Base;
         constexpr static std::array values = {"live", "config", "maximum"};
     } constexpr static MemoryModFlags{};
+    enum class OpenGraphicsFlag {
+        SKIPAUTH = VIR_DOMAIN_OPEN_GRAPHICS_SKIPAUTH,
+    };
+    class OpenGraphicsFlagsC : public EnumSetHelper<OpenGraphicsFlagsC, OpenGraphicsFlag> {
+        using Base = EnumSetHelper<OpenGraphicsFlagsC, OpenGraphicsFlag>;
+        friend Base;
+        constexpr static std::array values = {"skipauth"};
+    } constexpr static OpenGraphicsFlags{};
     enum class SaveImageXMLFlag : unsigned {
         SECURE = VIR_DOMAIN_XML_SECURE, /* dump security sensitive information too */
     };
@@ -941,6 +946,10 @@ class Domain {
 
     bool migrateStartPostCopy(unsigned int flag) noexcept;
 
+    bool openGraphics(unsigned int idx, int fd, OpenGraphicsFlag flags) const noexcept;
+
+    [[nodiscard]] int openGraphicsFD(unsigned int idx, OpenGraphicsFlag flags) const noexcept;
+
     bool pinEmulator(CpuMap cpumap, ModificationImpactFlag flags) noexcept;
 
     bool pinIOThread(unsigned int iothread_id, CpuMap cpumap, ModificationImpactFlag flags) noexcept;
@@ -1288,6 +1297,8 @@ constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::St
 constexpr inline Domain::MemoryModFlag operator|=(Domain::MemoryModFlag& lhs, Domain::MemoryModFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
                                                                         Domain::ModificationImpactFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::OpenGraphicsFlag operator|(Domain::OpenGraphicsFlag lhs, Domain::OpenGraphicsFlag rhs) noexcept;
+constexpr Domain::OpenGraphicsFlag& operator|=(Domain::OpenGraphicsFlag& lhs, Domain::OpenGraphicsFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept;
 constexpr inline Domain::VCpuFlag& operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept;
