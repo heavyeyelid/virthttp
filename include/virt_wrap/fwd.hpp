@@ -17,4 +17,6 @@ class NodeDevice;
 class TypedParameter;
 
 class TypedParams;
+
+class CpuMap;
 }

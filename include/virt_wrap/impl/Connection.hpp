@@ -229,6 +229,14 @@ Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noex
 }
 Domain Connection::domainLookupByUUIDString(const std::string& uuid_str) const noexcept { return domainLookupByUUIDString(uuid_str.c_str()); }
 
+bool Connection::domainSaveImageDefineXML(gsl::czstring<> file, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept {
+    return virDomainSaveImageDefineXML(underlying, file, dxml, to_integral(flags)) >= 0;
+}
+
+[[nodiscard]] UniqueZstring Connection::domainSaveImageGetXMLDesc(gsl::czstring<> file, Domain::SaveImageXMLFlag flags) const noexcept {
+    return UniqueZstring{virDomainSaveImageGetXMLDesc(underlying, file, to_integral(flags))};
+}
+
 Network Connection::networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
     return Network{virNetworkLookupByUUID(underlying, uuid)};
 }

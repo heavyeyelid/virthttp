@@ -235,6 +235,10 @@ class Connection {
     [[nodiscard]] Domain domainLookupByUUIDString(gsl::czstring<>) const noexcept;
     [[nodiscard]] Domain domainLookupByUUIDString(const std::string&) const noexcept;
 
+    bool domainSaveImageDefineXML(gsl::czstring<> file, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept;
+
+    [[nodiscard]] UniqueZstring domainSaveImageGetXMLDesc(gsl::czstring<> file, Domain::SaveImageXMLFlag flags) const noexcept;
+
     [[nodiscard]] virNodeInfo nodeGetInfo() const;
 
     [[nodiscard]] unsigned long long nodeGetFreeMemory() const;

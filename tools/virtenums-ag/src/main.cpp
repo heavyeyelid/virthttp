@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     auto& [s_all, s_name] = name_res;
     const auto elem_res = elem_range(str);
     const auto name_w_s = s_name.to_view();
-    const auto name = name_w_s.substr(0, name_w_s.size() - 1);
+    const auto name = name_w_s.back() == 's' ? name_w_s.substr(0, name_w_s.size() - 1) : name_w_s;
     fmt::print("enum class {} {{\n", name);
     std::vector<std::pair<std::string_view, std::string_view>> elems;
     auto pos = std::numeric_limits<int>::max();

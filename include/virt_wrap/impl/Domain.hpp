@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <libvirt/libvirt.h>
+#include "../CpuMap.hpp"
 #include "../Domain.hpp"
 #include "../TypesParam.hpp"
 #include "../type_ops.hpp"
@@ -137,6 +138,27 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     return val == 1;
 }
 
+[[nodiscard]] auto Domain::getBlkioParameters(MITPFlags flags) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetBlkioParameters, to_integral(flags));
+}
+
+[[nodiscard]] auto Domain::getBlockInfo(gsl::czstring<> disk) const noexcept -> std::optional<virDomainBlockInfo> {
+    std::optional<virDomainBlockInfo> ret;
+    auto& info = ret.emplace();
+    return virDomainGetBlockInfo(underlying, disk, &info, 0) >= 0 ? ret : std::nullopt;
+}
+
+[[nodiscard]] auto Domain::getBlockIoTune(gsl::czstring<> disk, MITPFlags flags) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(
+        underlying, [=](auto* u, auto ptr, auto* n, auto f) { return virDomainGetBlockIoTune(u, disk, ptr, n, f); }, to_integral(flags));
+}
+
+[[nodiscard]] auto Domain::getBlockJobInfo(gsl::czstring<> disk, BlockJobInfoFlag flags) const noexcept {
+    std::optional<virDomainBlockJobInfo> ret;
+    auto& info = ret.emplace();
+    return virDomainGetBlockJobInfo(underlying, disk, &info, to_integral(flags)) >= 0 ? ret : std::nullopt;
+}
+
 [[nodiscard]] Connection Domain::getConnect() const noexcept { return Connection{virDomainGetConnect(underlying)}; }
 
 [[nodiscard]] std::optional<virDomainControlInfo> Domain::getControlInfo() const noexcept {
@@ -175,6 +197,13 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] auto Domain::extractFSInfo() const -> std::vector<FSInfo> {
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<FSInfo>(underlying, virDomainGetFSInfo, 0u);
+}
+
+[[nodiscard]] auto Domain::getJobStats(GetJobStatsFlag flags) const noexcept {
+    int jt = to_integral(JobType::NONE);
+    auto res = TPImpl::wrap_oparm_set_tp(
+        underlying, [&](auto* u, auto ptr, auto* n, auto f) { return virDomainGetJobStats(u, &jt, ptr, n, f); }, to_integral(flags));
+    return std::make_pair(JobType{jt}, std::move(res));
 }
 
 [[nodiscard]] std::optional<TypedParams> Domain::getGuestVcpus() const noexcept {
@@ -330,6 +359,10 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
 
 [[nodiscard]] auto Domain::getSchedulerParameters() const noexcept { return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetSchedulerParameters); }
 
+[[nodiscard]] auto Domain::getSchedulerParameters(MITPFlags flags) const noexcept {
+    return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetSchedulerParametersFlags, to_integral(flags));
+}
+
 [[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>> {
     return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
         underlying, [&](decltype(underlying) u) -> int { return getInfo().nrVirtCpu; },
@@ -408,6 +441,33 @@ auto Domain::memoryStats(unsigned int nr_stats) const noexcept {
         underlying, [=](decltype(underlying)) { return nr_stats; }, virDomainMemoryStats, 0u);
 }
 
+[[nodiscard]] inline Domain Domain::migrate(Connection dconn, MigrateFlag flags, gsl::czstring<> dname, gsl::czstring<> uri,
+                                            unsigned long bandwidth) noexcept {
+    return Domain{virDomainMigrate(underlying, dconn.underlying, to_integral(flags), dname, uri, bandwidth)};
+}
+
+[[nodiscard]] inline Domain Domain::migrate(Connection dconn, gsl::czstring<> dxml, MigrateFlag flags, gsl::czstring<> dname, gsl::czstring<> uri,
+                                            unsigned long bandwidth) noexcept {
+    return Domain{virDomainMigrate2(underlying, dconn.underlying, dxml, to_integral(flags), dname, uri, bandwidth)};
+}
+
+[[nodiscard]] inline Domain Domain::migrate(Connection dconn, const TypedParams& params, MigrateFlag flags) noexcept {
+    return Domain{virDomainMigrate3(underlying, dconn.underlying, params.underlying, params.size, to_integral(flags))};
+}
+
+inline bool Domain::migrateToURI(gsl::czstring<> duri, MigrateFlag flags, gsl::czstring<> dname, unsigned long bandwidth) noexcept {
+    return virDomainMigrateToURI(underlying, duri, to_integral(flags), dname, bandwidth) >= 0;
+}
+
+inline bool Domain::migrateToURI(gsl::czstring<> dconnuri, gsl::czstring<> miguri, gsl::czstring<> dxml, MigrateFlag flags, gsl::czstring<> dname,
+                                 unsigned long bandwidth) noexcept {
+    return virDomainMigrateToURI2(underlying, dconnuri, miguri, dxml, to_integral(flags), dname, bandwidth) >= 0;
+}
+
+inline bool Domain::migrateToURI(gsl::czstring<> dconnuri, const TypedParams& params, MigrateFlag flags) noexcept {
+    return virDomainMigrateToURI3(underlying, dconnuri, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+
 [[nodiscard]] auto Domain::migrateGetCompressionCache() const noexcept -> std::optional<unsigned long long> {
     unsigned long long v;
     return virDomainMigrateGetCompressionCache(underlying, &v, 0) == 0 ? std::optional{v} : std::nullopt;
@@ -436,6 +496,22 @@ inline bool Domain::migrateSetMaxSpeed(unsigned long bandwidth, unsigned int fla
 }
 
 inline bool Domain::migrateStartPostCopy(unsigned int flags) noexcept { return virDomainMigrateStartPostCopy(underlying, to_integral(flags)) == 0; }
+
+inline bool Domain::pinEmulator(CpuMap cpumap, ModificationImpactFlag flags) noexcept {
+    return virDomainPinEmulator(underlying, cpumap.underlying, cpumap.maplen, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::pinIOThread(unsigned int iothread_id, CpuMap cpumap, ModificationImpactFlag flags) noexcept {
+    return virDomainPinIOThread(underlying, iothread_id, cpumap.underlying, cpumap.maplen, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::pinVcpu(unsigned int vcpu, CpuMap cpumap) noexcept {
+    return virDomainPinVcpu(underlying, vcpu, cpumap.underlying, cpumap.maplen) >= 0;
+}
+
+inline bool Domain::pinVcpuFlags(unsigned int vcpu, CpuMap cpumap, ModificationImpactFlag flags) noexcept {
+    return virDomainPinVcpuFlags(underlying, vcpu, cpumap.underlying, cpumap.maplen, to_integral(flags)) >= 0;
+}
 
 inline bool Domain::sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<unsigned int> keycodes) noexcept {
     return virDomainSendKey(underlying, to_integral(codeset), holdtime, keycodes.data(), keycodes.size(), 0) >= 0;
@@ -479,12 +555,21 @@ inline bool Domain::setBlockIoTune(gsl::czstring<> disk, TypedParams params, Mod
     return virDomainSetBlockIoTune(underlying, disk, params.underlying, params.size, to_integral(flags)) >= 0;
 }
 
+inline bool Domain::setBlockThreshold(gsl::czstring<> dev, unsigned long long threshold) noexcept {
+    return virDomainSetBlockThreshold(underlying, dev, threshold, 0) >= 0;
+}
+
+inline bool Domain::setGuestVcpus(gsl::czstring<> cpumap, bool state) noexcept { return virDomainSetGuestVcpus(underlying, cpumap, state, 0) >= 0; }
+
 inline bool Domain::setIOThreadParams(unsigned int iothread_id, TypedParams params, MITPFlags flags) noexcept {
     return virDomainSetIOThreadParams(underlying, iothread_id, params.underlying, params.size, to_integral(flags)) >= 0;
 }
 
 inline bool Domain::setInterfaceParameters(gsl::czstring<> device, TypedParams params, ModificationImpactFlag flags) noexcept {
     return virDomainSetInterfaceParameters(underlying, device, params.underlying, params.size, to_integral(flags)) >= 0;
+}
+inline bool Domain::setLifecycleAction(Lifecycle type, LifecycleAction action, ModificationImpactFlag flags) noexcept {
+    return virDomainSetLifecycleAction(underlying, to_integral(type), to_integral(action), to_integral(flags)) >= 0;
 }
 
 inline bool Domain::setMemoryFlags(unsigned long memory, MemoryModFlag flags) noexcept {
@@ -524,6 +609,10 @@ inline bool Domain::setUserPassword(gsl::czstring<> user, gsl::czstring<> passwo
     return virDomainSetUserPassword(underlying, user, password, to_integral(flags));
 }
 
+inline bool Domain::setVcpu(gsl::czstring<> vcpumap, bool state, ModificationImpactFlag flags) noexcept {
+    return virDomainSetVcpu(underlying, vcpumap, state, to_integral(flags)) >= 0;
+}
+
 inline bool Domain::setVcpus(unsigned int nvcpus) noexcept { return virDomainSetVcpus(underlying, nvcpus) == 0; }
 
 inline bool Domain::setVcpus(unsigned int nvcpus, Domain::VCpuFlag flags) noexcept {
@@ -534,11 +623,15 @@ inline bool Domain::shutdown() noexcept { return virDomainShutdown(underlying) =
 
 inline bool Domain::shutdown(Domain::ShutdownFlag flags) noexcept { return virDomainShutdownFlags(underlying, to_integral(flags)) == 0; }
 
-inline bool Domain::suspend() { return virDomainSuspend(underlying) == 0; }
+inline bool Domain::suspend() noexcept { return virDomainSuspend(underlying) == 0; }
 
 inline bool Domain::undefine() noexcept { return virDomainUndefine(underlying) == 0; }
 
 inline bool Domain::undefine(UndefineFlag flags) noexcept { return virDomainUndefineFlags(underlying, to_integral(flags)) == 0; }
+
+inline bool Domain::updateDeviceFlags(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept {
+    return virDomainUpdateDeviceFlags(underlying, xml, to_integral(flags)) >= 0;
+}
 
 inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept : dom(from.dom) {
     params.reserve(static_cast<std::size_t>(from.nparams));
@@ -557,6 +650,12 @@ constexpr inline Domain::BlockCommitFlag& operator|=(Domain::BlockCommitFlag& lh
 }
 constexpr Domain::BlockJobAbortFlag& operator|=(Domain::BlockJobAbortFlag& lhs, Domain::BlockJobAbortFlag rhs) noexcept {
     return lhs = Domain::BlockJobAbortFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::BlockJobInfoFlag operator|(Domain::BlockJobInfoFlag lhs, Domain::BlockJobInfoFlag rhs) noexcept {
+    return Domain::BlockJobInfoFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::BlockJobInfoFlag& operator|=(Domain::BlockJobInfoFlag& lhs, Domain::BlockJobInfoFlag rhs) noexcept {
+    return lhs = Domain::BlockJobInfoFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr Domain::BlockJobSetSpeedFlag operator|(Domain::BlockJobSetSpeedFlag lhs, Domain::BlockJobSetSpeedFlag rhs) noexcept {
     return Domain::BlockJobSetSpeedFlag{to_integral(lhs) | to_integral(rhs)};
@@ -585,7 +684,12 @@ constexpr Domain::BlockResizeFlag& operator|=(Domain::BlockResizeFlag& lhs, Doma
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept {
     return Domain::CoreDump::Flag{to_integral(lhs) | to_integral(rhs)};
 }
-
+[[nodiscard]] constexpr Domain::DeviceModifyFlag operator|(Domain::DeviceModifyFlag lhs, Domain::DeviceModifyFlag rhs) noexcept {
+    return Domain::DeviceModifyFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::DeviceModifyFlag& operator|=(Domain::DeviceModifyFlag& lhs, Domain::DeviceModifyFlag rhs) noexcept {
+    return lhs = Domain::DeviceModifyFlag{to_integral(lhs) | to_integral(rhs)};
+}
 constexpr inline Domain::UndefineFlag operator|(virt::Domain::UndefineFlag lhs, virt::Domain::UndefineFlag rhs) noexcept {
     return Domain::UndefineFlag{to_integral(lhs) | to_integral(rhs)};
 }
@@ -600,6 +704,12 @@ constexpr inline Domain::UndefineFlag& operator|=(virt::Domain::UndefineFlag& lh
 
 constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs, Domain::GetAllDomainStatsFlag rhs) noexcept {
     return lhs = Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::GetJobStatsFlag operator|(Domain::GetJobStatsFlag lhs, Domain::GetJobStatsFlag rhs) noexcept {
+    return Domain::GetJobStatsFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::GetJobStatsFlag& operator|=(Domain::GetJobStatsFlag& lhs, Domain::GetJobStatsFlag rhs) noexcept {
+    return lhs = Domain::GetJobStatsFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept {
     return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
