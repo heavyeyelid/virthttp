@@ -28,18 +28,19 @@ constexpr Stream& Stream::operator=(Stream&& from) noexcept {
 
 inline bool Stream::abort() noexcept { return virStreamAbort(underlying) >= 0; }
 
-bool Stream::finish() noexcept { return virStreamFinish(underlying) >= 0; }
-int Stream::recv(gsl::span<char> span) noexcept { return recv(span.data(), span.size()); }
-int Stream::recv(char* buf, size_t buflen) noexcept { return virStreamRecv(underlying, buf, buflen); }
-int Stream::recv(gsl::span<char> span, RecvFlag flags) noexcept { return recv(span.data(), span.size(), flags); }
-int Stream::recv(char* buf, size_t buflen, RecvFlag flags) noexcept { return virStreamRecvFlags(underlying, buf, buflen, to_integral(flags)); }
-std::optional<long long> Stream::recvHole() {
+inline bool Stream::finish() noexcept { return virStreamFinish(underlying) >= 0; }
+inline int Stream::recv(gsl::span<char> span) noexcept { return recv(span.data(), span.size()); }
+inline int Stream::recv(char* buf, size_t buflen) noexcept { return virStreamRecv(underlying, buf, buflen); }
+inline int Stream::recv(gsl::span<char> span, RecvFlag flags) noexcept { return recv(span.data(), span.size(), flags); }
+inline int Stream::recv(char* buf, size_t buflen, RecvFlag flags) noexcept { return virStreamRecvFlags(underlying, buf, buflen, to_integral(flags)); }
+inline std::optional<long long> Stream::recvHole() {
     std::optional<long long> ret;
     long long& v = ret.emplace();
     return virStreamRecvHole(underlying, &v, 0) >= 0 ? ret : std::nullopt;
 }
-int Stream::send(gsl::span<const char> span) noexcept { return send(span.data(), span.size()); }
-int Stream::send(const char* buf, size_t buflen) noexcept { return virStreamSend(underlying, buf, buflen); }
+inline int Stream::send(gsl::span<const char> span) noexcept { return send(span.data(), span.size()); }
+inline int Stream::send(const char* buf, size_t buflen) noexcept { return virStreamSend(underlying, buf, buflen); }
+inline bool Stream::sendHole(long long len) noexcept { return virStreamSendHole(underlying, len, 0) >= 0; }
 
 [[nodiscard]] constexpr Stream::Flag operator|(Stream::Flag lhs, Stream::Flag rhs) noexcept {
     return Stream::Flag{to_integral(lhs) | to_integral(rhs)};
