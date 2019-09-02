@@ -973,7 +973,7 @@ class Domain {
 
     bool pinVcpuFlags(unsigned int vcpu, CpuMap cpumap, ModificationImpactFlag flags) noexcept;
 
-    bool sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<unsigned int> keycodes) noexcept;
+    bool sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<const unsigned int> keycodes) noexcept;
 
     bool sendProcessSignal(long long pid_value, ProcessSignal signum) noexcept;
 

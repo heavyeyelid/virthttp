@@ -5,6 +5,7 @@
 #include <gsl/gsl>
 #include "cexpr_algs.hpp"
 #include "depends.hpp"
+#include "json2virt.hpp"
 #include "json_utils.hpp"
 #include "utils.hpp"
 
@@ -76,8 +77,8 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
 
     using Hdl = DomainActionsHdl;
 
-    constexpr static std::array<std::string_view, 5> keys = {"power_mgt", "name", "memory", "max_memory", "autostart"};
-    constexpr static std::array<Hdl, 5> fcns = {
+    constexpr static std::array<std::string_view, 7> keys = {"power_mgt", "name", "memory", "max_memory", "autostart", "send_signal", "send_keys"};
+    constexpr static std::array<Hdl, 7> fcns = {
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             auto pm_message = [&](gsl::czstring<> name, gsl::czstring<> value) {
@@ -193,6 +194,46 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(208);
             return DependsOutcome::SUCCESS;
         },
-    };
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
+            if (!val.IsObject())
+                return error(0);
+
+            const auto pid_opt = extract_param<JTag::Int64>(val, "pid", json_res);
+            if (!pid_opt)
+                return error(0);
+            const long long pid = *pid_opt;
+
+            const auto sig_opt =
+                extract_param<JTag::Enum, JTag::None, TypePair<virt::Domain::ProcessSignal, virt::Domain::ProcessSignalsC>>(val, "signal", json_res);
+            if (!sig_opt)
+                return error(0);
+            const auto sig = *sig_opt;
+
+            return dom.sendProcessSignal(pid, sig) ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
+        },
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
+            if (!val.IsObject())
+                return error(0);
+
+            const auto keycodeset_opt =
+                extract_param<JTag::Enum, JTag::None, TypePair<virt::Domain::KeycodeSet, virt::Domain::KeycodeSetsC>>(val, "keycode_set", json_res);
+            if (!keycodeset_opt)
+                return error(0);
+            const auto keycodeset = *keycodeset_opt;
+
+            const auto holdtime_opt = extract_param<JTag::Uint32>(val, "hold_time", json_res);
+            if (!holdtime_opt)
+                return error(0);
+            const auto holdtime = *holdtime_opt;
+
+            const auto keys_opt = extract_param<JTag::Array, JTag::Uint32>(val, "keys", json_res);
+            if (!keys_opt)
+                return error(0);
+            const auto keys = *keys_opt;
+
+            return dom.sendKey(keycodeset, holdtime, gsl::span(keys.data(), keys.size())) ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
+        }};
     static_assert(keys.size() == fcns.size());
 } constexpr static const domain_actions_table{};

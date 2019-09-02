@@ -530,8 +530,8 @@ inline bool Domain::pinVcpuFlags(unsigned int vcpu, CpuMap cpumap, ModificationI
     return virDomainPinVcpuFlags(underlying, vcpu, cpumap.underlying, cpumap.maplen, to_integral(flags)) >= 0;
 }
 
-inline bool Domain::sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<unsigned int> keycodes) noexcept {
-    return virDomainSendKey(underlying, to_integral(codeset), holdtime, keycodes.data(), keycodes.size(), 0) >= 0;
+inline bool Domain::sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<const unsigned int> keycodes) noexcept {
+    return virDomainSendKey(underlying, to_integral(codeset), holdtime, const_cast<unsigned int*>(keycodes.data()), keycodes.size(), 0) >= 0;
 }
 
 inline bool Domain::sendProcessSignal(long long pid_value, ProcessSignal signum) noexcept {
