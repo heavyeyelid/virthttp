@@ -11,6 +11,7 @@
 #include "../TypesParam.hpp"
 #include "../type_ops.hpp"
 #include "Connection.hpp"
+#include "Stream.hpp"
 
 namespace virt {
 constexpr inline Domain::Domain(virDomainPtr ptr) noexcept : underlying(ptr) {}
@@ -497,6 +498,14 @@ inline bool Domain::migrateSetMaxSpeed(unsigned long bandwidth, unsigned int fla
 
 inline bool Domain::migrateStartPostCopy(unsigned int flags) noexcept { return virDomainMigrateStartPostCopy(underlying, to_integral(flags)) == 0; }
 
+inline bool Domain::openChannel(gsl::czstring<> name, Stream& st, ChannelFlag flags) noexcept {
+    return virDomainOpenChannel(underlying, name, st.underlying, to_integral(flags)) >= 0;
+}
+
+inline bool Domain::openConsole(gsl::czstring<> dev_name, Stream& st, ConsoleFlag flags) noexcept {
+    return virDomainOpenConsole(underlying, dev_name, st.underlying, to_integral(flags)) >= 0;
+}
+
 inline bool Domain::openGraphics(unsigned int idx, int fd, OpenGraphicsFlag flags) const noexcept {
     return virDomainOpenGraphics(underlying, idx, fd, to_integral(flags)) >= 0;
 }
@@ -551,6 +560,10 @@ inline bool Domain::save(gsl::czstring<> to) noexcept { return virDomainSave(und
 
 inline bool Domain::save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept {
     return virDomainSaveFlags(underlying, to, dxml, to_integral(flags)) == 0;
+}
+
+inline UniqueZstring Domain::screenshot(Stream& stream, unsigned int screen) const noexcept {
+    return UniqueZstring{virDomainScreenshot(underlying, stream.underlying, screen, 0)};
 }
 
 inline bool Domain::setAutoStart(bool as) { return virDomainSetAutostart(underlying, as ? 1 : 0) == 0; }
@@ -688,6 +701,18 @@ constexpr Domain::BlockRebaseFlag& operator|=(Domain::BlockRebaseFlag& lhs, Doma
 }
 constexpr Domain::BlockResizeFlag& operator|=(Domain::BlockResizeFlag& lhs, Domain::BlockResizeFlag rhs) noexcept {
     return lhs = Domain::BlockResizeFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::ChannelFlag operator|(Domain::ChannelFlag lhs, Domain::ChannelFlag rhs) noexcept {
+    return Domain::ChannelFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::ChannelFlag& operator|=(Domain::ChannelFlag& lhs, Domain::ChannelFlag rhs) noexcept {
+    return lhs = Domain::ChannelFlag{to_integral(lhs) | to_integral(rhs)};
+}
+[[nodiscard]] constexpr Domain::ConsoleFlag operator|(Domain::ConsoleFlag lhs, Domain::ConsoleFlag rhs) noexcept {
+    return Domain::ConsoleFlag{to_integral(lhs) | to_integral(rhs)};
+}
+constexpr Domain::ConsoleFlag& operator|=(Domain::ConsoleFlag& lhs, Domain::ConsoleFlag rhs) noexcept {
+    return lhs = Domain::ConsoleFlag{to_integral(lhs) | to_integral(rhs)};
 }
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept {
     return Domain::CoreDump::Flag{to_integral(lhs) | to_integral(rhs)};

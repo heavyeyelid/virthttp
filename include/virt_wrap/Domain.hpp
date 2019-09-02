@@ -84,11 +84,6 @@ char* virConnectGetDomainCapabilities(virConnectPtr conn, const char* emulatorbi
                                   unsigned int flags);
                                   */
 
-int virDomainOpenChannel(virDomainPtr dom, const char* name, virStreamPtr st, unsigned int flags);
-int virDomainOpenConsole(virDomainPtr dom, const char* dev_name, virStreamPtr st, unsigned int flags);
-
-char* virDomainScreenshot(virDomainPtr domain, virStreamPtr stream, unsigned int screen, unsigned int flags);
-
 /*
  * ((?:[A-Z]+_)+([A-Z]+)(?!_))\s*=.*,(.*)
  * $2 = $1, $3
@@ -194,7 +189,23 @@ class Domain {
         friend Base;
         constexpr static std::array values = {"bytes"};
     } constexpr static BlockResizeFlags{};
-
+    enum class ChannelFlag {
+        FORCE = VIR_DOMAIN_CHANNEL_FORCE, /* abort a (possibly) active channel connection to force a new connection */
+    };
+    class ChannelFlagsC : public EnumSetHelper<ChannelFlagsC, ChannelFlag> {
+        using Base = EnumSetHelper<ChannelFlagsC, ChannelFlag>;
+        friend Base;
+        constexpr static std::array values = {"force"};
+    } constexpr static ChannelFlags{};
+    enum class ConsoleFlag {
+        FORCE = VIR_DOMAIN_CONSOLE_FORCE, /* abort a (possibly) active console connection to force a new connection */
+        SAFE = VIR_DOMAIN_CONSOLE_SAFE,   /* check if the console driver supports safe console operations */
+    };
+    class ConsoleFlagsC : public EnumSetHelper<ConsoleFlagsC, ConsoleFlag> {
+        using Base = EnumSetHelper<ConsoleFlagsC, ConsoleFlag>;
+        friend Base;
+        constexpr static std::array values = {"force", "safe"};
+    } constexpr static ConsoleFlags{};
     struct CoreDump {
         enum class Flag {
             CRASH = VIR_DUMP_CRASH,               /* crash after dump */
@@ -946,6 +957,10 @@ class Domain {
 
     bool migrateStartPostCopy(unsigned int flag) noexcept;
 
+    bool openChannel(gsl::czstring<> name, Stream& st, ChannelFlag flags) noexcept;
+
+    bool openConsole(gsl::czstring<> dev_name, Stream& st, ConsoleFlag flags) noexcept;
+
     bool openGraphics(unsigned int idx, int fd, OpenGraphicsFlag flags) const noexcept;
 
     [[nodiscard]] int openGraphicsFD(unsigned int idx, OpenGraphicsFlag flags) const noexcept;
@@ -979,6 +994,8 @@ class Domain {
     bool save(gsl::czstring<> to) noexcept;
 
     bool save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
+
+    UniqueZstring screenshot(Stream& stream, unsigned int screen) const noexcept;
 
     bool setAutoStart(bool);
 
@@ -1282,6 +1299,10 @@ constexpr Domain::BlockPullFlag& operator|=(Domain::BlockPullFlag& lhs, Domain::
 constexpr Domain::BlockRebaseFlag& operator|=(Domain::BlockRebaseFlag& lhs, Domain::BlockRebaseFlag rhs) noexcept;
 [[nodiscard]] constexpr Domain::BlockResizeFlag operator|(Domain::BlockResizeFlag lhs, Domain::BlockResizeFlag rhs) noexcept;
 constexpr Domain::BlockResizeFlag& operator|=(Domain::BlockResizeFlag& lhs, Domain::BlockResizeFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::ChannelFlag operator|(Domain::ChannelFlag lhs, Domain::ChannelFlag rhs) noexcept;
+constexpr Domain::ChannelFlag& operator|=(Domain::ChannelFlag& lhs, Domain::ChannelFlag rhs) noexcept;
+[[nodiscard]] constexpr Domain::ConsoleFlag operator|(Domain::ConsoleFlag lhs, Domain::ConsoleFlag rhs) noexcept;
+constexpr Domain::ConsoleFlag& operator|=(Domain::ConsoleFlag& lhs, Domain::ConsoleFlag rhs) noexcept;
 [[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept;
 [[nodiscard]] constexpr Domain::DeviceModifyFlag operator|(Domain::DeviceModifyFlag lhs, Domain::DeviceModifyFlag rhs) noexcept;
 constexpr Domain::DeviceModifyFlag& operator|=(Domain::DeviceModifyFlag& lhs, Domain::DeviceModifyFlag rhs) noexcept;

@@ -12,6 +12,9 @@ class Stream {
     constexpr explicit Stream(virStreamPtr ptr) noexcept;
 
   public:
+    friend Connection;
+    friend Domain;
+
     enum class Flag : unsigned {
         NONBLOCK = VIR_STREAM_NONBLOCK,
     };
