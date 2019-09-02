@@ -19,4 +19,6 @@ class TypedParameter;
 class TypedParams;
 
 class CpuMap;
+
+class Stream;
 }

@@ -58,6 +58,7 @@ class Connection {
     friend Domain;
     friend Network;
     friend NodeDevice;
+    friend Stream;
 
     virConnectPtr underlying = nullptr;
 
