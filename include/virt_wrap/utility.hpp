@@ -21,6 +21,12 @@
 
 class Empty {};
 
+template <class> struct RemoveOptional;
+
+template <class T> struct RemoveOptional<std::optional<T>> { using type = T; };
+
+template <class OptT> using RemoveOptional_t = typename RemoveOptional<OptT>::type;
+
 template <class... Ts> void sink(Ts&&... ts) { (static_cast<void>(std::move(ts)), ...); }
 
 template <class Lambda, class... Ts> constexpr auto test_sfinae(Lambda lambda, Ts&&...) -> decltype(lambda(std::declval<Ts>()...), bool{}) {

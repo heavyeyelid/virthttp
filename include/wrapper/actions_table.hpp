@@ -195,22 +195,10 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
             return DependsOutcome::SUCCESS;
         },
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
-            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.IsObject())
-                return error(0);
-
-            const auto pid_opt = extract_param<JTag::Int64>(val, "pid", json_res);
-            if (!pid_opt)
-                return error(0);
-            const long long pid = *pid_opt;
-
-            const auto sig_opt =
-                extract_param<JTag::Enum, JTag::None, TypePair<virt::Domain::ProcessSignal, virt::Domain::ProcessSignalsC>>(val, "signal", json_res);
-            if (!sig_opt)
-                return error(0);
-            const auto sig = *sig_opt;
-
-            return dom.sendProcessSignal(pid, sig) ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
+            const auto res = wrap_fcn(
+                val, json_res, [&](auto... args) { return dom.sendProcessSignal(args...); }, WArg<JTag::Int64>{"pid"},
+                WArg<JTag::Enum, JTag::None, TypePair<virt::Domain::ProcessSignal, virt::Domain::ProcessSignalsC>>{"signal"});
+            return res ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
         },
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };

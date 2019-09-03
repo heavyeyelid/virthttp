@@ -6,8 +6,6 @@
 
 std::optional<virt::TypedParams> json_to_typed_parameters(const rapidjson::Value& val);
 
-namespace impl {}
-
 enum class JTag {
     None,
     // Object,
@@ -36,6 +34,13 @@ template <> struct JTagRepr<JTag::String, void> { using type = std::string; };
 template <class F, class FC> struct JTagRepr<JTag::Enum, TypePair<F, FC>> {
     using type = F;
     using proxy = FC;
+};
+
+template <class> struct JTagReverse;
+
+template <JTag tag_, class Extra_> struct JTagReverse<JTagRepr<tag_, Extra_>> {
+    using Extra = Extra_;
+    constexpr static JTag tag = tag_;
 };
 
 template <JTag tag, class Extra = void> using JTagRepr_t = typename JTagRepr<tag, Extra>::type;
@@ -121,4 +126,59 @@ auto extract_param(const rapidjson::Value& val, gsl::czstring<> name, JsonRes& j
         return Ret{std::nullopt};
     const auto& el_json = el_it->value;
     return extract_param_val<type, nested_type, Extra>(el_json, json_res);
+}
+
+template <JTag tag, JTag nested_type_ = JTag::None, class Extra = void> struct WArg {
+    using JTagRepr = ::JTagRepr<tag, Extra>;
+    using Ret =
+        RemoveOptional_t<decltype(extract_param_val<tag, nested_type_, Extra>(std::declval<const rapidjson::Value&>(), std::declval<JsonRes&>()))>;
+    constexpr static auto nested_type = nested_type_;
+    gsl::czstring<> name;
+};
+
+template <size_t... I, class... Args>
+auto wrap_fcn_args_impl(const rapidjson::Value& val, JsonRes& json_res, std::index_sequence<I...> is, Args... args) noexcept {
+    using Tup = std::tuple<typename Args::Ret...>;
+    std::optional<Tup> ret{};
+    auto& vals = ret.emplace();
+
+    if constexpr (sizeof...(args) > 1) {
+        if (!val.IsObject())
+            return json_res.error(0), decltype(ret){std::nullopt};
+        auto proc_parm = [&](auto warg, auto ic) {
+            using JTagRev = JTagReverse<typename decltype(warg)::JTagRepr>;
+            using Extra = typename JTagRev::Extra;
+            constexpr JTag tag = JTagRev::tag;
+            constexpr JTag nested_tag = decltype(warg)::nested_type;
+            constexpr auto idx = decltype(ic)::value;
+            const auto res = extract_param<tag, nested_tag, Extra>(val, warg.name, json_res);
+            if (res)
+                std::get<idx>(vals) = std::move(*res);
+            return static_cast<bool>(res);
+        };
+        return (proc_parm(args, std::integral_constant<size_t, I>{}) && ...) ? ret : std::nullopt; // Done this way to use lazy evaluation
+    } else if constexpr (sizeof...(args) == 1) {
+        auto proc_parm = [&](auto warg) {
+            using JTagRev = JTagReverse<typename decltype(warg)::JTagRepr>;
+            using Extra = typename JTagRev::Extra;
+            constexpr JTag tag = JTagRev::tag;
+            constexpr JTag nested_tag = decltype(warg)::nested_type;
+            const auto res = extract_param_val<tag, nested_tag, Extra>(val, json_res);
+            if (res)
+                std::get<0>(vals) = std::move(*res);
+            return static_cast<bool>(res);
+        };
+        return (proc_parm(args) && ...) ? ret : std::nullopt;
+    } else {
+        return std::optional{std::tuple<>{}};
+    }
+}
+
+template <class... Args> auto wrap_fcn_args(const rapidjson::Value& val, JsonRes& json_res, Args... args) noexcept {
+    return wrap_fcn_args_impl(val, json_res, std::index_sequence_for<Args...>{}, args...);
+}
+
+template <class Fcn, class... Args> auto wrap_fcn(const rapidjson::Value& val, JsonRes& json_res, Fcn fcn, Args... args) noexcept {
+    const auto tup = wrap_fcn_args(val, json_res, args...);
+    return tup ? std::optional{std::apply(fcn, *tup)} : std::nullopt;
 }
