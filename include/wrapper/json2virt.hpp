@@ -118,12 +118,19 @@ auto extract_param_val(const rapidjson::Value& el_json, JsonRes& json_res) noexc
 }
 
 template <JTag type, JTag nested_type = JTag::None, class Extra = void>
-auto extract_param(const rapidjson::Value& val, gsl::czstring<> name, JsonRes& json_res) noexcept {
+auto extract_param(const rapidjson::Value& val, gsl::czstring<> name, JsonRes& json_res, bool consider_optional = false) noexcept
+    -> decltype(extract_param_val<type, nested_type, Extra>(std::declval<decltype(val)>(), json_res)) {
     using Ret = decltype(extract_param_val<type, nested_type, Extra>(std::declval<decltype(val)>(), json_res));
     auto error = [&](auto... args) { return json_res.error(args...), std::nullopt; };
     const auto el_it = val.FindMember(name);
-    if (el_it == val.MemberEnd())
-        return Ret{std::nullopt};
+    if (el_it == val.MemberEnd()) {
+        if (consider_optional) {
+            Ret ret{};
+            ret.emplace(); // Requires the type to have a default ctor
+            return ret;
+        }
+        return std::nullopt;
+    }
     const auto& el_json = el_it->value;
     return extract_param_val<type, nested_type, Extra>(el_json, json_res);
 }
@@ -133,7 +140,9 @@ template <JTag tag, JTag nested_type_ = JTag::None, class Extra = void> struct W
     using Ret =
         RemoveOptional_t<decltype(extract_param_val<tag, nested_type_, Extra>(std::declval<const rapidjson::Value&>(), std::declval<JsonRes&>()))>;
     constexpr static auto nested_type = nested_type_;
+
     gsl::czstring<> name;
+    bool optional = false;
 };
 
 template <size_t... I, class... Args>

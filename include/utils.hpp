@@ -18,7 +18,9 @@ template <class T, class U> struct TypePair {
 
 template <class T, class U> TypePair<T, U> tp{};
 
-template <typename E> constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }
+template <typename E, class = std::enable_if_t<std::is_enum_v<E>>> constexpr inline decltype(auto) to_integral(E e) {
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
 
 constexpr auto pow10(std::size_t n) {
     auto ret = 1u;
