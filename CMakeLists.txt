@@ -40,7 +40,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
     add_executable(virthttp
             main.cpp
             src/wrapper/depends.cpp
-            include/wrapper/http_wrapper.hpp
+            src/wrapper/json2virt.cpp
             include/utils.hpp
             include/virt_wrap/AdminConnection.hpp
             include/virt_wrap/Connection.hpp
@@ -54,6 +54,44 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/GFlags.hpp
             include/virt_wrap/Network.hpp
             include/virt_wrap/NodeDevice.hpp
+            include/virt_wrap/CpuMap.hpp
+            include/virt_wrap/Stream.hpp
+            include/virt_wrap/impl/Stream.hpp
+            include/virt_wrap/enums/Domain/Domain.hpp
+            include/virt_wrap/enums/Base.hpp
+            include/virt_wrap/enums/Domain/BlockCommitFlag.hpp
+            include/virt_wrap/enums/Domain/BlockCopyFlag.hpp
+            include/virt_wrap/enums/Domain/BlockJobAbortFlag.hpp
+            include/virt_wrap/enums/Domain/BlockJobInfoFlag.hpp
+            include/virt_wrap/enums/Domain/BlockJobSetSpeedFlag.hpp
+            include/virt_wrap/enums/Domain/BlockPullFlag.hpp
+            include/virt_wrap/enums/Domain/BlockRebaseFlag.hpp
+            include/virt_wrap/enums/Domain/BlockResizeFlag.hpp
+            include/virt_wrap/enums/Domain/ChannelFlag.hpp
+            include/virt_wrap/enums/Domain/ConsoleFlag.hpp
+            include/virt_wrap/enums/Domain/CreateFlag.hpp
+            include/virt_wrap/enums/Domain/DestroyFlag.hpp
+            include/virt_wrap/enums/Domain/DeviceModifyFlag.hpp
+            include/virt_wrap/enums/Domain/GetJobStatsFlag.hpp
+            include/virt_wrap/enums/Domain/KeycodeSet.hpp
+            include/virt_wrap/enums/Domain/Lifecycle.hpp
+            include/virt_wrap/enums/Domain/LifecycleAction.hpp
+            include/virt_wrap/enums/Domain/MemoryModFlag.hpp
+            include/virt_wrap/enums/Domain/OpenGraphicsFlag.hpp
+            include/virt_wrap/enums/Domain/ShutdownFlag.hpp
+            include/virt_wrap/enums/Domain/MetadataType.hpp
+            include/virt_wrap/enums/Domain/MigrateFlag.hpp
+            include/virt_wrap/enums/Domain/ModificationImpactFlag.hpp
+            include/virt_wrap/enums/Domain/ProcessSignal.hpp
+            include/virt_wrap/enums/Domain/XmlFlag.hpp
+            include/virt_wrap/enums/Domain/State.hpp
+            include/virt_wrap/enums/Domain/UndefineFlag.hpp
+            include/virt_wrap/enums/Domain/SaveRestoreFlag.hpp
+            include/virt_wrap/enums/Connection/ListDomainFlag.hpp
+            include/virt_wrap/enums/Connection/Connection.hpp
+            include/virt_wrap/enums/Stream/Stream.hpp
+            include/virt_wrap/enums/Stream/Flag.hpp
+            include/virt_wrap/enums/Stream/RecvFlag.hpp
             include/virt_wrap/impl/Connection.hpp
             include/virt_wrap/impl/Domain.hpp
             include/virt_wrap/impl/Network.hpp
@@ -70,20 +108,22 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/wrapper/dispatch.hpp
             include/wrapper/error_msg.hpp
             include/wrapper/handler.hpp
+            include/wrapper/json2virt.hpp
+            include/wrapper/http_wrapper.hpp
             include/wrapper/solver.hpp
+            include/wrapper/virt2json.hpp
             include/wrapper/handlers/base.hpp
             include/wrapper/handlers/domain.hpp
+            include/wrapper/handlers/flagwork.hpp
             include/wrapper/handlers/hdl_ctx.hpp
+            include/wrapper/handlers/network.hpp
             include/virt_wrap.hpp
             include/logger.hpp
             include/fwd.hpp
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp
-            include/wrapper/handlers/network.hpp
-            include/wrapper/handlers/flagwork.hpp
-            include/wrapper/virt2json.hpp include/wrapper/json2virt.hpp src/wrapper/json2virt.cpp include/virt_wrap/CpuMap.hpp include/virt_wrap/Stream.hpp include/virt_wrap/impl/Stream.hpp include/virt_wrap/enums/Domain/Domain.hpp include/virt_wrap/enums/Base.hpp include/virt_wrap/enums/Domain/BlockCommitFlag.hpp include/virt_wrap/enums/Domain/BlockCopyFlag.hpp include/virt_wrap/enums/Domain/BlockJobAbortFlag.hpp include/virt_wrap/enums/Domain/BlockJobInfoFlag.hpp include/virt_wrap/enums/Domain/BlockJobSetSpeedFlag.hpp include/virt_wrap/enums/Domain/BlockPullFlag.hpp include/virt_wrap/enums/Domain/BlockRebaseFlag.hpp include/virt_wrap/enums/Domain/BlockResizeFlag.hpp include/virt_wrap/enums/Domain/ChannelFlag.hpp include/virt_wrap/enums/Domain/ConsoleFlag.hpp include/virt_wrap/enums/Domain/CreateFlag.hpp include/virt_wrap/enums/Domain/DestroyFlag.hpp include/virt_wrap/enums/Domain/DeviceModifyFlag.hpp include/virt_wrap/enums/Domain/GetJobStatsFlag.hpp include/virt_wrap/enums/Domain/KeycodeSet.hpp include/virt_wrap/enums/Domain/Lifecycle.hpp include/virt_wrap/enums/Domain/LifecycleAction.hpp include/virt_wrap/enums/Domain/MemoryModFlag.hpp include/virt_wrap/enums/Domain/OpenGraphicsFlag.hpp include/virt_wrap/enums/Domain/ShutdownFlag.hpp include/virt_wrap/enums/Domain/MetadataType.hpp include/virt_wrap/enums/Domain/MigrateFlag.hpp include/virt_wrap/enums/Domain/ModificationImpactFlag.hpp include/virt_wrap/enums/Domain/ProcessSignal.hpp include/virt_wrap/enums/Domain/XmlFlag.hpp include/virt_wrap/enums/Domain/State.hpp include/virt_wrap/enums/Domain/UndefineFlag.hpp include/virt_wrap/enums/Domain/SaveRestoreFlag.hpp include/virt_wrap/enums/Connection/ListDomainFlag.hpp include/virt_wrap/enums/Connection/Connection.hpp include/virt_wrap/enums/Stream/Stream.hpp include/virt_wrap/enums/Stream/Flag.hpp include/virt_wrap/enums/Stream/RecvFlag.hpp)
+            include/urlparser.hpp)
 
     target_link_libraries(virthttp ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
