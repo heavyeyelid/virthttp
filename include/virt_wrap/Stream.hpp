@@ -15,22 +15,8 @@ class Stream {
     friend Connection;
     friend Domain;
 
-    enum class Flag : unsigned {
-        NONBLOCK = VIR_STREAM_NONBLOCK,
-    };
-    class FlagsC : public EnumSetHelper<FlagsC, Flag> {
-        using Base = EnumSetHelper<FlagsC, Flag>;
-        friend Base;
-        constexpr static std::array values = {"nonblock"};
-    } constexpr static Flags{};
-    enum class RecvFlag {
-        STOP_AT_HOLE = VIR_STREAM_RECV_STOP_AT_HOLE,
-    };
-    class RecvFlagsC : public EnumSetHelper<RecvFlagsC, RecvFlag> {
-        using Base = EnumSetHelper<RecvFlagsC, RecvFlag>;
-        friend Base;
-        constexpr static std::array values = {"stop_at_hole"};
-    } constexpr static RecvFlagsValues{};
+    class Flag;
+    class RecvFlag;
 
     template <class T> using SinkFunc = int (*)(Stream st, const char* data, size_t nbytes, T* opaque);
 
@@ -66,7 +52,5 @@ class Stream {
     //                           SourceSkipFunc<T> skipHandler, T* opaque) noexcept;
 };
 
-[[nodiscard]] constexpr Stream::Flag operator|(Stream::Flag lhs, Stream::Flag rhs) noexcept;
-constexpr Stream::Flag& operator|=(Stream::Flag& lhs, Stream::Flag rhs) noexcept;
-
 }
+#include "enums/Stream/Stream.hpp"

@@ -8,7 +8,6 @@
 #include <libvirt/libvirt.h>
 #include "Domain.hpp"
 #include "fwd.hpp"
-#include "type_ops.hpp"
 #include "utility.hpp"
 
 namespace virt {
@@ -69,36 +68,7 @@ class Connection {
     };
     struct List {
         struct Domains {
-            enum class Flag : unsigned {
-                DEFAULT = 0,
-                ACTIVE = VIR_CONNECT_LIST_DOMAINS_ACTIVE,
-                INACTIVE = VIR_CONNECT_LIST_DOMAINS_INACTIVE,
-
-                PERSISTENT = VIR_CONNECT_LIST_DOMAINS_PERSISTENT,
-                TRANSIENT = VIR_CONNECT_LIST_DOMAINS_TRANSIENT,
-
-                RUNNING = VIR_CONNECT_LIST_DOMAINS_RUNNING,
-                PAUSED = VIR_CONNECT_LIST_DOMAINS_PAUSED,
-                SHUTOFF = VIR_CONNECT_LIST_DOMAINS_SHUTOFF,
-                OTHER = VIR_CONNECT_LIST_DOMAINS_OTHER,
-
-                MANAGEDSAVE = VIR_CONNECT_LIST_DOMAINS_MANAGEDSAVE,
-                NO_MANAGEDSAVE = VIR_CONNECT_LIST_DOMAINS_NO_MANAGEDSAVE,
-
-                AUTOSTART = VIR_CONNECT_LIST_DOMAINS_AUTOSTART,
-                NO_AUTOSTART = VIR_CONNECT_LIST_DOMAINS_NO_AUTOSTART,
-
-                HAS_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_HAS_SNAPSHOT,
-                NO_SNAPSHOT = VIR_CONNECT_LIST_DOMAINS_NO_SNAPSHOT,
-            };
-            class FlagsC : public EnumSetHelper<FlagsC, Flag> {
-                using Base = EnumSetHelper<FlagsC, Flag>;
-                friend Base;
-                constexpr static std::array values = {"active",    "inactive",     "persistent",   "transient",    "running",
-                                                      "paused",    "shutoff",      "other",        "managed_save", "no_managed_save",
-                                                      "autostart", "no_autostart", "has_snapshot", "no_snapshot"};
-            };
-            constexpr static FlagsC Flags;
+            class Flag;
         };
         struct Devices {
             enum class Flags : unsigned {
@@ -221,7 +191,7 @@ class Connection {
 
     template <typename StrT>[[nodiscard]] auto listDefinedDomains() const = delete;
 
-    [[nodiscard]] auto listAllDomains(List::Domains::Flag flags = List::Domains::Flag::DEFAULT) const -> std::vector<Domain>;
+    [[nodiscard]] auto listAllDomains(List::Domains::Flag flags) const -> std::vector<Domain>;
 
     [[nodiscard]] auto getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags)
         -> std::vector<Domain::Stats::Record>;
@@ -278,6 +248,10 @@ class Connection {
 
     [[nodiscard]] NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;
 };
+
+} // namespace virt
+#include "enums/Connection/Connection.hpp"
+namespace virt {
 
 [[nodiscard]] constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
 

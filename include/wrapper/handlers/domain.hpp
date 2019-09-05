@@ -23,7 +23,7 @@ struct DomainUnawareHandlers : public HandlerContext {
     explicit DomainUnawareHandlers(HandlerContext& ctx) : HandlerContext(ctx) {}
 
     [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
-        auto flags = virt::Connection::List::Domains::Flag::DEFAULT;
+        virt::Connection::List::Domains::Flag flags = virt::Connection::List::Domains::Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
             flags |= *activity ? virt::Connection::List::Domains::Flag::ACTIVE : virt::Connection::List::Domains::Flag::INACTIVE;
         if (auto persistence = target.getBool("persistent"); persistence)
@@ -35,8 +35,7 @@ struct DomainUnawareHandlers : public HandlerContext {
         if (auto snapshot = target.getBool("has_snapshot"); snapshot)
             flags |= *snapshot ? virt::Connection::List::Domains::Flag::HAS_SNAPSHOT : virt::Connection::List::Domains::Flag::NO_SNAPSHOT;
 
-        const auto opt_flags =
-            target_get_composable_flag<virt::Connection::List::Domains::Flag, virt::Connection::List::Domains::FlagsC>(target, "status");
+        const auto opt_flags = target_get_composable_flag<virt::Connection::List::Domains::Flag>(target, "status");
         if (!opt_flags)
             return error(301), std::nullopt;
         return {flags | *opt_flags};
@@ -75,14 +74,14 @@ class DomainHandlers : public HandlerMethods {
             res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
             res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
             res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
-            res_val.AddMember("status", rapidjson::StringRef(virt::Domain::States[state]), json_res.GetAllocator());
+            res_val.AddMember("status", rapidjson::StringRef(virt::Domain::State(EHTag{}, state).to_string().data()), json_res.GetAllocator());
             res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
             res_val.AddMember("ram", memory, json_res.GetAllocator());
             res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
             res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
         } else if (path_parts.size() == 5) {
             if (path_parts[4] == "xml_desc") {
-                const auto opt_flags = target_get_composable_flag<virt::Domain::XmlFlag, virt::Domain::XmlFlagsC>(target, "options");
+                const auto opt_flags = target_get_composable_flag<virt::Domain::XmlFlag>(target, "options");
                 if (!opt_flags)
                     return error(301), DependsOutcome::FAILURE;
                 res_val = rapidjson::Value(dom.getXMLDesc(*opt_flags), json_res.GetAllocator());
@@ -97,7 +96,7 @@ class DomainHandlers : public HandlerMethods {
                     return xml ? std::pair{rapidjson::Value(xml, json_res.GetAllocator()), true}
                                : (error(-999), std::pair{rapidjson::Value{}, false});
                 },
-                tp<virt::Domain::XmlFlag, virt::Domain::XmlFlagsC>),
+                ti<virt::Domain::XmlFlag>),
             subquery("fs_info", SUBQ_LIFT(dom.getFSInfo),
                      [&](auto fs_infos) {
                          if (!fs_infos.get()) {
@@ -152,7 +151,7 @@ class DomainHandlers : public HandlerMethods {
             json_res.message(std::move(msg_val));
             return error(216), DependsOutcome::FAILURE;
         };
-        const auto opt_flags = target_get_composable_flag<virt::Domain::UndefineFlag, virt::Domain::UndefineFlagsC>(target, "options");
+        const auto opt_flags = target_get_composable_flag<virt::Domain::UndefineFlag>(target, "options");
         if (!opt_flags)
             return error(301), DependsOutcome::FAILURE;
         return dom.undefine(*opt_flags) ? success() : failure();

@@ -12,7 +12,6 @@
 #include "../Connection.hpp"
 #include "../Domain.hpp"
 #include "../fwd.hpp"
-#include "../type_ops.hpp"
 #include "../utility.hpp"
 
 namespace virt {
@@ -327,7 +326,7 @@ constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::
 }
 
 constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Domains::Flag lhs, Connection::List::Domains::Flag rhs) noexcept {
-    return Connection::List::Domains::Flag(to_integral(lhs) | to_integral(rhs));
+    return Connection::List::Domains::Flag(EHTag{}, to_integral(lhs) | to_integral(rhs));
 }
 constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept {
     return lhs = lhs | rhs;

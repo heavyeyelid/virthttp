@@ -31,10 +31,7 @@ template <> struct JTagRepr<JTag::Uint64, void> { using type = unsigned long lon
 template <> struct JTagRepr<JTag::Float, void> { using type = float; };
 template <> struct JTagRepr<JTag::Double, void> { using type = double; };
 template <> struct JTagRepr<JTag::String, void> { using type = std::string; };
-template <class F, class FC> struct JTagRepr<JTag::Enum, TypePair<F, FC>> {
-    using type = F;
-    using proxy = FC;
-};
+template <class F> struct JTagRepr<JTag::Enum, F> { using type = F; };
 
 template <class> struct JTagReverse;
 
@@ -107,8 +104,7 @@ auto extract_param_val(const rapidjson::Value& el_json, JsonRes& json_res) noexc
         } else if constexpr (type == JTag::Enum) {
             if (!el_json.IsString())
                 return error(0);
-            using FC = typename RawRepr::proxy;
-            const auto enum_opt = FC{}[{el_json.GetString(), el_json.GetStringLength()}];
+            const auto enum_opt = Repr::from_string({el_json.GetString(), el_json.GetStringLength()});
             if (!enum_opt)
                 return Ret{std::nullopt};
             ret_val = *enum_opt;

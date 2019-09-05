@@ -9,7 +9,6 @@
 #include "../CpuMap.hpp"
 #include "../Domain.hpp"
 #include "../TypesParam.hpp"
-#include "../type_ops.hpp"
 #include "Connection.hpp"
 #include "Stream.hpp"
 
@@ -34,6 +33,7 @@ constexpr inline Domain::operator bool() const noexcept { return underlying != n
 [[nodiscard]] inline Domain Domain::createXML(Connection& c, gsl::czstring<> xml, CreateFlag flags) {
     return Domain{virDomainCreateXML(c.underlying, xml, to_integral(flags))};
 }
+[[nodiscard]] inline Domain Domain::createXML(Connection& c, gsl::czstring<> xml) { return Domain{virDomainCreateXML(c.underlying, xml, 0)}; }
 
 bool Domain::abortJob() noexcept { return virDomainAbortJob(underlying) == 0; }
 
@@ -549,6 +549,7 @@ inline bool Domain::setMemoryStatsPeriod(int period, MemoryModFlag flags) noexce
 [[nodiscard]] inline bool Domain::isActive() const noexcept { return virDomainIsActive(underlying) != 0; }
 
 inline bool Domain::reboot(Domain::ShutdownFlag flags) { return virDomainReboot(underlying, to_integral(flags)) == 0; }
+inline bool Domain::reboot() { return virDomainReboot(underlying, 0) == 0; }
 
 inline bool Domain::rename(gsl::czstring<> name) { return virDomainRename(underlying, name, 0) == 0; }
 
@@ -658,134 +659,5 @@ inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept 
     params.reserve(static_cast<std::size_t>(from.nparams));
     std::transform(from.params, from.params + from.nparams, std::back_inserter(params),
                    [](const virTypedParameter& tp) { return TypedParameter{tp}; });
-}
-
-[[nodiscard]] constexpr inline Domain::BlockCommitFlag operator|(Domain::BlockCommitFlag lhs, Domain::BlockCommitFlag rhs) noexcept {
-    return Domain::BlockCommitFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::BlockCommitFlag& operator|=(Domain::BlockCommitFlag& lhs, Domain::BlockCommitFlag rhs) noexcept {
-    return lhs = Domain::BlockCommitFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::BlockJobAbortFlag operator|(Domain::BlockJobAbortFlag lhs, Domain::BlockJobAbortFlag rhs) noexcept {
-    return Domain::BlockJobAbortFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::BlockJobAbortFlag& operator|=(Domain::BlockJobAbortFlag& lhs, Domain::BlockJobAbortFlag rhs) noexcept {
-    return lhs = Domain::BlockJobAbortFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::BlockJobInfoFlag operator|(Domain::BlockJobInfoFlag lhs, Domain::BlockJobInfoFlag rhs) noexcept {
-    return Domain::BlockJobInfoFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::BlockJobInfoFlag& operator|=(Domain::BlockJobInfoFlag& lhs, Domain::BlockJobInfoFlag rhs) noexcept {
-    return lhs = Domain::BlockJobInfoFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::BlockJobSetSpeedFlag operator|(Domain::BlockJobSetSpeedFlag lhs, Domain::BlockJobSetSpeedFlag rhs) noexcept {
-    return Domain::BlockJobSetSpeedFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::BlockJobSetSpeedFlag& operator|=(Domain::BlockJobSetSpeedFlag& lhs, Domain::BlockJobSetSpeedFlag rhs) noexcept {
-    return lhs = Domain::BlockJobSetSpeedFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::BlockPullFlag operator|(Domain::BlockPullFlag lhs, Domain::BlockPullFlag rhs) noexcept {
-    return Domain::BlockPullFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::BlockPullFlag& operator|=(Domain::BlockPullFlag& lhs, Domain::BlockPullFlag rhs) noexcept {
-    return lhs = Domain::BlockPullFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::BlockRebaseFlag operator|(Domain::BlockRebaseFlag lhs, Domain::BlockRebaseFlag rhs) noexcept {
-    return Domain::BlockRebaseFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::BlockRebaseFlag& operator|=(Domain::BlockRebaseFlag& lhs, Domain::BlockRebaseFlag rhs) noexcept {
-    return lhs = Domain::BlockRebaseFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::BlockResizeFlag operator|(Domain::BlockResizeFlag lhs, Domain::BlockResizeFlag rhs) noexcept {
-    return Domain::BlockResizeFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::BlockResizeFlag& operator|=(Domain::BlockResizeFlag& lhs, Domain::BlockResizeFlag rhs) noexcept {
-    return lhs = Domain::BlockResizeFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::ChannelFlag operator|(Domain::ChannelFlag lhs, Domain::ChannelFlag rhs) noexcept {
-    return Domain::ChannelFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::ChannelFlag& operator|=(Domain::ChannelFlag& lhs, Domain::ChannelFlag rhs) noexcept {
-    return lhs = Domain::ChannelFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::ConsoleFlag operator|(Domain::ConsoleFlag lhs, Domain::ConsoleFlag rhs) noexcept {
-    return Domain::ConsoleFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::ConsoleFlag& operator|=(Domain::ConsoleFlag& lhs, Domain::ConsoleFlag rhs) noexcept {
-    return lhs = Domain::ConsoleFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::CoreDump::Flag operator|(Domain::CoreDump::Flag lhs, Domain::CoreDump::Flag rhs) noexcept {
-    return Domain::CoreDump::Flag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::DeviceModifyFlag operator|(Domain::DeviceModifyFlag lhs, Domain::DeviceModifyFlag rhs) noexcept {
-    return Domain::DeviceModifyFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::DeviceModifyFlag& operator|=(Domain::DeviceModifyFlag& lhs, Domain::DeviceModifyFlag rhs) noexcept {
-    return lhs = Domain::DeviceModifyFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::UndefineFlag operator|(virt::Domain::UndefineFlag lhs, virt::Domain::UndefineFlag rhs) noexcept {
-    return Domain::UndefineFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::UndefineFlag& operator|=(virt::Domain::UndefineFlag& lhs, virt::Domain::UndefineFlag rhs) noexcept {
-    return lhs = Domain::UndefineFlag{to_integral(lhs) | to_integral(rhs)};
-}
-
-[[nodiscard]] constexpr inline Domain::GetAllDomainStatsFlag operator|(Domain::GetAllDomainStatsFlag lhs,
-                                                                       Domain::GetAllDomainStatsFlag rhs) noexcept {
-    return Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
-}
-
-constexpr inline Domain::GetAllDomainStatsFlag operator|=(Domain::GetAllDomainStatsFlag& lhs, Domain::GetAllDomainStatsFlag rhs) noexcept {
-    return lhs = Domain::GetAllDomainStatsFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::GetJobStatsFlag operator|(Domain::GetJobStatsFlag lhs, Domain::GetJobStatsFlag rhs) noexcept {
-    return Domain::GetJobStatsFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::GetJobStatsFlag& operator|=(Domain::GetJobStatsFlag& lhs, Domain::GetJobStatsFlag rhs) noexcept {
-    return lhs = Domain::GetJobStatsFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::ShutdownFlag operator|(Domain::ShutdownFlag lhs, Domain::ShutdownFlag rhs) noexcept {
-    return Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::ShutdownFlag& operator|=(Domain::ShutdownFlag& lhs, Domain::ShutdownFlag rhs) noexcept {
-    return lhs = Domain::ShutdownFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::StatsType operator|(Domain::StatsType lhs, Domain::StatsType rhs) noexcept {
-    return Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
-}
-
-constexpr inline Domain::StatsType operator|=(Domain::StatsType& lhs, Domain::StatsType rhs) noexcept {
-    return lhs = Domain::StatsType{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::MemoryModFlag operator|(Domain::MemoryModFlag lhs, Domain::MemoryModFlag rhs) noexcept {
-    return Domain::MemoryModFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::MemoryModFlag operator|=(Domain::MemoryModFlag& lhs, Domain::MemoryModFlag rhs) noexcept {
-    return lhs = Domain::MemoryModFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::ModificationImpactFlag operator|(Domain::ModificationImpactFlag lhs,
-                                                                        Domain::ModificationImpactFlag rhs) noexcept {
-    return Domain::ModificationImpactFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::VCpuFlag operator|(Domain::VCpuFlag lhs, Domain::VCpuFlag rhs) noexcept {
-    return lhs = Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::VCpuFlag& operator|=(Domain::VCpuFlag& lhs, Domain::VCpuFlag rhs) noexcept {
-    return lhs = Domain::VCpuFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::XmlFlag operator|(Domain::XmlFlag lhs, Domain::XmlFlag rhs) noexcept {
-    return lhs = Domain::XmlFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr Domain::OpenGraphicsFlag operator|(Domain::OpenGraphicsFlag lhs, Domain::OpenGraphicsFlag rhs) noexcept {
-    return Domain::OpenGraphicsFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Domain::OpenGraphicsFlag& operator|=(Domain::OpenGraphicsFlag& lhs, Domain::OpenGraphicsFlag rhs) noexcept {
-    return lhs = Domain::OpenGraphicsFlag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Domain::XmlFlag& operator|=(Domain::XmlFlag& lhs, Domain::XmlFlag rhs) noexcept {
-    return lhs = Domain::XmlFlag{to_integral(lhs) | to_integral(rhs)};
-}
-[[nodiscard]] constexpr inline Domain::Stats::Types operator|(Domain::Stats::Types lhs, Domain::Stats::Types rhs) noexcept {
-    return Domain::Stats::Types(to_integral(lhs) | to_integral(rhs));
 }
 }

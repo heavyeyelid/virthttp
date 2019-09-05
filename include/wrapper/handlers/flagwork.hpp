@@ -5,12 +5,12 @@
 
 #define SUBQ_LIFT(mem_fn) [&](auto... args) { return mem_fn(args...); }
 
-template <class F, class FC, class = std::enable_if_t<!std::is_same_v<F, Empty>>>
+template <class F, class = std::enable_if_t<!std::is_same_v<F, Empty>>>
 constexpr auto target_get_composable_flag(const TargetParser& target, std::string_view tag) noexcept {
     auto flags = F{};
     if (auto csv = target[tag]; !csv.empty()) {
         for (CSVIterator state_it{csv}; state_it != state_it.end(); ++state_it) {
-            const auto v = FC{}[*state_it];
+            const auto v = F::from_string(*state_it);
             if (!v)
                 return std::optional<F>{std::nullopt};
             if constexpr (test_sfinae([](auto f, auto g) { return f | g; }, F{}, F{}))
@@ -39,13 +39,12 @@ template <class... Fcns> constexpr auto parameterized_depends_scope(Fcns&&... de
 
 namespace subq_impl {}
 
-template <class F, class TJ, class TP> auto subquery(std::string_view name, std::string_view opt_tag, F&& lifted, TJ&& to_json, TP) noexcept {
+template <class F, class TJ, class TI> auto subquery(std::string_view name, std::string_view opt_tag, F&& lifted, TJ&& to_json, TI) noexcept {
     return [&, name, opt_tag](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
-            using Flag = typename TP::First;
-            using FlagsC = typename TP::Second;
+            using Flag = typename TI::type;
             Flag flag{};
-            const auto opt_flags = target_get_composable_flag<Flag, FlagsC>(target, opt_tag);
+            const auto opt_flags = target_get_composable_flag<Flag>(target, opt_tag);
             if (!opt_flags)
                 return error(301), DependsOutcome::FAILURE;
             flag = *opt_flags;

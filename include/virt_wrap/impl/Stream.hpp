@@ -41,9 +41,4 @@ inline std::optional<long long> Stream::recvHole() {
 inline int Stream::send(gsl::span<const char> span) noexcept { return send(span.data(), span.size()); }
 inline int Stream::send(const char* buf, size_t buflen) noexcept { return virStreamSend(underlying, buf, buflen); }
 inline bool Stream::sendHole(long long len) noexcept { return virStreamSendHole(underlying, len, 0) >= 0; }
-
-[[nodiscard]] constexpr Stream::Flag operator|(Stream::Flag lhs, Stream::Flag rhs) noexcept {
-    return Stream::Flag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr Stream::Flag& operator|=(Stream::Flag& lhs, Stream::Flag rhs) noexcept { return lhs = Stream::Flag{to_integral(lhs) | to_integral(rhs)}; }
 }

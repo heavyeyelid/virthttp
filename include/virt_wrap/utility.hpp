@@ -19,6 +19,10 @@
 #define UNREACHABLE
 #endif
 
+template <typename E, std::enable_if_t<std::is_enum_v<E>, int> = 0> constexpr inline decltype(auto) to_integral(E e) {
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
 class Empty {};
 
 template <class> struct RemoveOptional;
@@ -47,87 +51,46 @@ template <typename T> inline void freeany(T ptr) {
     std::free(ptr);
 }
 
-template <class... Es> class EnumSetTie {
-    using Underlying = std::common_type_t<std::underlying_type_t<Es>...>;
-    Underlying underlying;
+class EHTag {};
 
-  public:
-    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
-    constexpr explicit EnumSetTie(E v) : underlying(v) {}
-    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
-    constexpr EnumSetTie& operator=(E v) noexcept {
-        underlying = v;
-        return *this;
-    }
-    friend constexpr auto to_integral(EnumSetTie est) { return est.underlying; }
-};
-
-template <class, class> class EnumSetCTie;
-template <class... Es, class... ECs> class EnumSetCTie<EnumSetTie<Es...>, std::tuple<ECs...>> {
-    constexpr static std::tuple<ECs...> ecs{};
-
-  public:
-    constexpr std::optional<EnumSetTie<Es...>> operator[](std::string_view sv) const noexcept {
-        std::optional<EnumSetTie<Es...>> ret{};
-        visit(ecs, [=, &ret](auto ec) {
-            if (const auto res = ec[sv]; res)
-                ret = *res;
-        });
-        return ret;
-    }
-};
-
-template <class... Es> constexpr EnumSetTie<Es...> operator|(EnumSetTie<Es...> lhs, EnumSetTie<Es...> rhs) noexcept {
-    return {to_integral(lhs) | to_integral(rhs)};
-}
-template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
-constexpr EnumSetTie<Es...> operator|(EnumSetTie<Es...> lhs, E rhs) noexcept {
-    return {to_integral(lhs) | to_integral(rhs)};
-}
-template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
-constexpr EnumSetTie<Es...> operator|(E lhs, EnumSetTie<Es...> rhs) noexcept {
-    return {to_integral(lhs) | to_integral(rhs)};
-}
-template <class... Es> constexpr EnumSetTie<Es...>& operator|=(EnumSetTie<Es...>& lhs, EnumSetTie<Es...> rhs) noexcept {
-    return lhs = {to_integral(lhs) | to_integral(rhs)};
-}
-template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
-constexpr EnumSetTie<Es...>& operator|=(EnumSetTie<Es...>& lhs, E rhs) noexcept {
-    return lhs = {to_integral(lhs) | to_integral(rhs)};
-}
-
-template <class CRTP, class E, class V = gsl::czstring<>> class EnumHelper {
-    using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
-
+template <class CRTP> class EnumHelper {
+    constexpr auto& get_underlying(EHTag) const noexcept { return static_cast<const CRTP&>(*this).underlying; }
     constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
+    constexpr static EHTag tag;
+
   public:
-    [[nodiscard]] constexpr V operator[](E val) const noexcept { return values()[to_integral(val)]; }
-    [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[+val]; }
-    [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
+    [[nodiscard]] constexpr std::string_view to_string() const noexcept { return values()[to_integral(get_underlying(tag))]; }
+    [[nodiscard]] constexpr auto from_string_base(std::string_view v) const noexcept {
         const auto res = cexpr::find(values().cbegin(), values().cend(), v);
-        return res != values().end() ? std::optional{E(std::distance(values().cbegin(), res))} : std::nullopt;
+        return res != values().end() ? std::optional{CRTP{tag, std::distance(values().cbegin(), res)}} : std::nullopt;
     }
 };
 
-class EnumSetHelperTag;
-template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
-    using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
-
+template <class CRTP> class EnumSetHelper {
+    constexpr auto& get_underlying(EHTag) const noexcept { return static_cast<const CRTP&>(*this).underlying; }
     constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
+    constexpr static EHTag tag;
+
   public:
-    using Tag = EnumSetHelperTag;
-    using Enum = E;
-    [[nodiscard]] constexpr V operator[](E val) const noexcept {
-        return values()[sizeof(decltype(to_integral(val))) * 8 - __builtin_clz(to_integral(val)) - 1]; // C++2a: use std::countl_zeroe();
+    [[nodiscard]] constexpr std::string_view to_string() const noexcept {
+        return values()[sizeof(decltype(to_integral(get_underlying(tag)))) * 8 - __builtin_clz(to_integral(get_underlying(tag))) -
+                        1]; // C++2a: use std::countl_zeroe();
     }
-    [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[sizeof(decltype(val)) * 8 - +val - 1]; }
-    [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
+    [[nodiscard]] constexpr auto from_string_base(std::string_view v) const noexcept {
         const auto res = cexpr::find(values().cbegin(), values().end(), v);
-        return res != values().cend() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
+        return res != values().cend() ? std::optional{CRTP{tag, (1u << std::distance(values().cbegin(), res))}} : std::nullopt;
     }
 };
+
+template <class E, class = std::enable_if_t<std::is_base_of_v<EnumSetHelper<E>, E>>> E operator|(E lhs, E rhs) {
+    return {EHTag{}, to_integral(lhs) | to_integral(rhs)};
+}
+
+template <class E, class = std::enable_if_t<std::is_base_of_v<EnumSetHelper<E>, E>>> E& operator|=(E& lhs, E rhs) {
+    return lhs = E{EHTag{}, to_integral(lhs) | to_integral(rhs)};
+}
 
 template <class E> class EnumSetIterator {
     using U = decltype(to_integral(std::declval<E>()));
