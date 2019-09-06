@@ -4,11 +4,11 @@
 #include <iostream>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
-#include "virt_wrap.hpp"
 #include "wrapper/config.hpp"
 #include "wrapper/http_wrapper.hpp"
 #include "fwd.hpp"
 #include "logger.hpp"
+#include "virt_wrap.hpp"
 
 using namespace std::literals;
 
@@ -50,4 +50,5 @@ int main(int argc, char** argv) {
 #include "virt_wrap/impl/Domain.hpp"
 #include "virt_wrap/impl/Network.hpp"
 #include "virt_wrap/impl/NodeDevice.hpp"
+#include "virt_wrap/impl/Stream.hpp"
 #include "virt_wrap/impl/TypedParams.hpp"

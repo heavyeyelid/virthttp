@@ -461,8 +461,7 @@ class Domain {
 
     [[nodiscard]] std::vector<DiskError> extractDiskErrors() const;
 
-    // [[nodiscard]] int getEmulatorPinInfo(unsigned char* cpumap, int maplen, unsigned int flags); // TODO figure out the intended way of using
-    // this
+    //[[nodiscard]] CpuMap getEmulatorPinInfo(std::size_t maplen, ModificationImpactFlag flags) const noexcept;
 
     [[nodiscard]] auto getFSInfo() const noexcept;
 

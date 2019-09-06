@@ -192,6 +192,12 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
         +[](decltype(underlying) u, virDomainDiskErrorPtr ptr, int n) { return virDomainGetDiskErrors(u, ptr, n, 0); });
 }
 
+/*
+[[nodiscard]] CpuMap Domain::getEmulatorPinInfo(std::size_t maplen, ModificationImpactFlag flags) const noexcept {
+CpuMap ret;
+
+}
+*/
 [[nodiscard]] auto Domain::getFSInfo() const noexcept {
     return meta::light::wrap_opram_owning_set_destroyable_arr<virDomainFSInfo, UniqueSpan, virDomainFSInfoFree>(underlying, virDomainGetFSInfo, 0u);
 }
