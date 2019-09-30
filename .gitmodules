@@ -19,3 +19,6 @@
 [submodule "thirdparty/gsl"]
 	path = thirdparty/gsl
 	url = https://github.com/microsoft/GSL
+[submodule "thirdparty/virtxml++"]
+	path = thirdparty/virtxml++
+	url = https://github.com/heavyeyelid/virtxmlpp

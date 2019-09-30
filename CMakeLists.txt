@@ -4,8 +4,9 @@ project(HeavyEyelid)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
 
+add_subdirectory(thirdparty/virtxml++)
+
 include_directories(thirdparty/gsl/include
-        thirdparty/rapidxml_ns
         thirdparty/rapidjson/include
         include)
 
@@ -97,11 +98,6 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/impl/Network.hpp
             include/virt_wrap/impl/TypedParams.hpp
             include/virt_wrap/impl/NodeDevice.hpp
-            include/virtxml/capabilities.hpp
-            include/virtxml/generic.hpp
-            include/virtxml/virtxml.hpp
-            include/virtxml/xmlspan.hpp
-            include/virtxml/xmlval.hpp
             include/wrapper/actions_table.hpp
             include/wrapper/config.hpp
             include/wrapper/depends.hpp
@@ -125,7 +121,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/json_utils.hpp
             include/urlparser.hpp)
 
-    target_link_libraries(virthttp ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
+    target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
         target_link_libraries(virthttp Ws2_32.lib WSock32.lib)
     endif ()
