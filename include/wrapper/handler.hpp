@@ -11,7 +11,7 @@
 #include "wrapper/handlers/network.hpp"
 #include "actions_table.hpp"
 #include "dispatch.hpp"
-#include "fwd.hpp"
+#include "general_store.hpp"
 #include "json_utils.hpp"
 #include "logger.hpp"
 #include "solver.hpp"
@@ -21,11 +21,11 @@
 namespace beast = boost::beast;
 namespace http = beast::http;
 
-template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const http::request<Body, http::basic_fields<Allocator>>& req) {
+template <class Body, class Allocator>
+rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Body, http::basic_fields<Allocator>>& req, const TargetParser& target) {
     JsonRes json_res{};
     std::string key_str{};
     auto error = [&](auto... args) { return json_res.error(args...); };
-    auto target = TargetParser{bsv2stdsv(req.target())};
 
     auto object = [&](virt::Connection&& conn, auto resolver, auto jdispatchers, auto t_hdls) -> void {
         using Object = typename decltype(resolver)::O;
@@ -74,7 +74,8 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
                        std::bind(object, std::placeholders::_1, network_resolver, network_jdispatchers, t_<NetworkHandlers>)};
 
     [&] {
-        if (iniConfig.isHTTPAuthRequired() && req["X-Auth-Key"] != iniConfig.http_auth_key)
+        auto& config = gstore.config();
+        if (config.isHTTPAuthRequired() && req["X-Auth-Key"] != gstore.config().http_auth_key)
             return error(1);
         auto path_parts = target.getPathParts();
         if (path_parts.empty())
@@ -84,11 +85,11 @@ template <class Body, class Allocator> rapidjson::StringBuffer handle_json(const
         if (path_parts.size() <= 1)
             return error(-999); // Path is only /libvirt
 
-        logger.debug("Opening connection to ", iniConfig.getConnURI());
-        virt::Connection conn{iniConfig.connURI.c_str()};
+        logger.debug("Opening connection to ", config.getConnURI());
+        virt::Connection conn{config.connURI.c_str()};
 
         if (!conn) {
-            logger.error("Failed to open connection to ", iniConfig.getConnURI());
+            logger.error("Failed to open connection to ", config.getConnURI());
             return error(10);
         }
 

@@ -26,13 +26,14 @@
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include "handlers/async/async_handler.hpp"
 #include "virt_wrap/Connection.hpp"
 #include "virt_wrap/Domain.hpp"
 #include "virt_wrap/TypesParam.hpp"
 #include "virt_wrap/impl/Connection.hpp"
 #include "virt_wrap/impl/Domain.hpp"
 #include "virt_wrap/impl/TypedParams.hpp"
-#include "fwd.hpp"
+#include "general_store.hpp"
 #include "handler.hpp"
 #include "virt_wrap.hpp"
 
@@ -123,7 +124,7 @@ std::string path_cat(beast::string_view base, beast::string_view path) {
 // contents of the request, so the interface requires the
 // caller to pass a generic lambda for receiving the response.
 template <class Body, class Allocator, class Send>
-void handle_request(beast::string_view doc_root, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
+void handle_request(GeneralStore& gstore, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
     // Returns a bad request response
     const auto bad_request = [&](beast::string_view why) {
         http::response<http::string_body> res{http::status::bad_request, req.version()};
@@ -168,9 +169,60 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
     if (req.target().empty() || req.target()[0] != '/' || req.target().find("..") != beast::string_view::npos)
         return send(bad_request("Illegal request-target"));
 
-    auto req_method = req.method();
+    const auto forward_packid = [&](auto& res) noexcept {
+        if (const auto pakid = req["X-Packet-ID"]; !pakid.empty())
+            res.set("X-Packet-ID", pakid);
+    };
 
-    auto buffer = handle_json(req);
+    auto req_method = req.method();
+    auto target = TargetParser{bsv2stdsv(req.target())};
+    const auto& path_parts = target.getPathParts();
+
+    if (path_parts.empty())
+        return send(bad_request("No module name specified"));
+
+    // Handle cases where the client wants to retrieve an async result
+    if (path_parts[0] == "async") {
+        if (path_parts.size() != 2)
+            return send(bad_request("Bad invalid request target"));
+
+        if (auto opt = target.getBool("async"); opt && *opt)
+            return send(bad_request("Async retrieve cannot be async'ed"));
+
+        auto [code, body] = handle_async_retrieve<TransportProto::HTTP1>(gstore, path_parts[1]);
+
+        http::response<http::string_body> res{code, req.version()};
+        res.content_length(body.size());
+        res.body() = std::move(body);
+        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(http::field::content_type, "application/json");
+        forward_packid(res);
+        res.keep_alive(req.keep_alive());
+        return send(std::move(res));
+    }
+
+    if (auto opt = target.getBool("async"); opt && *opt) {
+        auto launch_res = gstore.async_store.launch([&gstore, target = std::move(target), req = std::move(req)]() {
+            auto buf = handle_json(gstore, req, target);
+            return std::string{buf.GetString(), buf.GetLength()};
+        });
+
+        if (!launch_res)
+            return send(server_error("Unable to enqueue async request"));
+
+        constexpr auto n_bytes = sizeof(AsyncStore::IndexType) * 2;
+
+        http::response<http::string_body> res{http::status::ok, req.version()};
+        res.body() = std::string{hex_encode_id(*launch_res).data(), n_bytes};
+        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(http::field::content_type, "application/json");
+        forward_packid(res);
+        res.content_length(n_bytes);
+        res.keep_alive(req.keep_alive());
+        return send(std::move(res));
+    }
+
+    auto buffer = handle_json(gstore, req, std::move(target));
 
     // Build the path to the requested file
     /*
@@ -195,11 +247,6 @@ void handle_request(beast::string_view doc_root, http::request<Body, http::basic
     // Cache the size since we need it after the move
     auto const size = body.size();
     */
-
-    const auto forward_packid = [&](auto& res) noexcept {
-        if (const auto pakid = req["X-Packet-ID"]; !pakid.empty())
-            res.set("X-Packet-ID", pakid);
-    };
 
     // Respond to HEAD request
     if (req_method == http::verb::head) {
@@ -231,10 +278,10 @@ void fail(beast::error_code ec, const char* what) { std::cerr << what << ": " <<
 class Session : public std::enable_shared_from_this<Session> {
     // This is the C++11 equivalent of a generic lambda.
     // The function object is used to send an HTTP message.
-    struct send_lambda {
+    struct SendLambda {
         Session& self_;
 
-        explicit send_lambda(Session& self) : self_(self) {}
+        explicit SendLambda(Session& self) : self_(self) {}
 
         template <bool isRequest, class Body, class Fields> void operator()(http::message<isRequest, Body, Fields>&& msg) const {
             // The lifetime of the message has to extend
@@ -254,17 +301,17 @@ class Session : public std::enable_shared_from_this<Session> {
     };
 
     tcp::socket socket_;
-    net::strand<net::io_context::executor_type> strand_;
+    net::strand<tcp::socket::executor_type> strand_;
     beast::flat_buffer buffer_;
-    std::shared_ptr<std::string const> doc_root_;
+    std::reference_wrapper<GeneralStore> m_gstore;
     http::request<http::string_body> req_;
     std::shared_ptr<void> res_;
-    send_lambda lambda_;
+    SendLambda lambda_;
 
   public:
     // Take ownership of the socket
-    explicit Session(tcp::socket socket, std::shared_ptr<std::string const> const& doc_root)
-        : socket_(std::move(socket)), strand_(socket_.get_executor()), doc_root_(doc_root), lambda_(*this) {}
+    explicit Session(tcp::socket socket, GeneralStore& gstore)
+        : socket_(std::move(socket)), strand_(socket_.get_executor()), m_gstore(gstore), lambda_(*this) {}
 
     // Start the asynchronous operation
     void run() { do_read(); }
@@ -290,7 +337,7 @@ class Session : public std::enable_shared_from_this<Session> {
             return fail(ec, "read");
 
         // Send the response
-        handle_request(*doc_root_, std::move(req_), lambda_);
+        handle_request(m_gstore, std::move(req_), lambda_);
     }
 
     void on_write(beast::error_code ec, std::size_t bytes_transferred, bool close) {
@@ -327,11 +374,10 @@ class Session : public std::enable_shared_from_this<Session> {
 class Listener : public std::enable_shared_from_this<Listener> {
     tcp::acceptor acceptor_;
     tcp::socket socket_;
-    std::shared_ptr<const std::string> doc_root_;
+    std::reference_wrapper<GeneralStore> gstore;
 
   public:
-    Listener(net::io_context& ioc, tcp::endpoint endpoint, const std::shared_ptr<const std::string>& doc_root)
-        : acceptor_(ioc), socket_(ioc), doc_root_(doc_root) {
+    Listener(net::io_context& ioc, const tcp::endpoint& endpoint, GeneralStore& gstore) : acceptor_(ioc), socket_(ioc), gstore(gstore) {
         beast::error_code ec;
 
         // Open the acceptor
@@ -377,7 +423,7 @@ class Listener : public std::enable_shared_from_this<Listener> {
             fail(ec, "accept");
         else {
             // Create the Session and run it
-            std::make_shared<Session>(std::move(socket_), doc_root_)->run();
+            std::make_shared<Session>(std::move(socket_), gstore)->run();
         }
 
         // Accept another connection

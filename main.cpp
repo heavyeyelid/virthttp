@@ -5,30 +5,31 @@
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
 #include "wrapper/config.hpp"
+#include "wrapper/general_store.hpp"
 #include "wrapper/http_wrapper.hpp"
-#include "fwd.hpp"
 #include "logger.hpp"
 #include "virt_wrap.hpp"
 
 using namespace std::literals;
 
 int main(int argc, char** argv) {
-    iniConfig.init("config.ini");
-    logger.info("libvirt server URI: ", iniConfig.getConnURI());
-    logger.info("http server URI: ", iniConfig.getHttpURI());
-    if (!iniConfig.isHTTPAuthRequired())
+    GeneralStore gstore{IniConfig{"config.ini"}};
+
+    logger.info("libvirt server URI: ", gstore.config().getConnURI());
+    logger.info("http server URI: ", gstore.config().getHttpURI());
+    if (!gstore.config().isHTTPAuthRequired())
         logger.warning("The HTTP authentication is disabled! Beware of unauthorized access!");
 
-    const auto address = net::ip::make_address(iniConfig.http_address);
-    const auto port = static_cast<unsigned short>(iniConfig.http_port);
-    const auto doc_root = std::make_shared<std::string>(iniConfig.http_doc_root);
-    const auto threads = std::max(1, gsl::narrow_cast<int>(iniConfig.http_threads));
+    const auto address = net::ip::make_address(gstore.config().http_address);
+    const auto port = static_cast<unsigned short>(gstore.config().http_port);
+    const auto doc_root = std::make_shared<std::string>(gstore.config().http_doc_root);
+    const auto threads = std::max(1, gsl::narrow_cast<int>(gstore.config().http_threads));
 
     // The io_context is required for all I/O
     net::io_context ioc{threads};
 
     // Create and launch a listening port
-    std::make_shared<Listener>(ioc, tcp::endpoint{address, port}, doc_root)->run();
+    std::make_shared<Listener>(ioc, tcp::endpoint{address, port}, gstore)->run();
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;
@@ -37,8 +38,7 @@ int main(int argc, char** argv) {
         v.emplace_back([&ioc] { ioc.run(); });
     ioc.run();
 
-    // iniConfig.reset(nullptr); // Better to run destructors in the lifetime of
-    // main
+    // iniConfig.reset(nullptr); // Better to run destructors in the lifetime of main
     return EXIT_SUCCESS;
 }
 

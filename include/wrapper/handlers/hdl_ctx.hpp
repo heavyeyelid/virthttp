@@ -7,7 +7,7 @@
 struct HandlerContext {
     virt::Connection& conn;
     JsonRes& json_res;
-    TargetParser& target;
+    const TargetParser& target;
     std::string_view key_str;
 
   protected:

@@ -99,6 +99,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/impl/TypedParams.hpp
             include/virt_wrap/impl/NodeDevice.hpp
             include/wrapper/actions_table.hpp
+            include/wrapper/handlers/async/async_store.hpp
             include/wrapper/config.hpp
             include/wrapper/depends.hpp
             include/wrapper/dispatch.hpp
@@ -115,11 +116,10 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/wrapper/handlers/network.hpp
             include/virt_wrap.hpp
             include/logger.hpp
-            include/fwd.hpp
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp)
+            include/urlparser.hpp include/wrapper/general_store.hpp include/wrapper/handlers/async/async_handler.hpp include/wrapper/handlers/proto.hpp)
 
     target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)
