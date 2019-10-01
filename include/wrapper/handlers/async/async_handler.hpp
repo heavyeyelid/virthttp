@@ -29,8 +29,8 @@ constexpr std::array<char, sizeof(std::uint32_t) * 2> hex_encode_id(std::uint32_
     constexpr auto hex = "0123456789abcdef"sv;
     std::array<char, sizeof(std::uint32_t)* 2> ret = {};
     for (auto it = ret.rbegin(); it < ret.rend(); ++it) {
-        *it = hex[id & 0b11u];
-        id <<= 2u;
+        *it = hex[id & 0xfu];
+        id >>= 16u;
     }
     return ret;
 }
