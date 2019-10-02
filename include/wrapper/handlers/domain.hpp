@@ -125,6 +125,16 @@ class DomainHandlers : public HandlerMethods {
                          return hostname ? std::pair{rapidjson::Value(static_cast<const char*>(*hostname), json_res.GetAllocator()), true}
                                          : std::pair{rapidjson::Value{}, false};
                      }),
+            subquery("time", SUBQ_LIFT(dom.getTime),
+                     [&](auto opt_time) {
+                         if (!opt_time)
+                             return std::pair{rapidjson::Value{}, false};
+                         rapidjson::Value ret{};
+                         ret.SetObject();
+                         ret.AddMember("seconds", static_cast<int64_t>(opt_time->seconds), json_res.GetAllocator());
+                         ret.AddMember("nanosec", static_cast<unsigned>(opt_time->nanosec), json_res.GetAllocator());
+                         return std::pair{std::move(ret), true};
+                     }),
             subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), [&](const auto& otp) {
                 return otp ? std::pair{to_json(*otp, json_res.GetAllocator()), true} : (error(-999), std::pair{rapidjson::Value{}, false});
             }))(4, target, res_val, [&](auto... args) { return error(args...); });
