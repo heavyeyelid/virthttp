@@ -143,6 +143,8 @@ class alignas(alignof(char*)) UniqueZstring {
 
     constexpr inline explicit operator const char*() const noexcept { return ptr; }
     constexpr inline explicit operator char*() noexcept { return ptr; }
+
+    constexpr inline explicit operator bool() const noexcept { return ptr; }
 };
 
 namespace ext {

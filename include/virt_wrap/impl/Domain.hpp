@@ -364,10 +364,30 @@ CpuMap ret;
     return TPImpl::wrap_oparm_set_tp(underlying, virDomainGetPerfEvents, to_integral(flags));
 }
 
-[[nodiscard]] auto Domain::getSchedulerParameters() const noexcept { return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetSchedulerParameters); }
+[[nodiscard]] auto Domain::getSchedulerParameters() const noexcept {
+    const auto sche_type = getSchedulerType();
+    if (!sche_type.first)
+        return std::optional<TypedParams>{std::nullopt};
+    return TPImpl::wrap_oparm_fill_tp(
+        underlying,
+        [n = sche_type.second](auto*, std::nullptr_t, int* c) {
+            *c = n;
+            return 0;
+        },
+        virDomainGetSchedulerParameters);
+}
 
 [[nodiscard]] auto Domain::getSchedulerParameters(MITPFlags flags) const noexcept {
-    return TPImpl::wrap_oparm_fill_tp(underlying, virDomainGetSchedulerParametersFlags, to_integral(flags));
+    const auto sche_type = getSchedulerType();
+    if (!sche_type.first)
+        return std::optional<TypedParams>{std::nullopt};
+    return TPImpl::wrap_oparm_fill_tp(
+        underlying,
+        [n = sche_type.second](auto*, std::nullptr_t, int* c, auto) {
+            *c = n;
+            return 0;
+        },
+        virDomainGetSchedulerParametersFlags, to_integral(flags));
 }
 
 [[nodiscard]] auto Domain::getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>> {
