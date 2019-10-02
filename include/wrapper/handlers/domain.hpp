@@ -79,22 +79,15 @@ class DomainHandlers : public HandlerMethods {
             res_val.AddMember("ram", memory, json_res.GetAllocator());
             res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
             res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
-        } else if (path_parts.size() == 5) {
-            if (path_parts[4] == "xml_desc") {
-                const auto opt_flags = target_get_composable_flag<virt::Domain::XmlFlag>(target, "options");
-                if (!opt_flags)
-                    return error(301), DependsOutcome::FAILURE;
-                res_val = rapidjson::Value(dom.getXMLDesc(*opt_flags), json_res.GetAllocator());
-            }
+            json_res.result(std::move(res_val));
+            return DependsOutcome::SUCCESS;
         }
-        json_res.result(std::move(res_val));
 
-        auto res = parameterized_depends_scope(
+        return parameterized_depends_scope(
             subquery(
                 "xml_desc", "options", SUBQ_LIFT(dom.getXMLDesc),
                 [&](auto xml) {
-                    return xml ? std::pair{rapidjson::Value(xml, json_res.GetAllocator()), true}
-                               : (error(-999), std::pair{rapidjson::Value{}, false});
+                    return xml ? std::pair{rapidjson::Value(xml, json_res.GetAllocator()), true} : (error(-2), std::pair{rapidjson::Value{}, false});
                 },
                 ti<virt::Domain::XmlFlag>),
             subquery("fs_info", SUBQ_LIFT(dom.getFSInfo),
@@ -121,24 +114,38 @@ class DomainHandlers : public HandlerMethods {
                          return std::pair{std::move(jvres), true};
                      }),
             subquery("hostname", SUBQ_LIFT(dom.getHostname),
-                     [&](std::optional<UniqueZstring> hostname) {
-                         return hostname ? std::pair{rapidjson::Value(static_cast<const char*>(*hostname), json_res.GetAllocator()), true}
-                                         : std::pair{rapidjson::Value{}, false};
+                     [&](auto hostname) {
+                         return hostname ? std::pair{rapidjson::Value(static_cast<const char*>(hostname), json_res.GetAllocator()), true}
+                                         : (error(-2), std::pair{rapidjson::Value{}, false});
                      }),
             subquery("time", SUBQ_LIFT(dom.getTime),
                      [&](auto opt_time) {
-                         if (!opt_time)
+                         if (!opt_time) {
+                             error(-2);
                              return std::pair{rapidjson::Value{}, false};
+                         }
                          rapidjson::Value ret{};
                          ret.SetObject();
                          ret.AddMember("seconds", static_cast<int64_t>(opt_time->seconds), json_res.GetAllocator());
                          ret.AddMember("nanosec", static_cast<unsigned>(opt_time->nanosec), json_res.GetAllocator());
                          return std::pair{std::move(ret), true};
                      }),
+            subquery("scheduler_type", SUBQ_LIFT(dom.getSchedulerType),
+                     [&](auto sp) {
+                         if (!sp.second) {
+                             error(-2);
+                             return std::pair{rapidjson::Value{}, false};
+                         }
+                         rapidjson::Value ret{};
+                         ret.SetObject();
+                         ret.AddMember("type", rapidjson::Value(static_cast<const char*>(sp.first), json_res.GetAllocator()),
+                                       json_res.GetAllocator());
+                         ret.AddMember("params_count", static_cast<int>(sp.second), json_res.GetAllocator());
+                         return std::pair{std::move(ret), true};
+                     }),
             subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), [&](const auto& otp) {
                 return otp ? std::pair{to_json(*otp, json_res.GetAllocator()), true} : (error(-999), std::pair{rapidjson::Value{}, false});
             }))(4, target, res_val, [&](auto... args) { return error(args...); });
-        return DependsOutcome::SUCCESS;
     }
     DependsOutcome alter(const rapidjson::Value& action) override {
         const auto& action_obj = *action.MemberBegin();
