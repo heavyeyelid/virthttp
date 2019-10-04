@@ -21,33 +21,33 @@ inline NodeDevice::~NodeDevice() noexcept {
 
 constexpr inline NodeDevice::operator bool() const noexcept { return underlying != nullptr; }
 
-bool NodeDevice::destroy() noexcept { return virNodeDeviceDestroy(underlying) == 0; }
+inline bool NodeDevice::destroy() noexcept { return virNodeDeviceDestroy(underlying) == 0; }
 
-bool NodeDevice::detach(gsl::czstring<> driver_name = nullptr) noexcept { return virNodeDeviceDetachFlags(underlying, driver_name, 0) == 0; }
+inline bool NodeDevice::detach(gsl::czstring<> driver_name = nullptr) noexcept { return virNodeDeviceDetachFlags(underlying, driver_name, 0) == 0; }
 
-bool NodeDevice::detach() noexcept { return virNodeDeviceDettach(underlying) == 0; }
+inline bool NodeDevice::detach() noexcept { return virNodeDeviceDettach(underlying) == 0; }
 
-passive<gsl::czstring<>> NodeDevice::getName() const noexcept { return virNodeDeviceGetName(underlying); }
+inline passive<gsl::czstring<>> NodeDevice::getName() const noexcept { return virNodeDeviceGetName(underlying); }
 
-passive<gsl::czstring<>> NodeDevice::getParent() const noexcept { return virNodeDeviceGetParent(underlying); }
+inline passive<gsl::czstring<>> NodeDevice::getParent() const noexcept { return virNodeDeviceGetParent(underlying); }
 
-passive<gsl::czstring<>> NodeDevice::getXMLDesc() const noexcept { return virNodeDeviceGetXMLDesc(underlying, 0); }
+inline passive<gsl::czstring<>> NodeDevice::getXMLDesc() const noexcept { return virNodeDeviceGetXMLDesc(underlying, 0); }
 
-std::string NodeDevice::extractXMLDesc() const noexcept { return {getXMLDesc()}; }
+inline std::string NodeDevice::extractXMLDesc() const noexcept { return {getXMLDesc()}; }
 
-auto NodeDevice::listCaps() const noexcept {
+inline auto NodeDevice::listCaps() const noexcept {
     return meta::light::wrap_oparm_owning_fill_static_arr(underlying, virNodeDeviceNumOfCaps, virNodeDeviceListCaps);
 }
 
-std::vector<std::string> NodeDevice::extractCaps() const {
+inline std::vector<std::string> NodeDevice::extractCaps() const {
     return meta::heavy::wrap_oparm_owning_fill_static_arr<std::string>(underlying, virNodeDeviceNumOfCaps, virNodeDeviceListCaps);
 }
 
-bool NodeDevice::reAttach() noexcept { return virNodeDeviceReAttach(underlying) == 0; }
+inline bool NodeDevice::reAttach() noexcept { return virNodeDeviceReAttach(underlying) == 0; }
 
-bool NodeDevice::reset() noexcept { return virNodeDeviceReset(underlying) == 0; }
+inline bool NodeDevice::reset() noexcept { return virNodeDeviceReset(underlying) == 0; }
 
-NodeDevice NodeDevice::createXML(Connection& conn, gsl::czstring<> xml) noexcept {
+inline NodeDevice NodeDevice::createXML(Connection& conn, gsl::czstring<> xml) noexcept {
     return NodeDevice{virNodeDeviceCreateXML(conn.underlying, xml, 0)};
 }
 }

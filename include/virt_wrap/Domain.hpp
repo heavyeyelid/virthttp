@@ -13,7 +13,6 @@
 #include <libvirt/libvirt-domain.h>
 #include "CpuMap.hpp"
 #include "GFlags.hpp"
-#include "decls.hpp"
 #include "fwd.hpp"
 #include "tfe.hpp"
 #include "utility.hpp"
@@ -829,3 +828,5 @@ class Domain::heavy::IOThreadInfo {
 };
 
 } // namespace virt
+
+#include "impl/Domain.hpp"

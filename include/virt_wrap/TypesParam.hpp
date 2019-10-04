@@ -10,7 +10,6 @@
 #include <variant>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
-
 #include "fwd.hpp"
 
 namespace virt {
@@ -22,9 +21,9 @@ class TypedParameter : public std::pair<std::string, TypedParamValueType> {
     struct no_name_tag {};
 
   public:
-    explicit TypedParameter(const virTypedParameter&);
+    inline explicit TypedParameter(const virTypedParameter&);
 
-    TypedParameter(const virTypedParameter&, no_name_tag);
+    inline TypedParameter(const virTypedParameter&, no_name_tag);
 };
 
 class TypedParams {
@@ -62,30 +61,30 @@ class TypedParams {
     constexpr TypedParams(const TypedParams&) = delete;
     constexpr TypedParams(TypedParams&&) = default;
     template <class Container> TypedParams(Container); /* container of TypedParam */
-    ~TypedParams() noexcept;
+    inline ~TypedParams() noexcept;
 
     constexpr Iterator begin() const noexcept;
     constexpr Iterator begin() noexcept;
     constexpr Iterator end() const noexcept;
     constexpr Iterator end() noexcept;
 
-    void add(gsl::czstring<> name, int);
+    inline void add(gsl::czstring<> name, int);
 
-    void add(gsl::czstring<> name, unsigned);
+    inline void add(gsl::czstring<> name, unsigned);
 
-    void add(gsl::czstring<> name, long long);
+    inline void add(gsl::czstring<> name, long long);
 
-    void add(gsl::czstring<> name, unsigned long long);
+    inline void add(gsl::czstring<> name, unsigned long long);
 
-    void add(gsl::czstring<> name, double);
+    inline void add(gsl::czstring<> name, double);
 
-    void add(gsl::czstring<> name, bool);
+    inline void add(gsl::czstring<> name, bool);
 
-    void add(gsl::czstring<> name, gsl::czstring<>);
+    inline void add(gsl::czstring<> name, gsl::czstring<>);
 
-    void add(gsl::czstring<> name, const std::string& s);
+    inline void add(gsl::czstring<> name, const std::string& s);
 
-    void add(const TypedParameter&);
+    inline void add(const TypedParameter&);
 
     template <typename T> T get(gsl::czstring<> name) const;
 
@@ -159,3 +158,5 @@ struct TPImpl {
         return res >= 0 ? std::move(ret) : std::nullopt;
     }
 };
+
+#include "impl/TypedParams.hpp"

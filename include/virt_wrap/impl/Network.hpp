@@ -44,7 +44,7 @@ inline Network::~Network() noexcept {
     return virNetworkGetUUIDString(underlying, ret.data()) == 0 ? std::optional(ret) : std::nullopt;
 }
 
-[[nodiscard]] auto Network::extractUUIDString() const -> std::string {
+[[nodiscard]] inline auto Network::extractUUIDString() const -> std::string {
     std::string ret{};
     ret.resize(VIR_UUID_STRING_BUFLEN);
     if (virNetworkGetUUIDString(underlying, ret.data()) != 0)
@@ -108,9 +108,9 @@ inline bool Network::setAutostart(bool autostart) noexcept { return virNetworkSe
 
 inline bool Network::create() noexcept { return virNetworkCreate(underlying) == 0; }
 
-bool Network::destroy() noexcept { return virNetworkDestroy(underlying) == 0; }
+inline bool Network::destroy() noexcept { return virNetworkDestroy(underlying) == 0; }
 
-bool Network::undefine() noexcept { return virNetworkUndefine(underlying) == 0; }
+inline bool Network::undefine() noexcept { return virNetworkUndefine(underlying) == 0; }
 
 inline Network Network::createXML(Connection& conn, gsl::czstring<> xml) { return Network{virNetworkCreateXML(conn.underlying, xml)}; }
 inline Network Network::defineXML(Connection& conn, gsl::czstring<> xml) { return Network{virNetworkDefineXML(conn.underlying, xml)}; }

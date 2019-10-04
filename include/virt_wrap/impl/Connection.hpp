@@ -11,6 +11,8 @@
 #include <libvirt/libvirt.h>
 #include "../Connection.hpp"
 #include "../Domain.hpp"
+#include "../Network.hpp"
+#include "../NodeDevice.hpp"
 #include "../fwd.hpp"
 #include "../utility.hpp"
 

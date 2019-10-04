@@ -26,8 +26,8 @@ class Network {
     constexpr Network(Network&&) noexcept;
     inline ~Network() noexcept;
     Network& operator=(const Network&) = delete;
-    Network& operator=(Network&&) noexcept;
-    constexpr explicit Network(virNetworkPtr p) : underlying(p) {}
+    inline Network& operator=(Network&&) noexcept;
+    constexpr explicit inline Network(virNetworkPtr p) : underlying(p) {}
 
     constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
     [[nodiscard]] inline auto getBridgeName() const noexcept;
@@ -42,7 +42,7 @@ class Network {
 
     [[nodiscard]] inline auto getUUIDString() const noexcept -> std::optional<std::array<char, VIR_UUID_STRING_BUFLEN>>;
 
-    [[nodiscard]] auto extractUUIDString() const -> std::string;
+    [[nodiscard]] inline auto extractUUIDString() const -> std::string;
 
     [[nodiscard]] inline auto getXMLDesc(XMLFlags flags = XMLFlags::DEFAULT) const noexcept;
 
@@ -62,10 +62,12 @@ class Network {
     inline bool create() noexcept;
     // inline bool update(...) noexcept;
 
-    bool destroy() noexcept;
-    bool undefine() noexcept;
+    inline bool destroy() noexcept;
+    inline bool undefine() noexcept;
 
     static inline Network createXML(Connection& conn, gsl::czstring<> xml);
     static inline Network defineXML(Connection& conn, gsl::czstring<> xml);
 };
-}
+} // namespace virt
+
+#include "impl/Network.hpp"

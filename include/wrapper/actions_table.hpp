@@ -3,6 +3,7 @@
 #include <functional>
 #include <string_view>
 #include <gsl/gsl>
+#include "virt_wrap/Domain.hpp"
 #include "cexpr_algs.hpp"
 #include "depends.hpp"
 #include "json2virt.hpp"

@@ -28,25 +28,25 @@ class Stream {
 
     template <class T> using SourceSkipFunc = bool (*)(Stream st, long long length, T* opaque);
 
-    Stream(const Connection&, Flag) noexcept;
-    Stream(const Stream&) noexcept;
+    inline Stream(const Connection&, Flag) noexcept;
+    inline Stream(const Stream&) noexcept;
     constexpr Stream(Stream&&) noexcept;
-    ~Stream() noexcept;
-    Stream& operator=(const Stream&) noexcept;
+    inline ~Stream() noexcept;
+    inline Stream& operator=(const Stream&) noexcept;
     constexpr Stream& operator=(Stream&&) noexcept;
 
-    bool abort() noexcept;
-    bool finish() noexcept;
-    int recv(gsl::span<char>) noexcept;
-    int recv(char* buf, size_t buflen) noexcept;
-    int recv(gsl::span<char>, RecvFlag) noexcept;
-    int recv(char* buf, size_t buflen, RecvFlag) noexcept;
+    inline bool abort() noexcept;
+    inline bool finish() noexcept;
+    inline int recv(gsl::span<char>) noexcept;
+    inline int recv(char* buf, size_t buflen) noexcept;
+    inline int recv(gsl::span<char>, RecvFlag) noexcept;
+    inline int recv(char* buf, size_t buflen, RecvFlag) noexcept;
     // template <class T> bool recvAll(SinkFunc<T> handler) noexcept;
-    std::optional<long long> recvHole();
-    int send(gsl::span<const char>) noexcept;
-    int send(const char* buf, size_t buflen) noexcept;
+    inline std::optional<long long> recvHole();
+    inline int send(gsl::span<const char>) noexcept;
+    inline int send(const char* buf, size_t buflen) noexcept;
     // template <class T> bool sendAll(SourceFunc<T> handler, T* opaque) noexcept;
-    bool sendHole(long long) noexcept;
+    inline bool sendHole(long long) noexcept;
     // template <class T> bool sparseRecvAll(SinkFunc<T> handler, SinkHoleFunc<T> holeHandler, T* opaque) noexcept;
     // template <class T> int sparseSendAll(SourceFunc<T> handler, SourceHoleFunc<T> holeHandler,
     //                           SourceSkipFunc<T> skipHandler, T* opaque) noexcept;
@@ -54,3 +54,4 @@ class Stream {
 
 }
 #include "enums/Stream/Stream.hpp"
+#include "impl/Stream.hpp"

@@ -40,7 +40,7 @@ class NodeDevice {
 
     NodeDevice(const NodeDevice&) = delete;
 
-    constexpr inline NodeDevice(NodeDevice&&) noexcept;
+    constexpr NodeDevice(NodeDevice&&) noexcept;
 
     NodeDevice& operator=(const NodeDevice&) = delete;
 
@@ -48,30 +48,32 @@ class NodeDevice {
 
     inline ~NodeDevice() noexcept;
 
-    constexpr inline explicit operator bool() const noexcept;
+    constexpr explicit operator bool() const noexcept;
 
-    bool destroy() noexcept;
+    inline bool destroy() noexcept;
 
-    bool detach(gsl::czstring<> driver_name_or_null) noexcept;
+    inline bool detach(gsl::czstring<> driver_name_or_null) noexcept;
 
-    bool detach() noexcept;
+    inline bool detach() noexcept;
 
-    [[nodiscard]] passive<gsl::czstring<>> getName() const noexcept;
+    [[nodiscard]] inline passive<gsl::czstring<>> getName() const noexcept;
 
-    [[nodiscard]] passive<gsl::czstring<>> getParent() const noexcept;
+    [[nodiscard]] inline passive<gsl::czstring<>> getParent() const noexcept;
 
-    [[nodiscard]] passive<gsl::czstring<>> getXMLDesc() const noexcept;
+    [[nodiscard]] inline passive<gsl::czstring<>> getXMLDesc() const noexcept;
 
-    [[nodiscard]] std::string extractXMLDesc() const noexcept;
+    [[nodiscard]] inline std::string extractXMLDesc() const noexcept;
 
-    [[nodiscard]] auto listCaps() const noexcept;
+    [[nodiscard]] inline auto listCaps() const noexcept;
 
-    [[nodiscard]] std::vector<std::string> extractCaps() const;
+    [[nodiscard]] inline std::vector<std::string> extractCaps() const;
 
-    bool reAttach() noexcept;
+    inline bool reAttach() noexcept;
 
-    bool reset() noexcept;
+    inline bool reset() noexcept;
 
-    [[nodiscard]] static NodeDevice createXML(Connection& conn, gsl::czstring<> xml) noexcept;
+    [[nodiscard]] inline static NodeDevice createXML(Connection& conn, gsl::czstring<> xml) noexcept;
 };
-}
+} // namespace virt
+
+#include "impl/NodeDevice.hpp"

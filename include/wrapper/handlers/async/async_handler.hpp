@@ -3,7 +3,7 @@
 #include <boost/beast/http.hpp>
 #include <ctre.hpp>
 #include "wrapper/general_store.hpp"
-#include "wrapper/handlers/proto.hpp"
+#include "wrapper/protocol_support/protocols.hpp"
 
 using namespace std::literals;
 

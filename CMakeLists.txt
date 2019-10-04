@@ -30,7 +30,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             thirdparty/ctre/include
             include)
 
-    add_compile_definitions(VIR_ENUM_SENTINELS)
+    add_compile_definitions(VIR_ENUM_SENTINELS RAPIDJSON_HAS_STDSTRING)
 
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_compile_options("-O3")
@@ -99,7 +99,6 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/impl/TypedParams.hpp
             include/virt_wrap/impl/NodeDevice.hpp
             include/wrapper/actions_table.hpp
-            include/wrapper/handlers/async/async_store.hpp
             include/wrapper/config.hpp
             include/wrapper/depends.hpp
             include/wrapper/dispatch.hpp
@@ -114,12 +113,22 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/wrapper/handlers/flagwork.hpp
             include/wrapper/handlers/hdl_ctx.hpp
             include/wrapper/handlers/network.hpp
+            include/wrapper/general_store.hpp
+            include/wrapper/handlers/async/async_handler.hpp
+            include/wrapper/handlers/async/async_store.hpp
+            include/wrapper/protocol_support/beast_internals.hpp
+            include/wrapper/protocol_support/protocols.hpp
+            include/wrapper/protocol_support/request_handler.hpp
+            include/wrapper/protocol_support/tcp_listener.hpp
+            include/wrapper/protocol_support/http1/Session.hpp
             include/virt_wrap.hpp
             include/logger.hpp
             include/cexpr_algs.hpp
             include/flatmap.hpp
             include/json_utils.hpp
-            include/urlparser.hpp include/wrapper/general_store.hpp include/wrapper/handlers/async/async_handler.hpp include/wrapper/handlers/proto.hpp)
+            include/urlparser.hpp
+
+            )
 
     target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)

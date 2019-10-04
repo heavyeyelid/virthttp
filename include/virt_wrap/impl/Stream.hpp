@@ -4,17 +4,17 @@
 
 namespace virt {
 constexpr Stream::Stream(virStreamPtr ptr) noexcept : underlying(ptr) {}
-Stream::Stream(const Connection& conn, Flag flags) noexcept : underlying(virStreamNew(conn.underlying, to_integral(flags))) {}
-Stream::Stream(const Stream& oth) noexcept : underlying(oth.underlying) {
+inline Stream::Stream(const Connection& conn, Flag flags) noexcept : underlying(virStreamNew(conn.underlying, to_integral(flags))) {}
+inline Stream::Stream(const Stream& oth) noexcept : underlying(oth.underlying) {
     if (underlying)
         virStreamRef(underlying);
 }
 constexpr Stream::Stream(Stream&& from) noexcept : underlying(from.underlying) { from.underlying = nullptr; }
-Stream::~Stream() noexcept {
+inline Stream::~Stream() noexcept {
     if (underlying)
         virStreamFree(underlying);
 }
-Stream& Stream::operator=(const Stream& oth) noexcept {
+inline Stream& Stream::operator=(const Stream& oth) noexcept {
     this->~Stream();
     if ((underlying = oth.underlying))
         virStreamRef(underlying);
