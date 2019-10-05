@@ -8,6 +8,7 @@ add_subdirectory(thirdparty/virtxml++)
 
 include_directories(thirdparty/gsl/include
         thirdparty/rapidjson/include
+        thirdparty
         include)
 
 include(WA-ICEs) # Workarouds for known ICEs on certain compiler versions
@@ -128,7 +129,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/json_utils.hpp
             include/urlparser.hpp
 
-            )
+            include/wrapper/decoder_support/zlib_beast.hpp include/wrapper/decoder_support/zlib_beast_impl.hpp include/wrapper/decoder_support/zlib_beast_detail.hpp)
 
     target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
     if (WIN32)

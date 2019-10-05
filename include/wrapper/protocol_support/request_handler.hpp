@@ -3,6 +3,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include "../decoder_support/zlib_beast.hpp"
 #include "../general_store.hpp"
 #include "../handler.hpp"
 #include "../handlers/async/async_handler.hpp"
@@ -26,6 +27,9 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     };
 
     logger.info("Received from a Session: HTTP ", boost::beast::http::to_string(req.method()), ' ', req.target());
+
+    if (!handle_decompression(static_cast<const boost::beast::http::basic_fields<Allocator>&>(req), req.body()))
+        return send(bad_request("Unsupported Content-Encoding"));
 
     // Returns a not found response
     const auto not_found = [&](boost::beast::string_view target) {
@@ -138,6 +142,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     auto const size = body.size();
     */
 
+    /*
     // Respond to HEAD request
     if (req_method == boost::beast::http::verb::head) {
         boost::beast::http::response<boost::beast::http::empty_body> res{boost::beast::http::status::ok, req.version()};
@@ -148,6 +153,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
         res.keep_alive(req.keep_alive());
         return send(std::move(res));
     }
+     */
 
     boost::beast::http::response<boost::beast::http::string_body> res{boost::beast::http::status::ok, req.version()};
     res.body() = std::string{buffer.GetString()};
@@ -155,6 +161,8 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     res.set(boost::beast::http::field::content_type, "application/json");
     forward_packid(res);
     res.content_length(std::size_t{buffer.GetSize()});
+    handle_compression(static_cast<const boost::beast::http::basic_fields<Allocator>&>(req), static_cast<boost::beast::http::fields&>(res),
+                       res.body());
     res.keep_alive(req.keep_alive());
     return send(std::move(res));
 }
