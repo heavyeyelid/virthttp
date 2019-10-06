@@ -157,9 +157,9 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(boost::beast::http::field::content_type, "application/json");
     forward_packid(res);
-    res.content_length(std::size_t{buffer.GetSize()});
     handle_compression(static_cast<const boost::beast::http::basic_fields<Allocator>&>(req), static_cast<boost::beast::http::fields&>(res),
                        res.body());
+    res.content_length(std::size_t{res.body().size()});
     res.keep_alive(req.keep_alive());
     return send(std::move(res));
 }
