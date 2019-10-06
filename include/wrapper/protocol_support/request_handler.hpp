@@ -3,10 +3,10 @@
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include "../decoder_support/zlib_beast.hpp"
 #include "../general_store.hpp"
 #include "../handler.hpp"
 #include "../handlers/async/async_handler.hpp"
+#include "wrapper/decoder_support/compression.hpp"
 #include "urlparser.hpp"
 
 // This function produces an HTTP response for the given
@@ -27,9 +27,6 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     };
 
     logger.info("Received from a Session: HTTP ", boost::beast::http::to_string(req.method()), ' ', req.target());
-
-    if (!handle_decompression(static_cast<const boost::beast::http::basic_fields<Allocator>&>(req), req.body()))
-        return send(bad_request("Unsupported Content-Encoding"));
 
     // Returns a not found response
     const auto not_found = [&](boost::beast::string_view target) {

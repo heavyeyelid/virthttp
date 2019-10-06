@@ -129,9 +129,9 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/json_utils.hpp
             include/urlparser.hpp
 
-            include/wrapper/decoder_support/zlib_beast.hpp include/wrapper/decoder_support/zlib_beast_impl.hpp include/wrapper/decoder_support/zlib_beast_detail.hpp)
+            include/wrapper/decoder_support/compression.hpp include/wrapper/decoder_support/libdeflate.hpp)
 
-    target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread)
+    target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread deflate)
     if (WIN32)
         target_link_libraries(virthttp Ws2_32.lib WSock32.lib)
     endif ()

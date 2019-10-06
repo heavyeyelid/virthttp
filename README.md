@@ -55,6 +55,7 @@ For more examples and a usage reference, see the [API documentation](https://git
 ### Dependencies *(debian packages)*
 - libvirt-dev
 - libboost-system-dev
+- libdeflate-dev
 
 ### Build steps
 #### Getting sources
