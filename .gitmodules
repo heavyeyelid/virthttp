@@ -21,4 +21,4 @@
 	url = https://github.com/microsoft/GSL
 [submodule "thirdparty/virtxml++"]
 	path = thirdparty/virtxml++
-	url = https://github.com/heavyeyelid/virtxmlpp
+	url = https://github.com/heavyeyelid/virtxmlpp.git
