@@ -55,12 +55,13 @@ For more examples and a usage reference, see the [API documentation](https://git
 ### Dependencies *(debian packages)*
 - libvirt-dev
 - libboost-system-dev
+- libdeflate-dev
 
 ### Build steps
 #### Getting sources
 ```
 $ git clone https://github.com/HeavyEyelid/virthttp.git
-$ git submodule update --init
+$ git submodule update --init --recursive
 ```
 #### Compiling
 ```
@@ -68,5 +69,5 @@ $ cd virthttp/
 $ mkdir build
 $ cd build/
 $ cmake ..
-$ make -j $(nproc)
+$ make -j $(nproc) # or simply 'ninja' if you use ninja-build 
 ```

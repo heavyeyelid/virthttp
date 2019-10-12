@@ -9,6 +9,7 @@
 #include <optional>
 #include <type_traits>
 #include <gsl/gsl>
+#include "cexpr_algs.hpp"
 
 #ifdef __GNUC__
 #define UNREACHABLE __builtin_unreachable()
@@ -18,7 +19,17 @@
 #define UNREACHABLE
 #endif
 
+template <typename E, std::enable_if_t<std::is_enum_v<E>, int> = 0> constexpr inline decltype(auto) to_integral(E e) {
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
 class Empty {};
+
+template <class> struct RemoveOptional;
+
+template <class T> struct RemoveOptional<std::optional<T>> { using type = T; };
+
+template <class OptT> using RemoveOptional_t = typename RemoveOptional<OptT>::type;
 
 template <class... Ts> void sink(Ts&&... ts) { (static_cast<void>(std::move(ts)), ...); }
 
@@ -27,6 +38,12 @@ template <class Lambda, class... Ts> constexpr auto test_sfinae(Lambda lambda, T
 }
 constexpr bool test_sfinae(...) { return false; }
 
+template <typename T, typename V, size_t... I> void visit_impl(T&& t, V&& v, std::index_sequence<I...>) { (..., v(std::get<I>(t))); }
+
+template <typename T, typename V> void visit(T&& t, V&& v) {
+    visit_impl(std::forward<T>(t), std::forward<V>(v), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>());
+}
+
 template <typename T> using passive = T;
 
 template <typename T> inline void freeany(T ptr) {
@@ -34,67 +51,46 @@ template <typename T> inline void freeany(T ptr) {
     std::free(ptr);
 }
 
-template <class... Es> class EnumSetTie {
-    using Underlying = std::common_type_t<std::underlying_type_t<Es>...>;
-    Underlying underlying;
+class EHTag {};
 
-  public:
-    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
-    constexpr EnumSetTie(E v) : underlying(v) {}
-    friend constexpr auto to_integral(EnumSetTie est) { return est.underlying; }
-};
-
-template <class... Es> constexpr EnumSetTie<Es...> operator|(EnumSetTie<Es...> lhs, EnumSetTie<Es...> rhs) noexcept {
-    return {to_integral(lhs) | to_integral(rhs)};
-}
-template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
-constexpr EnumSetTie<Es...> operator|(EnumSetTie<Es...> lhs, E rhs) noexcept {
-    return {to_integral(lhs) | to_integral(rhs)};
-}
-template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
-constexpr EnumSetTie<Es...> operator|(E lhs, EnumSetTie<Es...> rhs) noexcept {
-    return {to_integral(lhs) | to_integral(rhs)};
-}
-template <class... Es> constexpr EnumSetTie<Es...>& operator|=(EnumSetTie<Es...>& lhs, EnumSetTie<Es...> rhs) noexcept {
-    return lhs = {to_integral(lhs) | to_integral(rhs)};
-}
-template <class E, class... Es, class = std::enable_if_t<std::disjunction_v<std::is_same_v<E, Es>...>>>
-constexpr EnumSetTie<Es...>& operator|=(EnumSetTie<Es...>& lhs, E rhs) noexcept {
-    return lhs = {to_integral(lhs) | to_integral(rhs)};
-}
-
-template <class CRTP, class E, class V = gsl::czstring<>> class EnumHelper {
-    using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
-
+template <class CRTP> class EnumHelper {
+    constexpr auto& get_underlying(EHTag) const noexcept { return static_cast<const CRTP&>(*this).underlying; }
     constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
+    constexpr static EHTag tag;
+
   public:
-    [[nodiscard]] constexpr V operator[](E val) const noexcept { return values()[to_integral(val)]; }
-    [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[+val]; }
-    [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
+    [[nodiscard]] constexpr std::string_view to_string() const noexcept { return values()[to_integral(get_underlying(tag))]; }
+    [[nodiscard]] constexpr auto from_string_base(std::string_view v) const noexcept {
         const auto res = cexpr::find(values().cbegin(), values().cend(), v);
-        return res != values().end() ? std::optional{E(std::distance(values().cbegin(), res))} : std::nullopt;
+        return res != values().end() ? std::optional{CRTP{tag, std::distance(values().cbegin(), res)}} : std::nullopt;
     }
 };
 
-class EnumSetHelperTag;
-template <class CRTP, class E, class V = gsl::czstring<>> class EnumSetHelper {
-    using AC = std::conditional_t<std::is_same_v<V, const char*>, std::string_view, V>;
-
+template <class CRTP> class EnumSetHelper {
+    constexpr auto& get_underlying(EHTag) const noexcept { return static_cast<const CRTP&>(*this).underlying; }
     constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
+    constexpr static EHTag tag;
+
   public:
-    using Tag = EnumSetHelperTag;
-    using Enum = E;
-    [[nodiscard]] constexpr V operator[](E val) const noexcept {
-        return values()[sizeof(decltype(to_integral(val))) * 8 - __builtin_clz(to_integral(val)) - 1]; // C++2a: use std::countl_zeroe();
+    [[nodiscard]] constexpr std::string_view to_string() const noexcept {
+        return values()[sizeof(decltype(to_integral(get_underlying(tag)))) * 8 - __builtin_clz(to_integral(get_underlying(tag))) -
+                        1]; // C++2a: use std::countl_zeroe();
     }
-    [[nodiscard]] constexpr V operator[](unsigned char val) const noexcept { return values()[sizeof(decltype(val)) * 8 - +val - 1]; }
-    [[nodiscard]] constexpr std::optional<E> operator[](AC v) const noexcept {
+    [[nodiscard]] constexpr auto from_string_base(std::string_view v) const noexcept {
         const auto res = cexpr::find(values().cbegin(), values().end(), v);
-        return res != values().cend() ? std::optional{E(1u << std::distance(values().cbegin(), res))} : std::nullopt;
+        return res != values().cend() ? std::optional{CRTP{tag, (1u << std::distance(values().cbegin(), res))}} : std::nullopt;
     }
 };
+
+template <class E, class = std::enable_if_t<std::is_base_of_v<EnumSetHelper<E>, E>>> E operator|(E lhs, E rhs) {
+    return {EHTag{}, to_integral(lhs) | to_integral(rhs)};
+}
+
+template <class E, class = std::enable_if_t<std::is_base_of_v<EnumSetHelper<E>, E>>> E& operator|=(E& lhs, E rhs) {
+    return lhs = E{EHTag{}, to_integral(lhs) | to_integral(rhs)};
+}
 
 template <class E> class EnumSetIterator {
     using U = decltype(to_integral(std::declval<E>()));
@@ -147,6 +143,8 @@ class alignas(alignof(char*)) UniqueZstring {
 
     constexpr inline explicit operator const char*() const noexcept { return ptr; }
     constexpr inline explicit operator char*() noexcept { return ptr; }
+
+    constexpr inline explicit operator bool() const noexcept { return ptr; }
 };
 
 namespace ext {
@@ -211,6 +209,14 @@ template <typename T> struct NoallocWFree : private std::allocator<gsl::owner<T>
     inline void destroy(gsl::owner<T>* ptr) const noexcept { freeany(*ptr); }
 };
 
+template <typename T, typename D> struct UniqueSpan : std::unique_ptr<T[], D> {
+    UniqueSpan(T* p, D d) noexcept : std::unique_ptr<T[], D>(p, d) {}
+    inline auto begin() const noexcept { return this->get(); }
+    inline auto end() const noexcept { return this->get() + this->get_deleter()(nullptr); }
+    inline auto cbegin() const noexcept { return this->get(); }
+    inline auto cend() const noexcept { return this->get() + this->get_deleter()(nullptr); }
+};
+
 template <typename T, typename D> struct UniqueNullTerminatedSpan : public std::unique_ptr<T[], D> {
     constexpr UniqueNullTerminatedSpan() noexcept = default;
     UniqueNullTerminatedSpan(T* p, D d) noexcept : std::unique_ptr<T[], D>(p, d) {}
@@ -233,8 +239,8 @@ template <typename T, typename D> struct UniqueFalseTerminatedSpan : public std:
     UniqueFalseTerminatedSpan(T* p, D d) noexcept : std::unique_ptr<T[], D>(p, d) {}
     inline auto begin() const noexcept { return this->get(); }
     inline auto end() const noexcept { return false_it(this->get()); }
-    inline const auto cbegin() const noexcept { return this->get(); }
-    inline const auto cend() const noexcept { return false_it(this->get()); }
+    inline auto cbegin() const noexcept { return this->get(); }
+    inline auto cend() const noexcept { return false_it(this->get()); }
 };
 
 namespace virt::meta {
@@ -242,14 +248,26 @@ namespace impl::any {
 // Need template lambdas to reduce bloat, as types need to be passed around
 }
 namespace light {
-template <typename U, typename CountFRet, typename DataFRet, typename T>
-auto wrap_oparm_owning_fill_static_arr(U underlying, CountFRet (*count_fcn)(U), DataFRet (*data_fcn)(U, T*, CountFRet)) {
+template <typename U, typename CF, typename DF> auto wrap_oparm_owning_fill_static_arr(U underlying, CF&& count_fcn, DF&& data_fcn) {
+    using CountFTraits = ext::function_traits<CF>;
+    static_assert(CountFTraits::arity == 1, "Counting function requires one argument");
+    static_assert(std::is_same_v<typename CountFTraits::template Arg_t<0>, U>, "Counting function requires the underlying ptr as argument");
+    using CountFRet = typename CountFTraits::return_type;
+
+    using DataFTraits = ext::function_traits<DF>;
+    static_assert(DataFTraits::arity == 3, "Data function requires three arguments");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<0>, U>, "Data function requires the underlying ptr as first argument");
+    static_assert(std::is_pointer_v<typename DataFTraits::template Arg_t<0>>, "Data function requires a pointer to the array as second argument");
+    static_assert(std::is_same_v<typename DataFTraits::template Arg_t<2>, CountFRet>,
+                  "Data function requires counting function return type as third argument");
+    using T = std::remove_pointer_t<typename DataFTraits::template Arg_t<1>>;
+
     using RetType = std::optional<std::vector<T>>;
     std::vector<T> ret{};
     ret.resize(count_fcn(underlying));
     if (!ret.empty()) {
         const auto res = data_fcn(underlying, ret.data(), ret.size());
-        if (res != 0)
+        if (res <= 0)
             return RetType{std::nullopt};
     }
     return RetType{ret};
@@ -311,39 +329,35 @@ auto wrap_oparm_owning_fill_autodestroyable_arr(U underlying, CF count_fcn, DF d
     return ret;
 }
 
-template <typename Wrap, typename U, typename DataFRet, typename T, typename... DataFArgs>
-auto wrap_opram_owning_set_autodestroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args)
-    -> UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)> { // This one can shadow
-    using RetType = UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)>;
+template <typename Wrap, template <class, class> typename Span = UniqueSpan, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U,
+          typename DataFRet, typename T, typename... DataFArgs>
+decltype(auto) wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
     Wrap* lease_arr;
     auto res = data_fcn(underlying, reinterpret_cast<T**>(&lease_arr), data_f_args...);
-    if (res == -1)
-        return {nullptr, nullptr};
-    return {lease_arr, [](auto arr) {
-                auto it = arr;
-                while (it)
-                    (it++)->~Wrap();
-                freeany(arr);
-            }};
-}
+    auto deleter = [=](Wrap* arr) {
+        if (arr == nullptr)
+            return res;
 
-template <typename Wrap, void (*dtroy)(Wrap*) = std::destroy_at<Wrap>, typename U, typename DataFRet, typename T, typename... DataFArgs>
-auto wrap_opram_owning_set_destroyable_arr(U underlying, DataFRet (*data_fcn)(U, T**, DataFArgs...), DataFArgs... data_f_args) {
-    if constexpr (dtroy == std::destroy_at<Wrap>) { // GNU WARNING: FAILS TO COMPILE ON GCC < 10 DUE TO AN ICE OVER ADDRESSES OF TEMPLATED FUNCTIONS
-        return wrap_opram_owning_set_autodestroyable_arr<Wrap>(underlying, data_fcn, data_f_args...);
-    }
-
-    using RetType = UniqueFalseTerminatedSpan<Wrap, void (*)(Wrap*)>;
-    Wrap* lease_arr;
-    auto res = data_fcn(underlying, reinterpret_cast<T**>(&lease_arr), data_f_args...);
-    if (res == -1)
-        return RetType{nullptr, nullptr};
-    return RetType(lease_arr, [](Wrap* arr) {
-        auto it = arr;
-        while (it)
-            dtroy(it++);
+        for (auto it = arr; it != arr + res; ++it)
+            dtroy(it);
         freeany(arr);
-    });
+        return -1;
+    };
+    using RetType = Span<Wrap, std::conditional_t<std::is_same_v<Span<char, decltype(std::free)>, UniqueSpan<char, decltype(std::free)>>,
+                                                  decltype(deleter), void (*)(Wrap*)>>;
+
+    if constexpr (std::is_same_v<RetType, UniqueSpan<Wrap, decltype(deleter)>>) {
+        return RetType{res != -1 ? lease_arr : nullptr, deleter};
+    } else {
+        if (res == -1)
+            return RetType{nullptr, nullptr};
+        return RetType{lease_arr, [](auto arr) {
+                           auto it = arr;
+                           while (it)
+                               dtroy(it++);
+                           freeany(arr);
+                       }};
+    }
 }
 } // namespace light
 namespace heavy {

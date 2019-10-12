@@ -10,7 +10,6 @@
 #include <variant>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
-
 #include "fwd.hpp"
 
 namespace virt {
@@ -22,9 +21,9 @@ class TypedParameter : public std::pair<std::string, TypedParamValueType> {
     struct no_name_tag {};
 
   public:
-    explicit TypedParameter(const virTypedParameter&);
+    inline explicit TypedParameter(const virTypedParameter&);
 
-    TypedParameter(const virTypedParameter&, no_name_tag);
+    inline TypedParameter(const virTypedParameter&, no_name_tag);
 };
 
 class TypedParams {
@@ -33,9 +32,9 @@ class TypedParams {
     friend TypedParameter;
     friend TPImpl;
 
-    struct Element;
     struct Iterator;
 
+  public:
     class Element { // TODO implement std::variant's interface
         friend Iterator;
 
@@ -44,8 +43,13 @@ class TypedParams {
         constexpr Element(virTypedParameterPtr underlying) noexcept : underlying(underlying) {}
 
       public:
+        using Type = virTypedParameterType;
+        constexpr gsl::czstring<> name() const noexcept { return underlying->field; }
+        constexpr Type type() const noexcept { return Type(underlying->type); }
+        constexpr decltype(auto) value() const noexcept { return (underlying->value); }
     };
 
+  private:
     virTypedParameterPtr underlying{};
     int size = 0;
     int capacity = 0;
@@ -53,23 +57,34 @@ class TypedParams {
     bool needs_dealloc = false;
 
   public:
+    constexpr TypedParams() = default;
+    constexpr TypedParams(const TypedParams&) = delete;
+    constexpr TypedParams(TypedParams&&) = default;
+    template <class Container> TypedParams(Container); /* container of TypedParam */
     inline ~TypedParams() noexcept;
 
-    void add(gsl::czstring<> name, int);
+    constexpr Iterator begin() const noexcept;
+    constexpr Iterator begin() noexcept;
+    constexpr Iterator end() const noexcept;
+    constexpr Iterator end() noexcept;
 
-    void add(gsl::czstring<> name, unsigned);
+    inline void add(gsl::czstring<> name, int);
 
-    void add(gsl::czstring<> name, long long);
+    inline void add(gsl::czstring<> name, unsigned);
 
-    void add(gsl::czstring<> name, unsigned long long);
+    inline void add(gsl::czstring<> name, long long);
 
-    void add(gsl::czstring<> name, double);
+    inline void add(gsl::czstring<> name, unsigned long long);
 
-    void add(gsl::czstring<> name, bool);
+    inline void add(gsl::czstring<> name, double);
 
-    void add(gsl::czstring<> name, gsl::czstring<>);
+    inline void add(gsl::czstring<> name, bool);
 
-    void add(const TypedParameter&);
+    inline void add(gsl::czstring<> name, gsl::czstring<>);
+
+    inline void add(gsl::czstring<> name, const std::string& s);
+
+    inline void add(const TypedParameter&);
 
     template <typename T> T get(gsl::czstring<> name) const;
 
@@ -79,6 +94,8 @@ class TypedParams {
 };
 
 class TypedParams::Iterator {
+    friend TypedParams;
+
     virTypedParameterPtr it{};
 
     constexpr Iterator(virTypedParameterPtr it) noexcept : it(it) {}
@@ -87,7 +104,7 @@ class TypedParams::Iterator {
     constexpr Iterator& operator++() noexcept { return ++it, *this; }
     constexpr Iterator operator++(int) noexcept { return {it++}; }
     constexpr Iterator& operator--() noexcept { return --it, *this; }
-    constexpr Iterator operator--(int) noexcept { return {it++}; }
+    constexpr Iterator operator--(int) noexcept { return {it--}; }
     constexpr Iterator& operator+=(int v) noexcept { return it += v, *this; }
     constexpr Iterator& operator-=(int v) noexcept { return it -= v, *this; }
     constexpr Iterator operator+(int v) const noexcept { return {it + v}; }
@@ -98,6 +115,11 @@ class TypedParams::Iterator {
     constexpr bool operator!=(const Iterator& oth) const noexcept { return it != oth.it; }
 };
 
+constexpr TypedParams::Iterator TypedParams::begin() const noexcept { return Iterator{underlying}; }
+constexpr TypedParams::Iterator TypedParams::begin() noexcept { return Iterator{underlying}; }
+constexpr TypedParams::Iterator TypedParams::end() const noexcept { return Iterator{underlying + size}; }
+constexpr TypedParams::Iterator TypedParams::end() noexcept { return Iterator{underlying + size}; }
+
 } // namespace virt
 
 struct TPImpl {
@@ -107,7 +129,7 @@ struct TPImpl {
         auto& tp = ret.emplace();
         const auto res = fcn(underlying, &tp.underlying, &tp.size, args...);
         tp.capacity = tp.size;
-        return res == 0 ? ret : std::nullopt;
+        return res == 0 ? std::move(ret) : std::nullopt;
     }
     template <class U, class CountFcn, class DataFcn, class... Args,
               class = std::enable_if_t<std::is_invocable_v<DataFcn, U*, virTypedParameterPtr, int*, Args...>>>
@@ -120,19 +142,21 @@ struct TPImpl {
         tp.underlying = new virTypedParameter[tp.size];
         tp.needs_dealloc = true;
         const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
-        return res == 0 ? ret : std::nullopt;
+        return res >= 0 ? std::move(ret) : std::nullopt;
     }
     template <class U, class DataFcn, class... Args>
     static auto wrap_oparm_fill_tp(U* underlying, DataFcn data_fcn, Args... args) -> std::optional<virt::TypedParams> {
         std::optional<virt::TypedParams> ret{};
         auto& tp = ret.emplace();
         const auto count_res = data_fcn(underlying, nullptr, &tp.size, args...);
-        if (count_res == 0)
+        if (count_res < 0)
             return std::nullopt;
         tp.capacity = tp.size;
         tp.underlying = new virTypedParameter[tp.size];
         tp.needs_dealloc = true;
         const auto res = data_fcn(underlying, tp.underlying, &tp.size, args...);
-        return res == 0 ? ret : std::nullopt;
+        return res >= 0 ? std::move(ret) : std::nullopt;
     }
 };
+
+#include "impl/TypedParams.hpp"

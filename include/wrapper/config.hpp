@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string_view>
 #include <INIReader.h>
 #include "logger.hpp"
 
@@ -18,8 +19,9 @@ class IniConfig {
     bool http_auth_key_required{};
 
     IniConfig() = default;
+    IniConfig(std::string_view config_file_loc) { init(config_file_loc); }
 
-    void init(const std::string& config_file_loc) {
+    void init(std::string_view config_file_loc) {
         config_file = config_file_loc;
         INIReader reader(config_file);
 
@@ -79,9 +81,9 @@ class IniConfig {
         httpURI += http_address + ":" + std::to_string(http_port);
     }
 
-    const std::string& getConnURI() { return connURI; }
+    [[nodiscard]] const std::string& getConnURI() const noexcept { return connURI; }
 
-    const std::string& getHttpURI() { return httpURI; }
+    [[nodiscard]] const std::string& getHttpURI() const noexcept { return httpURI; }
 
-    const bool& isHTTPAuthRequired() { return http_auth_key_required; }
+    [[nodiscard]] bool isHTTPAuthRequired() const noexcept { return http_auth_key_required; }
 };

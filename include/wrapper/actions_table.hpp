@@ -3,8 +3,10 @@
 #include <functional>
 #include <string_view>
 #include <gsl/gsl>
+#include "virt_wrap/Domain.hpp"
 #include "cexpr_algs.hpp"
 #include "depends.hpp"
+#include "json2virt.hpp"
 #include "json_utils.hpp"
 #include "utils.hpp"
 
@@ -40,15 +42,15 @@ using DomainActionsHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes
 class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActionsHdl> {
   private:
     friend NamedCallTable<DomainActionsTable, DomainActionsHdl>;
-    template <typename Flag, typename Flags>
+    template <typename Flag>
     constexpr static const auto getFlag = [](const rapidjson::Value& json_flag, auto error) {
-        if (auto v = Flags{}[std::string_view{json_flag.GetString(), json_flag.GetStringLength()}]; v)
+        if (auto v = Flag::from_string({json_flag.GetString(), json_flag.GetStringLength()}); v)
             return std::optional{*v};
         return error(301), std::optional<Flag>{std::nullopt};
     };
-    template <class F, class Fs> static std::optional<F> getCombinedFlags(const rapidjson::Value& json_flag, JsonRes& json_res) noexcept {
+    template <class F> static std::optional<F> getCombinedFlags(const rapidjson::Value& json_flag, JsonRes& json_res) noexcept {
         auto error = [&](auto... args) { return json_res.error(args...), std::nullopt; };
-        auto getFlag = DomainActionsTable::getFlag<F, Fs>;
+        auto getFlag = DomainActionsTable::getFlag<F>;
 
         F flagset{};
         if (json_flag.IsArray()) {
@@ -76,8 +78,8 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
 
     using Hdl = DomainActionsHdl;
 
-    constexpr static std::array<std::string_view, 5> keys = {"power_mgt", "name", "memory", "max_memory", "autostart"};
-    constexpr static std::array<Hdl, 5> fcns = {
+    constexpr static std::array<std::string_view, 7> keys = {"power_mgt", "name", "memory", "max_memory", "autostart", "send_signal", "send_keys"};
+    constexpr static std::array<Hdl, 7> fcns = {
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             auto pm_message = [&](gsl::czstring<> name, gsl::czstring<> value) {
@@ -88,7 +90,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return DependsOutcome::SUCCESS;
             };
 
-            constexpr auto getShutdownFlag = getFlag<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>;
+            constexpr auto getShutdownFlag = getFlag<virt::Domain::ShutdownFlag>;
 
             const rapidjson::Value* json_flag = nullptr;
             gsl::czstring<> pm_req{};
@@ -107,11 +109,10 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(300);
             }
 
-            const auto dom_state = virt::Domain::State{dom.getInfo().state};
+            const auto dom_state = virt::Domain::State{EHTag{}, dom.getInfo().state}; // Verified use of EHTag
 
-            const auto pm_hdl = [&](gsl::czstring<> req_tag, auto flags, auto mem_fcn, int errc, gsl::czstring<> pm_msg, auto prereqs) {
-                using Flag = typename decltype(flags)::First;
-                using FlagsC = typename decltype(flags)::Second;
+            const auto pm_hdl = [&](gsl::czstring<> req_tag, auto flag_ti, auto mem_fcn, int errc, gsl::czstring<> pm_msg, auto prereqs) {
+                using Flag = typename decltype(flag_ti)::type;
                 return [=, &json_flag, &json_res]() {
                     const auto local_error = [&] {
                         const auto err_msg = error_messages[errc];
@@ -124,7 +125,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                             return DependsOutcome::FAILURE;
                         if (json_flag) {
                             if constexpr (test_sfinae([](auto f) -> std::enable_if_t<!std::is_same_v<decltype(f), Empty>> {}, Flag{})) {
-                                constexpr const auto getFlags = getCombinedFlags<Flag, FlagsC>;
+                                constexpr const auto getFlags = getCombinedFlags<Flag>;
                                 const auto o_flagset = getFlags(*json_flag, json_res);
                                 if (!o_flagset)
                                     return DependsOutcome::FAILURE;
@@ -144,15 +145,14 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                     return DependsOutcome::SKIPPED;
                 };
             };
-            constexpr auto no_flags = tp<Empty, Empty>;
+            constexpr auto no_flags = ti<Empty>;
             return action_scope(
-                pm_hdl("shutdown", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.shutdown), 200,
-                       "Domain is being shutdown", PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
-                pm_hdl("destroy", tp<virt::Domain::DestroyFlag, virt::Domain::DestroyFlagsC>, PM_LIFT(dom.destroy), 209, "Domain destroyed",
+                pm_hdl("shutdown", ti<virt::Domain::ShutdownFlag>, PM_LIFT(dom.shutdown), 200, "Domain is being shutdown", PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
+                pm_hdl("destroy", ti<virt::Domain::DestroyFlag>, PM_LIFT(dom.destroy), 209, "Domain destroyed",
                        PM_PREREQ(if (!dom.isActive()) return error(210);)),
-                pm_hdl("start", tp<virt::Domain::CreateFlag, virt::Domain::CreateFlagsC>, PM_LIFT(dom.create), 202, "Domain started",
+                pm_hdl("start", ti<virt::Domain::CreateFlag>, PM_LIFT(dom.create), 202, "Domain started",
                        PM_PREREQ(if (dom.isActive()) return error(203);)),
-                pm_hdl("reboot", tp<virt::Domain::ShutdownFlag, virt::Domain::ShutdownFlagsC>, PM_LIFT(dom.reboot), 213, "Domain is being rebooted",
+                pm_hdl("reboot", ti<virt::Domain::ShutdownFlag>, PM_LIFT(dom.reboot), 213, "Domain is being rebooted",
                        PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
                 pm_hdl("reset", no_flags, PM_LIFT(dom.reset), 214, "Domain was reset", PM_PREREQ(if (!dom.isActive()) return error(210);)),
                 pm_hdl("suspend", no_flags, PM_LIFT(dom.suspend), 215, "Domain suspended",
@@ -193,6 +193,33 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(208);
             return DependsOutcome::SUCCESS;
         },
-    };
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
+            const auto res = wrap_fcn(
+                val, json_res, [&](auto... args) { return dom.sendProcessSignal(args...); }, WArg<JTag::Int64>{"pid"},
+                WArg<JTag::Enum, JTag::None, virt::Domain::ProcessSignal>{"signal"});
+            return res ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
+        },
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
+            auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
+            if (!val.IsObject())
+                return error(0);
+
+            const auto keycodeset_opt = extract_param<JTag::Enum, JTag::None, virt::Domain::KeycodeSet>(val, "keycode_set", json_res);
+            if (!keycodeset_opt)
+                return error(0);
+            const auto keycodeset = *keycodeset_opt;
+
+            const auto holdtime_opt = extract_param<JTag::Uint32>(val, "hold_time", json_res);
+            if (!holdtime_opt)
+                return error(0);
+            const auto holdtime = *holdtime_opt;
+
+            const auto keys_opt = extract_param<JTag::Array, JTag::Uint32>(val, "keys", json_res);
+            if (!keys_opt)
+                return error(0);
+            const auto keys = *keys_opt;
+
+            return dom.sendKey(keycodeset, holdtime, gsl::span(keys.data(), keys.size())) ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
+        }};
     static_assert(keys.size() == fcns.size());
 } constexpr static const domain_actions_table{};

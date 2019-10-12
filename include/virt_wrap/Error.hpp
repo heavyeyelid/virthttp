@@ -36,7 +36,7 @@ struct Error {
     friend Error extractLastError();
 
   public:
-    inline explicit operator bool() const noexcept { return message.c_str() != nullptr; }
+    inline explicit operator bool() const noexcept { return message.data() != nullptr; }
 };
 
 inline ErrorRef getLastError() noexcept { return ErrorRef{virGetLastError()}; }

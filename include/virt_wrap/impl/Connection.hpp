@@ -11,8 +11,9 @@
 #include <libvirt/libvirt.h>
 #include "../Connection.hpp"
 #include "../Domain.hpp"
+#include "../Network.hpp"
+#include "../NodeDevice.hpp"
 #include "../fwd.hpp"
-#include "../type_ops.hpp"
 #include "../utility.hpp"
 
 namespace virt {
@@ -229,6 +230,14 @@ Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noex
 }
 Domain Connection::domainLookupByUUIDString(const std::string& uuid_str) const noexcept { return domainLookupByUUIDString(uuid_str.c_str()); }
 
+bool Connection::domainSaveImageDefineXML(gsl::czstring<> file, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept {
+    return virDomainSaveImageDefineXML(underlying, file, dxml, to_integral(flags)) >= 0;
+}
+
+[[nodiscard]] UniqueZstring Connection::domainSaveImageGetXMLDesc(gsl::czstring<> file, Domain::SaveImageXMLFlag flags) const noexcept {
+    return UniqueZstring{virDomainSaveImageGetXMLDesc(underlying, file, to_integral(flags))};
+}
+
 Network Connection::networkLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
     return Network{virNetworkLookupByUUID(underlying, uuid)};
 }
@@ -283,7 +292,8 @@ std::vector<Network> Connection::extractAllNetworks(List::Networks::Flag flags) 
 }
 
 auto Connection::listAllDevices(List::Devices::Flags flags) const noexcept {
-    return meta::light::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));
+    return meta::light::wrap_opram_owning_set_destroyable_arr<NodeDevice, UniqueNullTerminatedSpan>(underlying, virConnectListAllNodeDevices,
+                                                                                                    to_integral(flags));
 }
 std::vector<NodeDevice> Connection::extractAllDevices(List::Devices::Flags flags) const {
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));
@@ -318,7 +328,7 @@ constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::
 }
 
 constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Domains::Flag lhs, Connection::List::Domains::Flag rhs) noexcept {
-    return Connection::List::Domains::Flag(to_integral(lhs) | to_integral(rhs));
+    return Connection::List::Domains::Flag(EHTag{}, to_integral(lhs) | to_integral(rhs));
 }
 constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept {
     return lhs = lhs | rhs;

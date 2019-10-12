@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <lift.hpp>
 #include <libvirt/libvirt.h>
+#include <lift.hpp>
 #include "../TypesParam.hpp"
 #include "../utility.hpp"
 
@@ -40,7 +40,12 @@ TypedParameter::TypedParameter(const virTypedParameter& from, virt::TypedParamet
 
 TypedParameter::TypedParameter(const virTypedParameter& from) : TypedParameter(from, no_name_tag{}) { first = +from.field; }
 
-inline TypedParams::~TypedParams() noexcept {
+template <class Container> TypedParams::TypedParams(Container cont) : needs_free(true) {
+    for (const TypedParameter& tp : cont)
+        add(tp);
+}
+
+TypedParams::~TypedParams() noexcept {
     if (underlying && needs_free)
         virTypedParamsFree(underlying, size);
     if (underlying && needs_dealloc)
@@ -61,14 +66,11 @@ void TypedParams::add(gsl::czstring<> name, bool b) { virTypedParamsAddBoolean(&
 
 void TypedParams::add(gsl::czstring<> name, gsl::czstring<> czs) { virTypedParamsAddString(&underlying, &size, &capacity, name, czs); }
 
+void TypedParams::add(gsl::czstring<> name, const std::string& s) { virTypedParamsAddString(&underlying, &size, &capacity, name, s.c_str()); }
+
 void TypedParams::add(const TypedParameter& tp) {
     const auto name = tp.first.data();
-    std::visit(Visitor{// I hate when I can't just lift a member overload set
-                       // //C++2a: TODO change captures to [=, this]
-                       [&, this](int v) { add(name, v); }, [&, this](unsigned v) { add(name, v); }, [&, this](long long v) { add(name, v); },
-                       [&, this](unsigned long long v) { add(name, v); }, [&, this](double v) { add(name, v); }, [&, this](bool v) { add(name, v); },
-                       [&, this](std::string v) { add(name, v.c_str()); }},
-               tp.second);
+    std::visit([&, name](auto&& p) { this->add(name, p); }, tp.second);
 }
 
 template <typename T> T TypedParams::get(gsl::czstring<> name) const {

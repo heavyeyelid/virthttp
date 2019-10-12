@@ -18,7 +18,9 @@ template <class T, class U> struct TypePair {
 
 template <class T, class U> TypePair<T, U> tp{};
 
-template <typename E> constexpr inline decltype(auto) to_integral(E e) { return static_cast<typename std::underlying_type<E>::type>(e); }
+template <class T> struct TypeIdentity { using type = T; };
+
+template <class T> constexpr auto ti = TypeIdentity<T>{};
 
 constexpr auto pow10(std::size_t n) {
     auto ret = 1u;
@@ -37,10 +39,4 @@ constexpr unsigned strntou(const char* str, std::size_t len) {
 template <typename Container, typename T> unsigned reverse_search(const Container& c, const T& e) {
     const auto it = std::find(c.begin(), c.end(), e);
     return static_cast<unsigned>(std::distance(c.begin(), it));
-}
-
-template <typename T, typename V, size_t... I> void visit_impl(T&& t, V&& v, std::index_sequence<I...>) { (..., v(std::get<I>(t))); }
-
-template <typename T, typename V> void visit(T&& t, V&& v) {
-    visit_impl(std::forward<T>(t), std::forward<V>(v), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>());
 }

@@ -1,5 +1,7 @@
 #pragma once
 #include <rapidjson/document.h>
+#include <virt_wrap/Error.hpp>
+#include <virt_wrap/utility.hpp>
 #include "wrapper/error_msg.hpp"
 
 template <typename T> struct JsonSpan {
@@ -14,8 +16,8 @@ template <typename T> struct JsonSpan {
 
 struct JsonRes : public rapidjson::Document {
   private:
-    decltype(auto) json() const noexcept { return static_cast<const rapidjson::Document&>(*this); };
-    decltype(auto) json() noexcept { return static_cast<rapidjson::Document&>(*this); };
+    [[nodiscard]] decltype(auto) json() const noexcept { return static_cast<const rapidjson::Document&>(*this); };
+    [[nodiscard]] decltype(auto) json() noexcept { return static_cast<rapidjson::Document&>(*this); };
 
   public:
     JsonRes() {
@@ -36,11 +38,19 @@ struct JsonRes : public rapidjson::Document {
     template <typename T> void message(T&& val) { (*this)["messages"].PushBack(val, GetAllocator()); }
     void error(int code) {
         (*this)["success"] = false;
-        const auto msg = error_messages[code];
         rapidjson::Value err{};
         err.SetObject();
         err.AddMember("code", code, GetAllocator());
-        err.AddMember("message", rapidjson::StringRef(msg.data(), msg.length()), GetAllocator());
+        if (code == -2) { // use libvirt error
+            auto vir_err = virt::extractLastError();
+            auto& msg = vir_err.message;
+            if (!vir_err)
+                UNREACHABLE;
+            err.AddMember("message", rapidjson::Value(msg.data(), msg.length(), GetAllocator()), GetAllocator());
+        } else {
+            const auto msg = error_messages[code];
+            err.AddMember("message", rapidjson::StringRef(msg.data(), msg.length()), GetAllocator());
+        }
         (*this)["errors"].PushBack(err, GetAllocator());
     };
 };
