@@ -144,7 +144,7 @@ class DomainHandlers : public HandlerMethods {
                          return std::pair{std::move(ret), true};
                      }),
             subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), [&](const auto& otp) {
-                return otp ? std::pair{to_json(*otp, json_res.GetAllocator()), true} : (error(-999), std::pair{rapidjson::Value{}, false});
+                return otp ? std::pair{to_json(*otp, json_res.GetAllocator()), true} : (error(-2), std::pair{rapidjson::Value{}, false});
             }))(4, target, res_val, [&](auto... args) { return error(args...); });
     }
     DependsOutcome alter(const rapidjson::Value& action) override {

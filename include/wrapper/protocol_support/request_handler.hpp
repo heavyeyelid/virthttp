@@ -75,7 +75,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     // Handle cases where the client wants to retrieve an async result
     if (path_parts[0] == "async") {
         if (path_parts.size() != 2)
-            return send(bad_request("Bad invalid request target"));
+            return send(bad_request("Invalid request target"));
 
         if (auto opt = target.getBool("async"); opt && *opt)
             return send(bad_request("Async retrieve cannot be async'ed"));

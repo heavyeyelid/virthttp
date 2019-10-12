@@ -79,11 +79,11 @@ rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Bo
             return error(1);
         auto path_parts = target.getPathParts();
         if (path_parts.empty())
-            return error(-999); // Empty request (/)
+            return error(4); // Empty request (/)
         if (path_parts.front() != "libvirt")
-            return error(-999); // Path does not start by /libvirt
+            return error(5); // Path does not start by /libvirt
         if (path_parts.size() <= 1)
-            return error(-999); // Path is only /libvirt
+            return error(6); // Path is only /libvirt
 
         logger.debug("Opening connection to ", config.getConnURI());
         virt::Connection conn{config.connURI.c_str()};
@@ -95,7 +95,7 @@ rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Bo
 
         const auto it = std::find(keys.begin(), keys.end(), path_parts[1]);
         if (it == keys.end())
-            return error(2);
+            return error(7);
 
         int i = std::distance(keys.begin(), it);
         return visit(fcns, [&](const auto& e) {
