@@ -49,8 +49,7 @@ template <class F, class TJ, class TI> auto subquery(std::string_view name, std:
                 return error(301), DependsOutcome::FAILURE;
             flag = *opt_flags;
             auto&& [res, success] = to_json(lifted(flag));
-            if (success)
-                res_val = res;
+            return success ? (res_val = res, DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };

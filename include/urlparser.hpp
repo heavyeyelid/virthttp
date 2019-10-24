@@ -16,7 +16,7 @@ constexpr auto target_pattern = ctll::fixed_string{R"(^($|/[^#?\s]+)?(.*?)?(#[A-
 
 static constexpr auto target_match(std::string_view sv) noexcept { return ctre::match<target_pattern>(sv); }
 
-constexpr auto target_queries = ctll::fixed_string{R"([&;]?([^=&;]*)=([^=&;]*))"};
+constexpr auto target_queries = ctll::fixed_string{R"([&;]?([^=&;]+)=?([^=&;]*))"};
 constexpr auto target_path_parts = ctll::fixed_string{R"(/([^/]+))"};
 
 #ifndef HE_WA_CTRE_URL_SPLIT

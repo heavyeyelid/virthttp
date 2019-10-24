@@ -83,7 +83,7 @@ class DomainHandlers : public HandlerMethods {
             return DependsOutcome::SUCCESS;
         }
 
-        return parameterized_depends_scope(
+        const auto outcome = parameterized_depends_scope(
             subquery(
                 "xml_desc", "options", SUBQ_LIFT(dom.getXMLDesc),
                 [&](auto xml) {
@@ -146,6 +146,9 @@ class DomainHandlers : public HandlerMethods {
             subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), [&](const auto& otp) {
                 return otp ? std::pair{to_json(*otp, json_res.GetAllocator()), true} : (error(-2), std::pair{rapidjson::Value{}, false});
             }))(4, target, res_val, [&](auto... args) { return error(args...); });
+        if (outcome == DependsOutcome::SUCCESS)
+            json_res.result(std::move(res_val));
+        return outcome;
     }
     DependsOutcome alter(const rapidjson::Value& action) override {
         const auto& action_obj = *action.MemberBegin();
