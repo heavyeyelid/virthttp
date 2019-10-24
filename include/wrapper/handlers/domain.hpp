@@ -35,7 +35,7 @@ struct DomainUnawareHandlers : public HandlerContext {
         if (auto snapshot = target.getBool("has_snapshot"); snapshot)
             flags |= *snapshot ? virt::Connection::List::Domains::Flag::HAS_SNAPSHOT : virt::Connection::List::Domains::Flag::NO_SNAPSHOT;
 
-        const auto opt_flags = target_get_composable_flag<virt::Connection::List::Domains::Flag>(target, "status");
+        const auto opt_flags = target_get_composable_flag<virt::Connection::List::Domains::Flag>(target, "state");
         if (!opt_flags)
             return error(301), std::nullopt;
         return {flags | *opt_flags};
