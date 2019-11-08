@@ -28,7 +28,12 @@ inline Network::~Network() noexcept {
     return std::unique_ptr<char[], void (*)(char*)>(virNetworkGetBridgeName(underlying), freeany<char[]>);
 }
 
-[[nodiscard]] inline Connection Network::getConnect() const noexcept { return Connection{virNetworkGetConnect(underlying)}; }
+[[nodiscard]] inline Connection Network::getConnect() const noexcept {
+    const auto res = virNetworkGetConnect(underlying);
+    if (res)
+        virConnectRef(res);
+    return Connection{res};
+}
 
 [[nodiscard]] inline passive<const char*> Network::getName() const noexcept { return virNetworkGetName(underlying); }
 

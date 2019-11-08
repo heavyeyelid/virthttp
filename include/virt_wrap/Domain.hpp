@@ -2,7 +2,8 @@
 // Created by _as on 2019-01-31.
 //
 
-#pragma once
+#ifndef VIRTPP_DOMAIN_HPP
+#define VIRTPP_DOMAIN_HPP
 
 #include <filesystem>
 #include <stdexcept>
@@ -106,7 +107,7 @@ class Domain {
             INTERFACE = VIR_DOMAIN_STATS_INTERFACE, // domain interfaces info
             BLOCK = VIR_DOMAIN_STATS_BLOCK,         // domain block info
             PERF = VIR_DOMAIN_STATS_PERF,           // domain perf event info
-            // IOTHREAD	=	VIR_DOMAIN_STATS_IOTHREAD, // iothread poll info
+            IOTHREAD = VIR_DOMAIN_STATS_IOTHREAD,   // iothread poll info
         };
 
         class Record;
@@ -830,3 +831,5 @@ class Domain::heavy::IOThreadInfo {
 } // namespace virt
 
 #include "impl/Domain.hpp"
+
+#endif

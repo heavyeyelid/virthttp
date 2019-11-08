@@ -160,7 +160,12 @@ inline bool Domain::fsTrim(gsl::czstring<> mountpoint, unsigned long long minimu
     return virDomainGetBlockJobInfo(underlying, disk, &info, to_integral(flags)) >= 0 ? ret : std::nullopt;
 }
 
-[[nodiscard]] Connection Domain::getConnect() const noexcept { return Connection{virDomainGetConnect(underlying)}; }
+[[nodiscard]] Connection Domain::getConnect() const noexcept {
+    const auto res = virDomainGetConnect(underlying);
+    if (res)
+        virConnectRef(res);
+    return Connection{res};
+}
 
 [[nodiscard]] std::optional<virDomainControlInfo> Domain::getControlInfo() const noexcept {
     virDomainControlInfo info;

@@ -20,5 +20,9 @@ class TypedParams;
 
 class CpuMap;
 
+class StoragePool;
+
+class StorageVol;
+
 class Stream;
 }

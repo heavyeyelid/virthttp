@@ -14,6 +14,7 @@ class Stream {
   public:
     friend Connection;
     friend Domain;
+    friend StorageVol;
 
     class Flag;
     class RecvFlag;

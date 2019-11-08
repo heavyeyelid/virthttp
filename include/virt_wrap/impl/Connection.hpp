@@ -13,6 +13,7 @@
 #include "../Domain.hpp"
 #include "../Network.hpp"
 #include "../NodeDevice.hpp"
+#include "../StoragePool.hpp"
 #include "../fwd.hpp"
 #include "../utility.hpp"
 
@@ -113,6 +114,15 @@ void Connection::setKeepAlive(int interval, unsigned count) {
     if (virConnectSetKeepAlive(underlying, interval, count))
         throw std::runtime_error{"virConnectSetKeepAlive"};
 }
+
+[[nodiscard]] inline gsl::zstring<> Connection::findStoragePoolSources(gsl::czstring<> type, gsl::czstring<> srcSpec) const noexcept {
+    return virConnectFindStoragePoolSources(underlying, type, srcSpec, 0u);
+}
+#if LIBVIR_VERSION_NUMBER >= 5002000
+[[nodiscard]] inline gsl::zstring<> Connection::getStoragePoolCapabilities() const noexcept {
+    return virConnectGetStoragePoolCapabilities(underlying, 0u);
+}
+#endif
 
 inline gsl::zstring<> Connection::getCapabilities() const noexcept { return virConnectGetCapabilities(underlying); }
 
@@ -315,6 +325,41 @@ NodeDevice Connection::deviceLookupByName(gsl::czstring<> name) const noexcept {
 
 NodeDevice Connection::deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept {
     return NodeDevice{virNodeDeviceLookupSCSIHostByWWN(underlying, wwnn, wwpn, 0)};
+}
+
+[[nodiscard]] inline auto Connection::listAllStoragePools(List::StoragePool::Flag flags) const noexcept {
+    return meta::light::wrap_opram_owning_set_destroyable_arr<StoragePool>(underlying, virConnectListAllStoragePools, to_integral(flags));
+}
+[[nodiscard]] inline std::vector<StoragePool> Connection::extractAllStoragePools(List::StoragePool::Flag flags) const {
+    return meta::heavy::wrap_opram_owning_set_destroyable_arr<StoragePool>(underlying, virConnectListAllStoragePools, to_integral(flags));
+}
+[[nodiscard]] inline auto Connection::listDefinedStoragePoolsNames() const noexcept {
+    return meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfDefinedStoragePools, virConnectListDefinedStoragePools);
+}
+[[nodiscard]] inline auto Connection::listStoragePoolsNames() const noexcept {
+    return meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfStoragePools, virConnectListStoragePools);
+}
+[[nodiscard]] inline int Connection::numOfDefinedStoragePools() const noexcept { return virConnectNumOfDefinedStoragePools(underlying); }
+[[nodiscard]] inline int Connection::numOfStoragePools() const noexcept { return virConnectNumOfStoragePools(underlying); }
+
+inline StoragePool Connection::storagePoolLookupByName(gsl::czstring<> name) const noexcept {
+    return StoragePool{virStoragePoolLookupByName(underlying, name)};
+}
+inline StoragePool Connection::storagePoolLookupByTargetPath(gsl::czstring<> path) const noexcept {
+    return StoragePool{virStoragePoolLookupByTargetPath(underlying, path)};
+}
+inline StoragePool Connection::storagePoolLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
+    return StoragePool{virStoragePoolLookupByUUID(underlying, uuid)};
+}
+inline StoragePool Connection::storagePoolLookupByUUIDString(gsl::czstring<> uuidstr) const noexcept {
+    return StoragePool{virStoragePoolLookupByUUIDString(underlying, uuidstr)};
+}
+
+[[nodiscard]] inline StorageVol Connection::storageVolLookupByKey(gsl::czstring<> key) const noexcept {
+    return StorageVol{virStorageVolLookupByKey(underlying, key)};
+}
+[[nodiscard]] inline StorageVol Connection::storageVolLookupByPath(gsl::czstring<> path) const noexcept {
+    return StorageVol{virStorageVolLookupByPath(underlying, path)};
 }
 
 inline bool Connection::restore(gsl::czstring<> from) noexcept { return virDomainRestore(underlying, from) == 0; }

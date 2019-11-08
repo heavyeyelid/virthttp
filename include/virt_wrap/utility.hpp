@@ -57,7 +57,7 @@ template <class CRTP> class EnumHelper {
     constexpr auto& get_underlying(EHTag) const noexcept { return static_cast<const CRTP&>(*this).underlying; }
     constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
-    constexpr static EHTag tag;
+    constexpr static EHTag tag{};
 
   public:
     [[nodiscard]] constexpr std::string_view to_string() const noexcept { return values()[to_integral(get_underlying(tag))]; }
@@ -71,7 +71,7 @@ template <class CRTP> class EnumSetHelper {
     constexpr auto& get_underlying(EHTag) const noexcept { return static_cast<const CRTP&>(*this).underlying; }
     constexpr auto& values() const noexcept { return static_cast<const CRTP&>(*this).values; }
 
-    constexpr static EHTag tag;
+    constexpr static EHTag tag{};
 
   public:
     [[nodiscard]] constexpr std::string_view to_string() const noexcept {

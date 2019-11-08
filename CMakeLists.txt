@@ -57,10 +57,14 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/Network.hpp
             include/virt_wrap/NodeDevice.hpp
             include/virt_wrap/CpuMap.hpp
+            include/virt_wrap/StoragePool.hpp
+            include/virt_wrap/StorageVol.hpp
             include/virt_wrap/Stream.hpp
             include/virt_wrap/impl/Stream.hpp
-            include/virt_wrap/enums/Domain/Domain.hpp
             include/virt_wrap/enums/Base.hpp
+            include/virt_wrap/enums/Connection/Connection.hpp
+            include/virt_wrap/enums/Connection/ListDomainFlag.hpp
+            include/virt_wrap/enums/Connection/ListStoragePoolsFlag.hpp
             include/virt_wrap/enums/Domain/BlockCommitFlag.hpp
             include/virt_wrap/enums/Domain/BlockCopyFlag.hpp
             include/virt_wrap/enums/Domain/BlockJobAbortFlag.hpp
@@ -74,6 +78,7 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/enums/Domain/CreateFlag.hpp
             include/virt_wrap/enums/Domain/DestroyFlag.hpp
             include/virt_wrap/enums/Domain/DeviceModifyFlag.hpp
+            include/virt_wrap/enums/Domain/Domain.hpp
             include/virt_wrap/enums/Domain/GetJobStatsFlag.hpp
             include/virt_wrap/enums/Domain/KeycodeSet.hpp
             include/virt_wrap/enums/Domain/Lifecycle.hpp
@@ -89,16 +94,30 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/virt_wrap/enums/Domain/State.hpp
             include/virt_wrap/enums/Domain/UndefineFlag.hpp
             include/virt_wrap/enums/Domain/SaveRestoreFlag.hpp
-            include/virt_wrap/enums/Connection/ListDomainFlag.hpp
-            include/virt_wrap/enums/Connection/Connection.hpp
+            include/virt_wrap/enums/Storage/PoolBuildFlag.hpp
+            include/virt_wrap/enums/Storage/PoolCreateFlag.hpp
+            include/virt_wrap/enums/Storage/PoolDeleteFlag.hpp
+            include/virt_wrap/enums/Storage/PoolState.hpp
+            include/virt_wrap/enums/Storage/StoragePool.hpp
+            include/virt_wrap/enums/Storage/StorageVol.hpp
+            include/virt_wrap/enums/Storage/VolCreateFlag.hpp
+            include/virt_wrap/enums/Storage/VolDeleteFlag.hpp
+            include/virt_wrap/enums/Storage/VolDownloadFlag.hpp
+            include/virt_wrap/enums/Storage/VolInfoFlag.hpp
+            include/virt_wrap/enums/Storage/VolResizeFlag.hpp
+            include/virt_wrap/enums/Storage/VolType.hpp
+            include/virt_wrap/enums/Storage/VolWipeAlgorithm.hpp
+            include/virt_wrap/enums/Storage/VolUploadFlag.hpp
             include/virt_wrap/enums/Stream/Stream.hpp
             include/virt_wrap/enums/Stream/Flag.hpp
             include/virt_wrap/enums/Stream/RecvFlag.hpp
             include/virt_wrap/impl/Connection.hpp
             include/virt_wrap/impl/Domain.hpp
             include/virt_wrap/impl/Network.hpp
-            include/virt_wrap/impl/TypedParams.hpp
             include/virt_wrap/impl/NodeDevice.hpp
+            include/virt_wrap/impl/StoragePool.hpp
+            include/virt_wrap/impl/StorageVol.hpp
+            include/virt_wrap/impl/TypedParams.hpp
             include/wrapper/actions_table.hpp
             include/wrapper/config.hpp
             include/wrapper/depends.hpp
@@ -128,8 +147,9 @@ if (Boost_FOUND AND LibVirt_FOUND)
             include/flatmap.hpp
             include/json_utils.hpp
             include/urlparser.hpp
-
-            include/wrapper/decoder_support/compression.hpp include/wrapper/decoder_support/libdeflate.hpp)
+            include/wrapper/decoder_support/compression.hpp
+            include/wrapper/decoder_support/libdeflate.hpp
+            )
 
     target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} pthread deflate)
     if (WIN32)

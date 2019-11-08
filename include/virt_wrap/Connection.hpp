@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VIRTPP_CONNECTION_HPP
+#define VIRTPP_CONNECTION_HPP
 
 #include <cstring>
 #include <exception>
@@ -57,6 +58,8 @@ class Connection {
     friend Domain;
     friend Network;
     friend NodeDevice;
+    friend StoragePool;
+    friend StorageVol;
     friend Stream;
 
     virConnectPtr underlying = nullptr;
@@ -104,6 +107,9 @@ class Connection {
                 AUTOSTART = VIR_CONNECT_LIST_NETWORKS_AUTOSTART,
                 NO_AUTOSTART = VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART,
             };
+        };
+        struct StoragePool {
+            class Flag;
         };
     };
     struct GetAllDomains {
@@ -158,6 +164,11 @@ class Connection {
     inline void unregisterCloseCallback(void (*cb)());
 
     inline void setKeepAlive(int interval, unsigned count);
+
+    [[nodiscard]] inline gsl::zstring<> findStoragePoolSources(gsl::czstring<> type, gsl::czstring<>) const noexcept;
+#if LIBVIR_VERSION_NUMBER >= 5002000
+    [[nodiscard]] inline gsl::zstring<> getStoragePoolCapabilities() const noexcept;
+#endif
 
     [[nodiscard]] inline gsl::zstring<> getCapabilities() const noexcept;
 
@@ -247,6 +258,21 @@ class Connection {
     [[nodiscard]] inline NodeDevice deviceLookupByName(gsl::czstring<> name) const noexcept;
 
     [[nodiscard]] inline NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;
+
+    [[nodiscard]] inline auto listAllStoragePools(List::StoragePool::Flag flags) const noexcept;
+    [[nodiscard]] inline std::vector<StoragePool> extractAllStoragePools(List::StoragePool::Flag) const;
+    [[nodiscard]] inline auto listDefinedStoragePoolsNames() const noexcept;
+    [[nodiscard]] inline auto listStoragePoolsNames() const noexcept;
+    [[nodiscard]] inline int numOfDefinedStoragePools() const noexcept;
+    [[nodiscard]] inline int numOfStoragePools() const noexcept;
+
+    [[nodiscard]] inline StoragePool storagePoolLookupByName(gsl::czstring<> name) const noexcept;
+    [[nodiscard]] inline StoragePool storagePoolLookupByTargetPath(gsl::czstring<> path) const noexcept;
+    [[nodiscard]] inline StoragePool storagePoolLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept;
+    [[nodiscard]] inline StoragePool storagePoolLookupByUUIDString(gsl::czstring<> uuidstr) const noexcept;
+
+    [[nodiscard]] inline StorageVol storageVolLookupByKey(gsl::czstring<> key) const noexcept;
+    [[nodiscard]] inline StorageVol storageVolLookupByPath(gsl::czstring<> path) const noexcept;
 };
 
 } // namespace virt
@@ -269,3 +295,5 @@ constexpr inline Connection::List::Devices::Flags operator|(Connection::List::De
 } // namespace virt
 
 #include "impl/Connection.hpp"
+
+#endif
