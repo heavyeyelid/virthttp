@@ -136,3 +136,13 @@ if (Boost_FOUND AND LibVirt_FOUND)
         target_link_libraries(virthttp Ws2_32.lib WSock32.lib)
     endif ()
 endif ()
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "..." FORCE)
+endif()
+
+install(TARGETS virthttp
+        RUNTIME DESTINATION bin)
+
+install(FILES config.ini
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/virthttp)
