@@ -114,6 +114,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
             const auto pm_hdl = [&](gsl::czstring<> req_tag, auto flag_ti, auto mem_fcn, int errc, gsl::czstring<> pm_msg, auto prereqs) {
                 using Flag = typename decltype(flag_ti)::type;
                 return [=, &json_flag, &json_res]() {
+                    const auto mem_fcn_passthru = [=](auto... args) constexpr { return mem_fcn(args...); }; // WA GCC
                     const auto local_error = [&] {
                         const auto err_msg = error_messages[errc];
                         logger.error(err_msg, " :", key_str);
@@ -134,7 +135,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                             } else
                                 return error(301);
                         } else {
-                            if constexpr (test_sfinae([](auto f) { f(); }, mem_fcn)) {
+                            if constexpr (test_sfinae([](auto f) { f(); }, mem_fcn_passthru)) {
                                 if (!mem_fcn())
                                     local_error();
                             } else
