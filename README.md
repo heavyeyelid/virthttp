@@ -52,6 +52,11 @@ curl -X GET "http://localhost:8081/libvirt/domains" \
 For more examples and a usage reference, see the [API documentation](https://github.com/HeavyEyelid/virthttp/wiki/API-documentation)
 
 ## Building
+
+**!! IMPORTANT !!**  
+While compiling for any other target than Linux or BSD based OSes, there is no platform-dependent code in this repository.  
+Also, we currently only test with **Clang [7,8,9]**; GCC support used to be present and we are working on bringing it back again.
+
 ### Dependencies *(debian packages)*
 - libvirt-dev
 - libboost-system-dev
