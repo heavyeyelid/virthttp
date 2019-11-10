@@ -51,6 +51,7 @@ class Domain::SaveRestoreFlag : private VirtEnumStorage<unsigned>,
 
     using VirtEnumBase::VirtEnumBase;
     constexpr SaveRestoreFlag(unsigned u) noexcept { underlying = u; }
+    constexpr SaveRestoreFlag(virDomainSaveRestoreFlags u) noexcept { underlying = u; }
     template <typename T, typename = std::enable_if_t<std::is_base_of_v<EBase, T>>> constexpr SaveRestoreFlag(T) noexcept { underlying = T::value; }
     template <typename T, typename = std::enable_if_t<std::is_base_of_v<EBase, T>>> constexpr SaveRestoreFlag& operator=(T) noexcept {
         underlying = T::value;
@@ -78,9 +79,9 @@ class Domain::SaveRestoreFlag : private VirtEnumStorage<unsigned>,
 
     constexpr SaveRestoreFlag operator|(SaveRestoreFlag f) const noexcept;
     constexpr SaveRestoreFlag operator|(DEFAULT_t) const noexcept { return *this; }
-    constexpr SaveRestoreFlag operator|(BYPASS_CACHE_t) const noexcept { return {underlying | VIR_DOMAIN_SAVE_BYPASS_CACHE}; }
-    constexpr SaveRestoreFlag operator|(RUNNING_t) const noexcept { return {(underlying & ~VIR_DOMAIN_SAVE_PAUSED) | VIR_DOMAIN_SAVE_RUNNING}; }
-    constexpr SaveRestoreFlag operator|(PAUSED_t) const noexcept { return {(underlying & ~VIR_DOMAIN_SAVE_RUNNING) | VIR_DOMAIN_SAVE_PAUSED}; }
+    constexpr SaveRestoreFlag operator|(BYPASS_CACHE_t) const noexcept { return virDomainSaveRestoreFlags(underlying | VIR_DOMAIN_SAVE_BYPASS_CACHE); }
+    constexpr SaveRestoreFlag operator|(RUNNING_t) const noexcept { return virDomainSaveRestoreFlags((underlying & ~VIR_DOMAIN_SAVE_PAUSED) | VIR_DOMAIN_SAVE_RUNNING); }
+    constexpr SaveRestoreFlag operator|(PAUSED_t) const noexcept { return virDomainSaveRestoreFlags((underlying & ~VIR_DOMAIN_SAVE_RUNNING) | VIR_DOMAIN_SAVE_PAUSED); }
 
     constexpr static auto from_string(std::string_view sv) { return EnumSetHelper{}.from_string_base(sv); }
 };
@@ -98,22 +99,22 @@ constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::BYPASS_CACH
     return {VIR_DOMAIN_SAVE_BYPASS_CACHE};
 }
 constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::BYPASS_CACHE_t, Domain::SaveRestoreFlag::RUNNING_t) noexcept {
-    return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_RUNNING};
+    return virDomainSaveRestoreFlags(VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_RUNNING);
 }
 constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::BYPASS_CACHE_t, Domain::SaveRestoreFlag::PAUSED_t) noexcept {
-    return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_PAUSED};
+    return virDomainSaveRestoreFlags(VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_PAUSED);
 }
 constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::RUNNING_t, Domain::SaveRestoreFlag::DEFAULT_t) noexcept {
     return {VIR_DOMAIN_SAVE_RUNNING};
 }
 constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::RUNNING_t, Domain::SaveRestoreFlag::BYPASS_CACHE_t) noexcept {
-    return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_RUNNING};
+    return virDomainSaveRestoreFlags(VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_RUNNING);
 }
 constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::PAUSED_t, Domain::SaveRestoreFlag::DEFAULT_t) noexcept {
     return {VIR_DOMAIN_SAVE_PAUSED};
 }
 constexpr Domain::SaveRestoreFlag operator|(Domain::SaveRestoreFlag::PAUSED_t, Domain::SaveRestoreFlag::BYPASS_CACHE_t) noexcept {
-    return {VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_PAUSED};
+    return virDomainSaveRestoreFlags(VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_PAUSED);
 }
 
 } // namespace virt
