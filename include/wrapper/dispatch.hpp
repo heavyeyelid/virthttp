@@ -39,8 +39,7 @@ class JDispatch {
 
   public:
     template <class JDV>
-    explicit constexpr JDispatch(const JDV& jdv) noexcept
-        : singles(jdv.singles.data(), jdv.singles.size()), ranges(jdv.ranges.data(), jdv.ranges.size()) {}
+    explicit constexpr JDispatch(const JDV& jdv) noexcept : singles(jdv.singles), ranges(jdv.ranges) {}
     template <class Hdl> auto operator()(const rapidjson::Value& jval, Hdl&& hdl) const {
         return [&, this, hdl](HandlerContext& hc) {
             const auto jtype = jval.GetType();

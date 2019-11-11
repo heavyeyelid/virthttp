@@ -52,4 +52,5 @@ template <TransportProto proto> auto handle_async_retrieve(GeneralStore& gstore,
             return Ret{boost::beast::http::status::found, val};
         }
     }
+    UNREACHABLE;
 }

@@ -55,7 +55,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
         F flagset{};
         if (json_flag.IsArray()) {
             const auto json_arr = json_flag.GetArray();
-            if constexpr (test_sfinae([](auto f) -> decltype(f | f) {}, F{})) {
+            if constexpr (test_sfinae([](auto f) -> decltype(f | f) { UNREACHABLE; }, F{})) {
                 for (const auto& json_str : json_arr) {
                     const auto v = getFlag(json_str, error);
                     if (!v)
@@ -148,7 +148,8 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
             };
             constexpr auto no_flags = ti<Empty>;
             return action_scope(
-                pm_hdl("shutdown", ti<virt::Domain::ShutdownFlag>, PM_LIFT(dom.shutdown), 200, "Domain is being shutdown", PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
+                pm_hdl("shutdown", ti<virt::Domain::ShutdownFlag>, PM_LIFT(dom.shutdown), 200, "Domain is being shutdown",
+                       PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
                 pm_hdl("destroy", ti<virt::Domain::DestroyFlag>, PM_LIFT(dom.destroy), 209, "Domain destroyed",
                        PM_PREREQ(if (!dom.isActive()) return error(210);)),
                 pm_hdl("start", ti<virt::Domain::CreateFlag>, PM_LIFT(dom.create), 202, "Domain started",

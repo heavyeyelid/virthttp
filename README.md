@@ -55,7 +55,7 @@ For more examples and a usage reference, see the [API documentation](https://git
 
 **!! IMPORTANT !!**  
 While compiling for any other target than Linux or BSD based OSes, there is no platform-dependent code in this repository.  
-Also, we currently only test with **Clang [7,8,9]**; GCC support used to be present and we are working on bringing it back again.
+Also, we currently only test with **Clang [7,8,9]** and **GCC [8,9]**
 
 ### Dependencies *(debian packages)*
 - libvirt-dev
