@@ -8,9 +8,6 @@
 
 using namespace std::literals;
 
-constexpr std::string_view bsv2stdsv(boost::string_view bsv) noexcept { return {bsv.data(), bsv.length()}; }
-constexpr boost::string_view stdsv2bsv(std::string_view sv) noexcept { return {sv.data(), sv.length()}; }
-
 template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
     std::string_view type;
     KeysT skeys;

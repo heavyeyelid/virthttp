@@ -21,7 +21,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
         res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(boost::beast::http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
-        res.body() = why.to_string();
+        res.body() = why;
         res.prepare_payload();
         return res;
     };
@@ -34,7 +34,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
         res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(boost::beast::http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
-        res.body() = "The resource '" + target.to_string() + "' was not found.";
+        res.body() = "The resource '" + std::string{target} + "' was not found.";
         res.prepare_payload();
         return res;
     };
@@ -45,7 +45,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
         res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
         res.set(boost::beast::http::field::content_type, "text/html");
         res.keep_alive(req.keep_alive());
-        res.body() = "An error occurred: '" + what.to_string() + "'";
+        res.body() = "An error occurred: '" + std::string{what} + "'";
         res.prepare_payload();
         return res;
     };
@@ -66,7 +66,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     };
 
     auto req_method = req.method();
-    auto target = TargetParser{bsv2stdsv(req.target())};
+    auto target = TargetParser{req.target()};
     const auto& path_parts = target.getPathParts();
 
     if (path_parts.empty())
