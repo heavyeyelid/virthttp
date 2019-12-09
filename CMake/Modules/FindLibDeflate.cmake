@@ -12,7 +12,7 @@ find_path(LibDeflate_INCLUDE_DIR
 
 # Finally the library itself
 find_library(LibDeflate_LIBRARY
-        NAMES libdeflate.a
+        NAMES libdeflate.a libdeflate.so libdeflate.dylib libdeflate.lib libdeflate.dll
         )
 
 # Set the include dir variables and the libraries and let libfind_process do the rest.
