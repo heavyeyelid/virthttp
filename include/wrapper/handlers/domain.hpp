@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <tuple>
 #include <rapidjson/rapidjson.h>
 #include <virt_wrap/Error.hpp>
@@ -83,68 +84,64 @@ class DomainHandlers : public HandlerMethods {
             return DependsOutcome::SUCCESS;
         }
 
+        const auto fwd_err = [&](bool fwd, int code) -> bool {
+            if (!fwd)
+                error(code);
+            return fwd;
+        };
+        const auto fwd_as_if_err = [&](int code) { return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); }; };
+
         const auto outcome = parameterized_depends_scope(
             subquery(
-                "xml_desc", "options", SUBQ_LIFT(dom.getXMLDesc),
-                [&](auto xml) {
-                    return xml ? std::pair{rapidjson::Value(xml, json_res.GetAllocator()), true} : (error(-2), std::pair{rapidjson::Value{}, false});
+                "xml_desc", "options", SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2),
+                [&](auto xml) -> rapidjson::Value {
+                    return {xml, json_res.GetAllocator()};
                 },
                 ti<virt::Domain::XmlFlag>),
-            subquery("fs_info", SUBQ_LIFT(dom.getFSInfo),
-                     [&](auto fs_infos) {
-                         if (!fs_infos.get()) {
-                             error(-999); // getting filesystem information failed
-                             return std::pair{rapidjson::Value{}, false};
-                         }
-                         rapidjson::Value jvres;
-                         for (const virDomainFSInfo& fs_info : fs_infos) {
-                             rapidjson::Value sub;
-                             sub.AddMember("name", rapidjson::Value(fs_info.name, json_res.GetAllocator()), json_res.GetAllocator());
-                             sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, json_res.GetAllocator()), json_res.GetAllocator());
-                             sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, json_res.GetAllocator()), json_res.GetAllocator());
-                             {
-                                 rapidjson::Value dev_aliases;
-                                 dev_aliases.SetArray();
-                                 for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
-                                     dev_aliases.PushBack(rapidjson::Value(dev_alias, json_res.GetAllocator()), json_res.GetAllocator());
-                                 sub.AddMember("disk_dev_aliases", dev_aliases, json_res.GetAllocator());
-                             }
-                             jvres.PushBack(sub, json_res.GetAllocator());
-                         }
-                         return std::pair{std::move(jvres), true};
+            subquery(
+                "fs_info", SUBQ_LIFT(dom.getFSInfo),
+                [&](const auto& fs_infos) { return fwd_err(!fs_infos.get(), -999); }, // getting filesystem information failed
+                [&](auto fs_infos) {
+                    rapidjson::Value jvres;
+                    for (const virDomainFSInfo& fs_info : fs_infos) {
+                        rapidjson::Value sub;
+                        sub.AddMember("name", rapidjson::Value(fs_info.name, json_res.GetAllocator()), json_res.GetAllocator());
+                        sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, json_res.GetAllocator()), json_res.GetAllocator());
+                        sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, json_res.GetAllocator()), json_res.GetAllocator());
+                        {
+                            rapidjson::Value dev_aliases;
+                            dev_aliases.SetArray();
+                            for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
+                                dev_aliases.PushBack(rapidjson::Value(dev_alias, json_res.GetAllocator()), json_res.GetAllocator());
+                            sub.AddMember("disk_dev_aliases", dev_aliases, json_res.GetAllocator());
+                        }
+                        jvres.PushBack(sub, json_res.GetAllocator());
+                    }
+                    return jvres;
+                }),
+            subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(-2),
+                     [&](auto hostname) -> rapidjson::Value {
+                         return {static_cast<const char*>(hostname), json_res.GetAllocator()};
                      }),
-            subquery("hostname", SUBQ_LIFT(dom.getHostname),
-                     [&](auto hostname) {
-                         return hostname ? std::pair{rapidjson::Value(static_cast<const char*>(hostname), json_res.GetAllocator()), true}
-                                         : (error(-2), std::pair{rapidjson::Value{}, false});
-                     }),
-            subquery("time", SUBQ_LIFT(dom.getTime),
+            subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2),
                      [&](auto opt_time) {
-                         if (!opt_time) {
-                             error(-2);
-                             return std::pair{rapidjson::Value{}, false};
-                         }
                          rapidjson::Value ret{};
                          ret.SetObject();
                          ret.AddMember("seconds", static_cast<int64_t>(opt_time->seconds), json_res.GetAllocator());
                          ret.AddMember("nanosec", static_cast<unsigned>(opt_time->nanosec), json_res.GetAllocator());
-                         return std::pair{std::move(ret), true};
+                         return ret;
                      }),
-            subquery("scheduler_type", SUBQ_LIFT(dom.getSchedulerType),
-                     [&](auto sp) {
-                         if (!sp.second) {
-                             error(-2);
-                             return std::pair{rapidjson::Value{}, false};
-                         }
-                         rapidjson::Value ret{};
-                         ret.SetObject();
-                         ret.AddMember("type", rapidjson::Value(static_cast<const char*>(sp.first), json_res.GetAllocator()),
-                                       json_res.GetAllocator());
-                         ret.AddMember("params_count", static_cast<int>(sp.second), json_res.GetAllocator());
-                         return std::pair{std::move(ret), true};
-                     }),
-            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), [&](const auto& otp) {
-                return otp ? std::pair{to_json(*otp, json_res.GetAllocator()), true} : (error(-2), std::pair{rapidjson::Value{}, false});
+            subquery(
+                "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
+                [&](auto sp) {
+                    rapidjson::Value ret{};
+                    ret.SetObject();
+                    ret.AddMember("type", rapidjson::Value(static_cast<const char*>(sp.first), json_res.GetAllocator()), json_res.GetAllocator());
+                    ret.AddMember("params_count", static_cast<int>(sp.second), json_res.GetAllocator());
+                    return ret;
+                }),
+            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2), [&](const auto& otp) {
+                return to_json(*otp, json_res.GetAllocator());
             }))(4, target, res_val, [&](auto... args) { return error(args...); });
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));

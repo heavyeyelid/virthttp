@@ -39,7 +39,8 @@ template <class... Fcns> constexpr auto parameterized_depends_scope(Fcns&&... de
 
 namespace subq_impl {}
 
-template <class F, class TJ, class TI> auto subquery(std::string_view name, std::string_view opt_tag, F&& lifted, TJ&& to_json, TI) noexcept {
+template <class F, class VC, class TJ, class TI>
+auto subquery(std::string_view name, std::string_view opt_tag, F&& lifted, VC&& valid_check, TJ&& to_json, TI) noexcept {
     return [&, name, opt_tag](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             using Flag = typename TI::type;
@@ -48,17 +49,17 @@ template <class F, class TJ, class TI> auto subquery(std::string_view name, std:
             if (!opt_flags)
                 return error(301), DependsOutcome::FAILURE;
             flag = *opt_flags;
-            auto&& [res, success] = to_json(lifted(flag));
-            return success ? (res_val = res, DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
+            auto&& res = lifted(flag);
+            return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };
 }
-template <class F, class TJ> auto subquery(std::string_view name, F&& lifted, TJ&& to_json) noexcept {
+template <class F, class VC, class TJ> auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
     return [&, name](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
-            auto&& [res, success] = to_json(lifted());
-            return success ? (res_val = res, DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
+            auto&& res = lifted();
+            return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };
