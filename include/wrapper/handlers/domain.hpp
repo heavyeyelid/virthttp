@@ -123,7 +123,7 @@ class DomainHandlers : public HandlerMethods {
                      [&](auto hostname) -> rapidjson::Value {
                          return {static_cast<const char*>(hostname), json_res.GetAllocator()};
                      }),
-            subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2), opt_to_json),
+            subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2)),
             subquery(
                 "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
                 [&](auto sp) {
@@ -133,8 +133,8 @@ class DomainHandlers : public HandlerMethods {
                     ret.AddMember("params_count", static_cast<int>(sp.second), json_res.GetAllocator());
                     return ret;
                 }),
-            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2), opt_to_json))(
-            4, target, res_val, [&](auto... args) { return error(args...); });
+            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2)))(4, target, res_val, json_res.GetAllocator(),
+                                                                                                       [&](auto... args) { return error(args...); });
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
         return outcome;

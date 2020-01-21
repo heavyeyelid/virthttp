@@ -37,11 +37,30 @@ template <class... Fcns> constexpr auto parameterized_depends_scope(Fcns&&... de
     };
 };
 
-namespace subq_impl {}
+namespace subq_impl {
+
+constexpr auto lifted_to_json = [](auto&& v, auto& al) { return to_json(std::move(v), al); };
+constexpr auto lifted_get_to_json = [](auto&& v, auto& al) { return get_to_json(std::move(v), al); };
+
+template <class, class, class = std::void_t<>> struct has_to_json : std::false_type {};
+template <class T, class A> struct has_to_json<T, A, std::void_t<decltype(to_json(std::declval<T&&>(), std::declval<A&>()))>> : std::true_type {};
+
+template <class, class, class = std::void_t<>> struct has_get_to_json : std::false_type {};
+template <class T, class A>
+struct has_get_to_json<T, A, std::void_t<decltype(get_to_json(std::declval<T&&>(), std::declval<A&>()))>> : std::true_type {};
+
+template <class T, class A> constexpr decltype(auto) auto_serialize(T&& v, A& al) noexcept {
+    if constexpr (has_to_json<T, A>::value)
+        return lifted_to_json(std::move(v), al);
+    if constexpr (has_get_to_json<T, A>::value)
+        return lifted_get_to_json(std::move(v), al);
+}
+
+} // namespace subq_impl
 
 template <class F, class VC, class TJ, class TI>
 auto subquery(std::string_view name, std::string_view opt_tag, TI, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
-    return [&, name, opt_tag](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
+    return [&, name, opt_tag](int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             using Flag = typename TI::type;
             Flag flag{};
@@ -56,10 +75,21 @@ auto subquery(std::string_view name, std::string_view opt_tag, TI, F&& lifted, V
     };
 }
 template <class F, class VC, class TJ> auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
-    return [&, name](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
+    return [&, name](int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             auto&& res = lifted();
             return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
+        }
+        return DependsOutcome::SKIPPED;
+    };
+}
+
+template <class F, class VC> auto subquery(std::string_view name, F&& lifted, VC&& valid_check) noexcept {
+    return [&, name](int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
+        if (target.getPathParts()[sq_lev] == name) {
+            auto&& res = lifted();
+            return valid_check(res) ? (res_val = std::move(subq_impl::auto_serialize(std::move(res), allocator)), DependsOutcome::SUCCESS)
+                                    : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };
