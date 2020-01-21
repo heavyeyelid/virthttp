@@ -3,7 +3,7 @@
 #include <rapidjson/pointer.h>
 #include "virt_wrap/impl/TypedParams.hpp"
 
-template <class JAllocator> rapidjson::Value to_json(const virt::TypedParams& tp, JAllocator&& jalloc) noexcept {
+template <class JAllocator> auto to_json(const virt::TypedParams& tp, JAllocator&& jalloc) noexcept -> rapidjson::Value {
     rapidjson::Value ret;
     for (const virt::TypedParams::Element& v : tp) {
         switch (v.type()) {
@@ -33,4 +33,18 @@ template <class JAllocator> rapidjson::Value to_json(const virt::TypedParams& tp
         }
     }
     return ret;
+}
+
+using VirtWrappedDomainTime = decltype(*std::declval<virt::Domain>().getTime());
+
+template <class JAllocator> auto to_json(VirtWrappedDomainTime time, JAllocator&& jalloc) -> rapidjson::Value {
+    rapidjson::Value ret{};
+    ret.SetObject();
+    ret.AddMember("seconds", static_cast<int64_t>(time.seconds), jalloc);
+    ret.AddMember("nanosec", static_cast<unsigned>(time.nanosec), jalloc);
+    return ret;
+}
+
+template <class T, class JAllocator> auto get_to_json(std::optional<T> opt, JAllocator&& jalloc) -> rapidjson::Value {
+    return to_json(std::move(*opt), std::forward<JAllocator>(jalloc));
 }

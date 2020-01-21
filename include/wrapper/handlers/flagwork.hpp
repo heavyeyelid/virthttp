@@ -40,7 +40,7 @@ template <class... Fcns> constexpr auto parameterized_depends_scope(Fcns&&... de
 namespace subq_impl {}
 
 template <class F, class VC, class TJ, class TI>
-auto subquery(std::string_view name, std::string_view opt_tag, F&& lifted, VC&& valid_check, TJ&& to_json, TI) noexcept {
+auto subquery(std::string_view name, std::string_view opt_tag, TI, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
     return [&, name, opt_tag](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             using Flag = typename TI::type;

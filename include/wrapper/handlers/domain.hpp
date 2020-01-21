@@ -84,6 +84,8 @@ class DomainHandlers : public HandlerMethods {
             return DependsOutcome::SUCCESS;
         }
 
+        const auto opt_to_json = [&](auto opt) { return get_to_json(std::move(opt), json_res.GetAllocator()); };
+
         const auto fwd_err = [&](bool fwd, int code) -> bool {
             if (!fwd)
                 error(code);
@@ -92,12 +94,10 @@ class DomainHandlers : public HandlerMethods {
         const auto fwd_as_if_err = [&](int code) { return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); }; };
 
         const auto outcome = parameterized_depends_scope(
-            subquery(
-                "xml_desc", "options", SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2),
-                [&](auto xml) -> rapidjson::Value {
-                    return {xml, json_res.GetAllocator()};
-                },
-                ti<virt::Domain::XmlFlag>),
+            subquery("xml_desc", "options", ti<virt::Domain::XmlFlag>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2),
+                     [&](auto xml) -> rapidjson::Value {
+                         return {xml, json_res.GetAllocator()};
+                     }),
             subquery(
                 "fs_info", SUBQ_LIFT(dom.getFSInfo),
                 [&](const auto& fs_infos) { return fwd_err(!fs_infos.get(), -999); }, // getting filesystem information failed
@@ -123,14 +123,7 @@ class DomainHandlers : public HandlerMethods {
                      [&](auto hostname) -> rapidjson::Value {
                          return {static_cast<const char*>(hostname), json_res.GetAllocator()};
                      }),
-            subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2),
-                     [&](auto opt_time) {
-                         rapidjson::Value ret{};
-                         ret.SetObject();
-                         ret.AddMember("seconds", static_cast<int64_t>(opt_time->seconds), json_res.GetAllocator());
-                         ret.AddMember("nanosec", static_cast<unsigned>(opt_time->nanosec), json_res.GetAllocator());
-                         return ret;
-                     }),
+            subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2), opt_to_json),
             subquery(
                 "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
                 [&](auto sp) {
@@ -140,9 +133,8 @@ class DomainHandlers : public HandlerMethods {
                     ret.AddMember("params_count", static_cast<int>(sp.second), json_res.GetAllocator());
                     return ret;
                 }),
-            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2), [&](const auto& otp) {
-                return to_json(*otp, json_res.GetAllocator());
-            }))(4, target, res_val, [&](auto... args) { return error(args...); });
+            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2), opt_to_json))(
+            4, target, res_val, [&](auto... args) { return error(args...); });
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
         return outcome;
