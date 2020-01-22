@@ -1,6 +1,7 @@
 #pragma once
 #include <optional>
 #include <string_view>
+#include "../../detect.hpp"
 #include "urlparser.hpp"
 
 #define SUBQ_LIFT(mem_fn) [&](auto... args) { return mem_fn(args...); }
@@ -39,21 +40,19 @@ template <class... Fcns> constexpr auto parameterized_depends_scope(Fcns&&... de
 
 namespace subq_impl {
 
-constexpr auto lifted_to_json = [](auto&& v, auto& al) { return to_json(std::move(v), al); };
-constexpr auto lifted_get_to_json = [](auto&& v, auto& al) { return get_to_json(std::move(v), al); };
+template <class T, class A> using ToJson = decltype(to_json(std::declval<T&&>(), std::declval<A&>()));
+template <class T, class A> using GetToJson = decltype(get_to_json(std::declval<T&&>(), std::declval<A&>()));
 
-template <class, class, class = std::void_t<>> struct has_to_json : std::false_type {};
-template <class T, class A> struct has_to_json<T, A, std::void_t<decltype(to_json(std::declval<T&&>(), std::declval<A&>()))>> : std::true_type {};
-
-template <class, class, class = std::void_t<>> struct has_get_to_json : std::false_type {};
-template <class T, class A>
-struct has_get_to_json<T, A, std::void_t<decltype(get_to_json(std::declval<T&&>(), std::declval<A&>()))>> : std::true_type {};
-
-template <class T, class A> constexpr decltype(auto) auto_serialize(T&& v, A& al) noexcept {
-    if constexpr (has_to_json<T, A>::value)
-        return lifted_to_json(std::move(v), al);
-    if constexpr (has_get_to_json<T, A>::value)
-        return lifted_get_to_json(std::move(v), al);
+template <class T, class A> constexpr decltype(auto) auto_serialize(T&& v, A& al) {
+    using Value = std::remove_reference_t<T>;
+    using Alloc = std::remove_reference_t<A>;
+    if constexpr (nstd::is_detected_v<ToJson, Value, Alloc>)
+        return to_json(std::move(v), al);
+    if constexpr (nstd::is_detected_v<GetToJson, Value, Alloc>)
+        return get_to_json(std::move(v), al);
+    else
+        static_assert(std::is_void_v<Value>, "T is not auto-serializable");
+    UNREACHABLE;
 }
 
 } // namespace subq_impl
@@ -69,7 +68,7 @@ auto subquery(std::string_view name, std::string_view opt_tag, TI, F&& lifted, V
                 return error(301), DependsOutcome::FAILURE;
             flag = *opt_flags;
             auto&& res = lifted(flag);
-            return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
+            return valid_check(res) ? (res_val = std::move(to_json(std::move(res), allocator)), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };
@@ -78,19 +77,13 @@ template <class F, class VC, class TJ> auto subquery(std::string_view name, F&& 
     return [&, name](int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             auto&& res = lifted();
-            return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
+            return valid_check(res) ? (res_val = std::move(to_json(std::move(res), allocator)), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };
 }
 
-template <class F, class VC> auto subquery(std::string_view name, F&& lifted, VC&& valid_check) noexcept {
-    return [&, name](int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
-        if (target.getPathParts()[sq_lev] == name) {
-            auto&& res = lifted();
-            return valid_check(res) ? (res_val = std::move(subq_impl::auto_serialize(std::move(res), allocator)), DependsOutcome::SUCCESS)
-                                    : DependsOutcome::FAILURE;
-        }
-        return DependsOutcome::SKIPPED;
-    };
+template <class F, class VC> auto subquery(std::string_view name, F&& lifted, VC&& valid_check) noexcept -> decltype(auto) {
+    return subquery(name, std::forward<F>(lifted), std::forward<VC>(valid_check),
+                    [](auto&&... args) -> decltype(subq_impl::auto_serialize(args...)) { return subq_impl::auto_serialize(args...); });
 }
