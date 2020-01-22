@@ -72,7 +72,7 @@ template <class T, class A> constexpr decltype(auto) auto_serialize(T&& v, A& al
     using Alloc = std::remove_reference_t<A>;
     if constexpr (nstd::is_detected_v<ToJson, Value, Alloc>)
         return to_json(std::move(v), al);
-    if constexpr (nstd::is_detected_v<GetToJson, Value, Alloc>)
+    else if constexpr (nstd::is_detected_v<GetToJson, Value, Alloc>)
         return get_to_json(std::move(v), al);
     else
         static_assert(std::is_void_v<Value>, "T is not auto-serializable");
@@ -97,7 +97,15 @@ auto subquery(std::string_view name, std::string_view opt_tag, TI, F&& lifted, V
         return DependsOutcome::SKIPPED;
     };
 }
-template <class F, class VC, class TJ> auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
+
+template <class F, class VC, class TI>
+auto subquery(std::string_view name, std::string_view opt_tag, TI ti, F&& lifted, VC&& valid_check) noexcept -> decltype(auto) {
+    return subquery(name, opt_tag, ti, std::forward<F>(lifted), std::forward<VC>(valid_check),
+                    [](auto&&... args) -> decltype(subq_impl::auto_serialize(args...)) { return subq_impl::auto_serialize(args...); });
+}
+
+template <class F, class VC, class TJ, class = std::enable_if_t<!std::is_same_v<F, std::string_view>>>
+auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
     return [&, name](int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             auto&& res = lifted();
@@ -107,7 +115,8 @@ template <class F, class VC, class TJ> auto subquery(std::string_view name, F&& 
     };
 }
 
-template <class F, class VC> auto subquery(std::string_view name, F&& lifted, VC&& valid_check) noexcept -> decltype(auto) {
+template <class F, class VC, class = std::enable_if_t<!std::is_same_v<F, std::string_view>>>
+auto subquery(std::string_view name, F&& lifted, VC&& valid_check) noexcept -> decltype(auto) {
     return subquery(name, std::forward<F>(lifted), std::forward<VC>(valid_check),
                     [](auto&&... args) -> decltype(subq_impl::auto_serialize(args...)) { return subq_impl::auto_serialize(args...); });
 }

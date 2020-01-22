@@ -35,6 +35,12 @@ template <class JAllocator> auto to_json(const virt::TypedParams& tp, JAllocator
     return ret;
 }
 
+template <class JAllocator> auto to_json(const char* cstr, JAllocator&& jalloc) -> rapidjson::Value { return {cstr, jalloc}; }
+
+template <class JAllocator> auto to_json(UniqueZstring zstr, JAllocator&& jalloc) -> rapidjson::Value {
+    return to_json(static_cast<const char*>(zstr), std::forward<JAllocator>(jalloc));
+}
+
 using VirtWrappedDomainTime = decltype(*std::declval<virt::Domain>().getTime());
 
 template <class JAllocator> auto to_json(VirtWrappedDomainTime time, JAllocator&& jalloc) -> rapidjson::Value {

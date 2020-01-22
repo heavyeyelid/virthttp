@@ -93,36 +93,27 @@ class DomainHandlers : public HandlerMethods {
         const auto fwd_as_if_err = [&](int code) { return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); }; };
 
         const auto outcome = parameterized_depends_scope(
-            subquery("xml_desc", "options", ti<virt::Domain::XmlFlag>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2),
-                     [&](auto xml, auto& jalloc) -> rapidjson::Value {
-                         return {xml, jalloc};
+            subquery("xml_desc", "options", ti<virt::Domain::XmlFlag>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
+            subquery("fs_info", SUBQ_LIFT(dom.getFSInfo), fwd_as_if_err(-999), // getting filesystem information failed
+                     [&](auto fs_infos, auto& jalloc) {
+                         rapidjson::Value jvres;
+                         for (const virDomainFSInfo& fs_info : fs_infos) {
+                             rapidjson::Value sub;
+                             sub.AddMember("name", rapidjson::Value(fs_info.name, jalloc), jalloc);
+                             sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, jalloc), jalloc);
+                             sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, jalloc), jalloc);
+                             {
+                                 rapidjson::Value dev_aliases;
+                                 dev_aliases.SetArray();
+                                 for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
+                                     dev_aliases.PushBack(rapidjson::Value(dev_alias, jalloc), jalloc);
+                                 sub.AddMember("disk_dev_aliases", dev_aliases, jalloc);
+                             }
+                             jvres.PushBack(sub, jalloc);
+                         }
+                         return jvres;
                      }),
-            subquery(
-                "fs_info", SUBQ_LIFT(dom.getFSInfo),
-                [&](const auto& fs_infos) { return fwd_err(!fs_infos.get(), -999); }, // getting filesystem information failed
-                [&](auto fs_infos, auto& jalloc) {
-                    rapidjson::Value jvres;
-                    for (const virDomainFSInfo& fs_info : fs_infos) {
-                        rapidjson::Value sub;
-                        sub.AddMember("name", rapidjson::Value(fs_info.name, jalloc), jalloc);
-                        sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, jalloc), jalloc);
-                        sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, jalloc), jalloc);
-                        {
-                            rapidjson::Value dev_aliases;
-                            dev_aliases.SetArray();
-                            for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
-                                dev_aliases.PushBack(rapidjson::Value(dev_alias, jalloc), jalloc);
-                            sub.AddMember("disk_dev_aliases", dev_aliases, jalloc);
-                        }
-                        jvres.PushBack(sub, jalloc);
-                    }
-                    return jvres;
-                }),
-            subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(-2),
-                     [&](auto hostname, auto& jalloc) -> rapidjson::Value {
-                         return {static_cast<const char*>(hostname), jalloc};
-                     }),
-            subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2)),
+            subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(-2)), subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2)),
             subquery(
                 "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
                 [&](auto sp, auto& jalloc) {
