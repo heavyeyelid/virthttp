@@ -4,33 +4,57 @@
 #include "../../detect.hpp"
 #include "urlparser.hpp"
 
-#define SUBQ_LIFT(mem_fn) [&](auto... args) { return mem_fn(args...); }
-
+#define SUBQ_LIFT(mem_fn) [&](auto&&... args) noexcept(noexcept(mem_fn(std::forward<decltype(args)>(args)...))) \
+                            -> decltype(mem_fn(std::forward<decltype(args)>(args)...)) \
+                            { return mem_fn(std::forward<decltype(args)>(args)...); }
+/**
+ * \internal
+ * \brief Extracts a flag from the HTTP target
+ *
+ * Extracts by tag a flag from a TargetParser.
+ * The flag values must be comma-separated and only the first appearance of `tag` within the target is considered.
+ * If the flag is not composable (i.e. `F{} | F{}` is ill-formed), only the first value is considered.
+ *
+ * @tparam F the type of flag; value `Empty` SFINAE'ed out
+ * @param[in] target the target to read the query from
+ * @param[in] tag the key of the query where the flag values are
+ * @return std::optional<F> the flag, or std::nullopt if an error occurred when reading the flag values.
+ *      Note that if `F` is not composable, only the first flag value will be read
+ **/
 template <class F, class = std::enable_if_t<!std::is_same_v<F, Empty>>>
-constexpr auto target_get_composable_flag(const TargetParser& target, std::string_view tag) noexcept {
+constexpr auto target_get_composable_flag(const TargetParser& target, std::string_view tag) noexcept -> std::optional<F> {
     auto flags = F{};
     if (auto csv = target[tag]; !csv.empty()) {
         for (CSVIterator state_it{csv}; state_it != state_it.end(); ++state_it) {
             const auto v = F::from_string(*state_it);
             if (!v)
-                return std::optional<F>{std::nullopt};
+                return std::nullopt;
             if constexpr (test_sfinae([](auto f, auto g) { return f | g; }, F{}, F{}))
                 flags |= *v;
             else
-                flags = *v;
+                return v;
         }
     }
-    return std::optional<F>{flags};
+    return {flags};
 }
 
+/**
+ * \internal
+ * Creates a closure which invokes callables in order so long they return `DependsOutcome::SKIPPED`
+ *
+ * \tparam Fcns (deduced from `depends`)
+ * \param depends a parameter pack of callables which match `DependsOutcome(ClosureArgs...)`
+ *          where `ClosureArgs` is the parameter list of the closure returned by this function
+ * \return a closure of signature void(auto&&...)
+ **/
 template <class... Fcns> constexpr auto parameterized_depends_scope(Fcns&&... depends) noexcept {
     using Arr = std::tuple<Fcns...>; // pray for SFO ; wait for expansion statements
     return [&](auto&&... args) {
         DependsOutcome ret = DependsOutcome::SKIPPED;
-        visit(Arr{depends...}, [&](auto f) {
+        visit(Arr{std::forward<Fcns>(depends)...}, [&](auto&& f) {
             if (ret != DependsOutcome::SKIPPED)
                 return;
-            if (const auto ao = f(args...); ao != DependsOutcome::SKIPPED) {
+            if (const auto ao = std::forward<decltype(f)>(f)(args...); ao != DependsOutcome::SKIPPED) {
                 ret = ao;
             }
         });
