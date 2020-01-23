@@ -76,3 +76,9 @@ $ cd build/
 $ cmake ..
 $ make -j $(nproc) # or simply 'ninja' if you use ninja-build 
 ```
+
+### Generating developer documentation
+
+This project uses Doxygen for its developer documentation.  
+To generate the HTML version from the code, simply run `doxygen Doxyfile` at the root directory of this repository;
+you will find the generated HTML in a new `doc/` folder.
