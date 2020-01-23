@@ -743,7 +743,7 @@ struct Domain::FSInfo {
 
 class Domain::IPAddress {
     friend Domain;
-    friend Domain::Interface;
+    friend Interface;
     IPAddress(virDomainIPAddressPtr ptr) : type(Type{ptr->type}), addr(ptr->addr), prefix(ptr->prefix) {}
 
   public:

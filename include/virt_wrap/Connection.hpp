@@ -235,13 +235,7 @@ class Connection {
     [[nodiscard]] inline Network networkLookupByName(const std::string& name) const noexcept;
     [[nodiscard]] inline Network networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept;
     [[nodiscard]] inline Network networkLookupByUUIDString(const std::string& uuid_str) const noexcept;
-    /**
-     * (Light) List all networks
-     * @param active
-     * @param persistent
-     * @param autostart
-     * @return std:unique_ptr<Network[], ?>: A wrapped array of networks extended with begin() and end(), or {nullptr} in case of error
-     * */
+
     [[nodiscard]] inline auto listAllNetworks(List::Networks::Flag) const noexcept;
     [[nodiscard]] inline auto listDefinedNetworksNames() const noexcept;
     [[nodiscard]] inline auto listNetworksNames() const noexcept;
