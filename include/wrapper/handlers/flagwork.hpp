@@ -132,7 +132,8 @@ template <class T, class A> constexpr decltype(auto) auto_serialize(T&& v, A& al
  * \return a callable able to process the specified subquery
  **/
 template <class TI, class F, class VC, class TJ>
-auto subquery(std::string_view name, std::string_view opt_tag, [[maybe_unused]] TI ti, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
+auto subquery(std::string_view name, std::string_view opt_tag, [[maybe_unused]] TI ti, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept(
+    std::is_nothrow_move_constructible_v<F>&& std::is_nothrow_move_constructible_v<VC>&& std::is_nothrow_move_constructible_v<TJ>) {
     return [name, opt_tag, lifted = std::forward<F>(lifted), valid_check = std::forward<VC>(valid_check), to_json = std::forward<TJ>(to_json)](
                int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
@@ -164,7 +165,8 @@ auto subquery(std::string_view name, std::string_view opt_tag, [[maybe_unused]] 
  * \return a callable able to process the specified subquery
  **/
 template <class F, class VC, class TI>
-auto subquery(std::string_view name, std::string_view opt_tag, TI ti, F&& lifted, VC&& valid_check) noexcept -> decltype(auto) {
+auto subquery(std::string_view name, std::string_view opt_tag, TI ti, F&& lifted,
+              VC&& valid_check) noexcept(std::is_nothrow_move_constructible_v<F>&& std::is_nothrow_move_constructible_v<VC>) -> decltype(auto) {
     return subquery(name, opt_tag, ti, std::forward<F>(lifted), std::forward<VC>(valid_check),
                     [](auto&&... args) -> decltype(subq_impl::auto_serialize(args...)) { return subq_impl::auto_serialize(args...); });
 }
@@ -184,7 +186,8 @@ auto subquery(std::string_view name, std::string_view opt_tag, TI ti, F&& lifted
  * \return a callable able to process the specified subquery
  **/
 template <class F, class VC, class TJ, class = std::enable_if_t<!std::is_same_v<F, std::string_view>>>
-auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept {
+auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept(
+    std::is_nothrow_move_constructible_v<F>&& std::is_nothrow_move_constructible_v<VC>&& std::is_nothrow_move_constructible_v<TJ>) {
     return [&, name, lifted = std::forward<F>(lifted), valid_check = std::forward<VC>(valid_check), to_json = std::forward<TJ>(to_json)](
                int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
@@ -208,7 +211,8 @@ auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json)
  * \return a callable able to process the specified subquery
  **/
 template <class F, class VC, class = std::enable_if_t<!std::is_same_v<F, std::string_view>>>
-auto subquery(std::string_view name, F&& lifted, VC&& valid_check) noexcept -> decltype(auto) {
+auto subquery(std::string_view name, F&& lifted,
+              VC&& valid_check) noexcept(std::is_nothrow_move_constructible_v<F>&& std::is_nothrow_move_constructible_v<VC>) -> decltype(auto) {
     return subquery(name, std::forward<F>(lifted), std::forward<VC>(valid_check),
                     [](auto&&... args) -> decltype(subq_impl::auto_serialize(args...)) { return subq_impl::auto_serialize(args...); });
 }
