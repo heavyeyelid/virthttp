@@ -10,17 +10,44 @@
 #include "urlparser.hpp"
 #include "virt_wrap.hpp"
 
+/**
+ * \internal
+ * jdispatcher values for network handlers as a type list
+ **/
 using NetworkJDispatcherVals = std::tuple<JDispatchVals<JAll>, JDispatchVals<JAll>, JDispatchVals<JAll>, JDispatchVals<JAll>>;
+/**
+ * \internal
+ * jdispatcher values for network handlers as a tuple
+ **/
 constexpr NetworkJDispatcherVals network_jdispatcher_vals{};
 
+/**
+ * \internal jdispatchers for network handlers as an array
+ **/
 constexpr auto network_jdispatchers = gen_jdispatchers(network_jdispatcher_vals);
 
+/**
+ * \internal
+ * Networks-specific handler utilities
+ **/
 class NetworkUnawareHandlers : public HandlerContext {
+    /**
+     * Equivalent to calling #json_res's JsonRes::error
+     * \tparam Args (deduced)
+     * \param[in] args arguments to JsonRes::error
+     **/
     template <class... Args> auto error(Args... args) const noexcept { return json_res.error(args...); };
 
   public:
     explicit NetworkUnawareHandlers(HandlerContext& ctx) : HandlerContext(ctx) {}
 
+    /**
+     * \internal
+     * Extractor of virt::Connection::List::Networks::Flag from a URI's target
+     *
+     * \param[in] target the target to extract the flag from
+     * \return the flag, or `std::nullopt` on error
+     * */
     [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept
         -> std::optional<virt::Connection::List::Networks::Flag> {
         auto flags = virt::Connection::List::Networks::Flag::DEFAULT;
@@ -34,11 +61,18 @@ class NetworkUnawareHandlers : public HandlerContext {
     }
 };
 
+/**
+ * \internal
+ * Network-specific handlers
+ **/
 class NetworkHandlers : public HandlerMethods {
     template <class... Args> auto error(Args... args) const noexcept { return json_res.error(args...); };
-    virt::Network& nw;
+    virt::Network& nw; ///< Current libvirt network
 
   public:
+    /**
+     * \internal
+     **/
     explicit NetworkHandlers(HandlerContext& ctx, virt::Network& nw) : HandlerMethods(ctx), nw(nw) {}
 
     DependsOutcome create(const rapidjson::Value& obj) override { return error(-1), DependsOutcome::FAILURE; }
