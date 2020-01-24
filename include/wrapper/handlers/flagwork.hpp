@@ -6,7 +6,7 @@
 
 /**
  * @file
- * Utilities for making subqueries work and have as many parameters deduced
+ * Utilities for making subqueries work and have as many parameters as possible be deduced
  */
 
 /**
@@ -17,6 +17,7 @@
                                                                                               mem_fn(std::forward<decltype(args)>(args)...)) {       \
         return mem_fn(std::forward<decltype(args)>(args)...);                                                                                        \
     }
+
 /**
  * \internal
  * \brief Extracts a flag from the HTTP target
