@@ -7,10 +7,28 @@
 
 using namespace std::literals;
 
+/**
+ * \internal
+ * Regex pattern matching the encoded version of AsyncStore::IndexType
+ **/
 constexpr static ctll::fixed_string numeric_id_pattern = "[0-9A-Fa-f]{1,8}";
+/**
+ * \internal
+ * Matching function for the encoded version of AsyncStore::IndexType
+ *
+ * \param[in] id the potential string form of an AsyncStore key
+ * \return the match result object
+ * */
 constexpr auto numeric_id_match(std::string_view id) noexcept { return ctre::match<numeric_id_pattern>(id); }
 
 // Contract: sv matches `numeric_id_pattern`
+/**
+ * \internal
+ * Decodes an AsyncStore key from its string form
+ *
+ * \param[in] sv the string representation of the id
+ * \return the numerical form of the id
+ **/
 constexpr std::uint32_t hex_decode_id(std::string_view sv) noexcept {
     std::uint32_t ret = 0;
     for (char c : sv) {
@@ -25,6 +43,14 @@ constexpr std::uint32_t hex_decode_id(std::string_view sv) noexcept {
     }
     return ret;
 }
+
+/**
+ * \internal
+ * Encodes an AsyncStore key into its string form
+ *
+ * \param[in] id the numerical form of the id
+ * \return the string representation of the id, in an array
+ **/
 constexpr std::array<char, sizeof(std::uint32_t) * 2> hex_encode_id(std::uint32_t id) noexcept {
     constexpr auto hex = "0123456789abcdef"sv;
     std::array<char, sizeof(std::uint32_t)* 2> ret = {};
@@ -35,6 +61,14 @@ constexpr std::array<char, sizeof(std::uint32_t) * 2> hex_encode_id(std::uint32_
     return ret;
 }
 
+/**
+ * \internal
+ * Handles a asynchronous retrieval request
+ *
+ * \tparam proto the transport protocol the request came over
+ * \param[in] gstore the global store, where the AsyncStore instance is located
+ * \param[in] str_id the string representation of id
+ **/
 template <TransportProto proto> auto handle_async_retrieve(GeneralStore& gstore, std::string_view str_id) {
     if constexpr (proto == TransportProto::HTTP1) {
         using Ret = std::pair<boost::beast::http::status, std::string>;
