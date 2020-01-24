@@ -13,16 +13,38 @@
 #include "urlparser.hpp"
 #include "virt_wrap.hpp"
 
+/**
+ * \internal
+ * jdispatcher values for domain handlers as a type list
+ **/
 using DomainJDispatcherVals =
     std::tuple<JDispatchVals<JTypeList<rapidjson::kStringType, rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>,
                JDispatchVals<JTypeList<rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>>;
+/**
+ * \internal
+ * jdispatcher values for domain handlers as a tuple
+ **/
 constexpr DomainJDispatcherVals domain_jdispatcher_vals{};
 
+/**
+ * \internal jdispatchers for domain handlers as an array
+ **/
 constexpr std::array<JDispatch, std::tuple_size_v<DomainJDispatcherVals>> domain_jdispatchers = gen_jdispatchers(domain_jdispatcher_vals);
 
+/**
+ * \internal
+ * Domain-specific handler utilities
+ **/
 struct DomainUnawareHandlers : public HandlerContext {
     explicit DomainUnawareHandlers(HandlerContext& ctx) : HandlerContext(ctx) {}
 
+    /**
+     * \internal
+     * Extractor of virt::Connection::List::Domains::Flag from a URI's target
+     *
+     * \param[in] target the target to extract the flag from
+     * \return the flag, or `std::nullopt` on error
+     * */
     [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
         virt::Connection::List::Domains::Flag flags = virt::Connection::List::Domains::Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
@@ -43,10 +65,17 @@ struct DomainUnawareHandlers : public HandlerContext {
     }
 };
 
+/**
+ * \internal
+ * Domain-specific handlers
+ **/
 class DomainHandlers : public HandlerMethods {
-    virt::Domain& dom;
+    virt::Domain& dom; ///< Current libvirt domain
 
   public:
+    /**
+     * \internal
+     **/
     explicit DomainHandlers(HandlerContext& ctx, virt::Domain& dom) : HandlerMethods(ctx), dom(dom) {}
 
     DependsOutcome create(const rapidjson::Value& obj) override {
