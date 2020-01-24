@@ -24,7 +24,7 @@ struct AsyncStore {
     };
 
     std::mutex mut{};
-    std::unordered_map<std::uint32_t, Element> elems;
+    std::unordered_map<IndexType, Element> elems;
     IndexType last_id{-1u};
     std::chrono::seconds default_expire = 120s;
     constexpr static std::chrono::seconds init_expire = std::chrono::seconds::max();
