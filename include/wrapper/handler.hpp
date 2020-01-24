@@ -24,13 +24,12 @@ namespace http = beast::http;
 template <class Body, class Allocator>
 rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Body, http::basic_fields<Allocator>>& req, const TargetParser& target) {
     JsonRes json_res{};
-    std::string key_str{};
     auto error = [&](auto... args) { return json_res.error(args...); };
 
     auto object = [&](virt::Connection&& conn, auto resolver, auto jdispatchers, auto t_hdls) -> void {
         using Object = typename decltype(resolver)::O;
         using Handlers = typename decltype(t_hdls)::Type;
-        HandlerContext hdl_ctx{conn, json_res, target, key_str};
+        HandlerContext hdl_ctx{conn, json_res, target};
         Object obj{};
         Handlers hdls{hdl_ctx, obj};
 

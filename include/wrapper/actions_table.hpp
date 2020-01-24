@@ -38,7 +38,7 @@ template <class CRTP, class Hdl> class NamedCallTable {
     }
 };
 
-using DomainActionsHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str);
+using DomainActionsHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom);
 class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActionsHdl> {
   private:
     friend NamedCallTable<DomainActionsTable, DomainActionsHdl>;
@@ -80,7 +80,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
 
     constexpr static std::array<std::string_view, 7> keys = {"power_mgt", "name", "memory", "max_memory", "autostart", "send_signal", "send_keys"};
     constexpr static std::array<Hdl, 7> fcns = {
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             auto pm_message = [&](gsl::czstring<> name, gsl::czstring<> value) {
                 rapidjson::Value msg_val{};
@@ -116,8 +116,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return [=, &json_flag, &json_res]() {
                     const auto mem_fcn_passthru = [=](auto... args) constexpr { return mem_fcn(args...); }; // WA GCC
                     const auto local_error = [&] {
-                        const auto err_msg = error_messages[errc];
-                        logger.error(err_msg, " :", key_str);
+                        logger.error(error_messages[errc]);
                         return error(errc);
                     };
 
@@ -163,7 +162,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                        PM_PREREQ(if (dom_state != virt::Domain::State::PAUSED) return error(211);)),
                 [&]() { return error(300); });
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsString())
                 return error(0);
@@ -171,7 +170,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(205);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsInt())
                 return error(0);
@@ -179,7 +178,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(206);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsInt())
                 return error(0);
@@ -187,7 +186,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(207);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsBool())
                 return error(0);
@@ -195,13 +194,13 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(208);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             const auto res = wrap_fcn(
                 val, json_res, [&](auto... args) { return dom.sendProcessSignal(args...); }, WArg<JTag::Int64>{"pid"},
                 WArg<JTag::Enum, JTag::None, virt::Domain::ProcessSignal>{"signal"});
             return res ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom, std::string_view key_str) -> DependsOutcome {
+        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             if (!val.IsObject())
                 return error(0);

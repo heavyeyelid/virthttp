@@ -133,7 +133,7 @@ class DomainHandlers : public HandlerMethods {
         const auto& action_obj = *action.MemberBegin();
         const auto& [action_name, action_val] = action_obj;
         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-        return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
+        return hdl ? hdl(action_val, json_res, dom) : (error(123), DependsOutcome::FAILURE);
     }
     DependsOutcome vacuum(const rapidjson::Value& action) override {
         auto& jalloc = json_res.GetAllocator();
