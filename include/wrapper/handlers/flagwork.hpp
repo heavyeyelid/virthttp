@@ -58,7 +58,7 @@ constexpr auto target_get_composable_flag(const TargetParser& target, std::strin
  * \return (`auto`) a closure of signature void(auto&&...)
  **/
 template <class... Fcns> constexpr auto parameterized_depends_scope(Fcns&&... depends) noexcept((std::is_nothrow_move_constructible_v<Fcns> && ...)) {
-    using Arr = std::tuple<Fcns...>; // pray for SFO ; wait for expansion statements
+    using Arr = std::tuple<Fcns...>; // pray for vectorisation; wait for expansion statements
     return [&](auto&&... args) -> DependsOutcome {
         DependsOutcome ret = DependsOutcome::SKIPPED;
         visit(Arr{std::forward<Fcns>(depends)...}, [&](auto&& f) {
@@ -222,8 +222,9 @@ auto subquery(std::string_view name, F&& lifted,
 
 /**
  * \internal
- * Perfect-forwarding lifted subq_impl::subquery
- * It lifts a set of closure factories, where said closures process the subquery described by `args`.
+ * \brief Perfect-forwarding lifted subq_impl::subquery
+ *
+ * Lifts a set of closure factories, where said closures process the subquery described by `args`.
  * The resulting closure upon invocation of this lifting lambda must be of the signature `DependsOutcome(int sq_lev, const TargetParser& target, auto&
  *res_val, auto& allocator, auto&& error)`, where:
  *   - [in] `sq_lev` is the target path part index where the subquery to look for is located
