@@ -33,7 +33,7 @@ constexpr std::array<JDispatch, std::tuple_size_v<DomainJDispatcherVals>> domain
 
 /**
  * \internal
- * Domain-specific handler utilities
+ * Domains-specific handler utilities
  **/
 struct DomainUnawareHandlers : public HandlerContext {
     explicit DomainUnawareHandlers(HandlerContext& ctx) : HandlerContext(ctx) {}
