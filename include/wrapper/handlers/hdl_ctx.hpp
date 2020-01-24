@@ -15,6 +15,7 @@ struct HandlerContext {
 
   protected:
     /**
+     * \internal
      * Perfect-forwarding of #json_res's JsonRes::error
      **/
     template <class... Args>
