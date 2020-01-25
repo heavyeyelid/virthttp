@@ -8,11 +8,20 @@
 
 using namespace std::literals;
 
+/**
+ * \internal
+ * Functor used to resolve the selected libvirt objects
+ *
+ * \tparam TPOUH TypePair<Object, UnawareHandlers>
+ * \tparam KeysT constexpr-able ranged container of search keys
+ * \tparam FcnsT constexpr-able ranged container of lifted search callables
+ * \tparam ListFcn list-all callable type
+ **/
 template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
-    std::string_view type;
-    KeysT skeys;
-    FcnsT sfcns;
-    ListFcn list_fcn;
+    std::string_view type; ///< libvirt object class key in URIs
+    KeysT skeys;           ///< Search keys
+    FcnsT sfcns;           ///< Search callables
+    ListFcn list_fcn;      ///< List-all callable
 
   public:
     using O = typename TPOUH::First;
@@ -26,7 +35,7 @@ template <class TPOUH, class KeysT, class FcnsT, class ListFcn> class Resolver {
         if (path_parts.size() < 4)
             return {std::numeric_limits<int>::min(), std::string_view{}};
 
-        const auto path_part = path_parts[2]; // C++2a: use std::string_view all the way
+        const auto path_part = path_parts[2];
         const auto it = cexpr::find(skeys.begin(), skeys.end(), path_part);
         if (it == skeys.end())
             return {std::numeric_limits<int>::min(), std::string_view{}};
