@@ -5,8 +5,15 @@
 
 using namespace std::literals;
 
+/**
+ * \internal
+ **/
 class ErrorMessages {
     using P = std::pair<int, std::string_view>;
+    /**
+     * \internal
+     * Pairs of the possible **virthttp** error codes alongside their associated message
+     **/
     constexpr static std::array pairs = {
         P{-1, "Unsupported"sv},
         P{0, "Syntax error"sv},
@@ -49,6 +56,13 @@ class ErrorMessages {
     };
 
   public:
+    /**
+     * \internal
+     * Get error message from **virthttp** error code
+     *
+     * \param[in] errc virthttp error code
+     * \return the associated error message, or "Unknown error" if the code does exist in ErrorMessages::pairs
+     **/
     constexpr std::string_view operator[](int errc) const noexcept {
         const auto it = cexpr::find_if(pairs.begin(), pairs.end(), [=](auto p) { return p.first == errc; });
         return it != pairs.end() ? it->second : "Unknown error"sv;
