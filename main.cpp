@@ -14,7 +14,7 @@ using namespace std::literals;
  * \internal
  * \brief Program entry-point
  *
- * Loads the config, opens the listening port, and launch the threads
+ * Loads the config, opens the listening port, and launches the threads
  **/
 int main(int argc, char** argv) {
     GeneralStore gstore{IniConfig{"config.ini"}};
