@@ -59,16 +59,16 @@ struct JsonRes : public rapidjson::Document {
         rapidjson::Value err{};
         err.SetObject();
         err.AddMember("code", code, GetAllocator());
-        if (code == -2) { // use libvirt error
-            auto vir_err = virt::extractLastError();
-            auto& msg = vir_err.message;
-            if (!vir_err)
-                UNREACHABLE;
-            err.AddMember("message", rapidjson::Value(msg.data(), msg.length(), GetAllocator()), GetAllocator());
-        } else {
+        {
             const auto msg = error_messages[code];
             err.AddMember("message", rapidjson::StringRef(msg.data(), msg.length()), GetAllocator());
         }
+
+        if (auto vir_err = virt::extractLastError(); vir_err){
+            const auto& msg = vir_err.message;
+            err.AddMember("libvirt", rapidjson::Value(msg.data(), msg.length(), GetAllocator()), GetAllocator());
+        }
+
         (*this)["errors"].PushBack(err, GetAllocator());
     };
 };
