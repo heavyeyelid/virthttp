@@ -32,11 +32,12 @@ struct Error {
     std::string message;
 
   private:
-    inline explicit Error(virErrorPtr p) : code(Code((p ? p->code : 0))), level(p ? p->level : Level(0)), message(p ? p->message : nullptr) {}
+    inline explicit Error(virErrorPtr p)
+        : code(Code((p ? p->code : 0))), level(p ? p->level : Level(0)), message(p ? std::string{p->message} : std::string{}) {}
     friend Error extractLastError();
 
   public:
-    inline explicit operator bool() const noexcept { return message.data() != nullptr; }
+    inline explicit operator bool() const noexcept { return !message.empty(); }
 };
 
 inline ErrorRef getLastError() noexcept { return ErrorRef{virGetLastError()}; }
@@ -45,4 +46,4 @@ inline Error extractLastError() {
     virResetLastError();
     return e;
 }
-}
+} // namespace virt
