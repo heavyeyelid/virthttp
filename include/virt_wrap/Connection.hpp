@@ -7,7 +7,6 @@
 #include <vector>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
-#include "Domain.hpp"
 #include "fwd.hpp"
 #include "utility.hpp"
 
