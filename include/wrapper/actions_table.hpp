@@ -136,7 +136,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                         } else {
                             if constexpr (test_sfinae([](auto f) { f(); }, mem_fcn_passthru)) {
                                 if (!mem_fcn())
-                                    local_error();
+                                    return local_error();
                             } else
                                 return error(301);
                         }

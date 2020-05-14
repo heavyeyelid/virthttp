@@ -54,7 +54,7 @@ For more examples and a usage reference, see the [API documentation](https://git
 ## Building
 
 **!! IMPORTANT !!**  
-While compiling for any other target than Linux or BSD based OSes, there is no platform-dependent code in this repository.  
+While compiling for any other target than Linux or BSD based OSes, there is no platform-dependent code in this repository.
 Also, we currently only test with **Clang [7,8,9]** and **GCC [8,9]**
 
 ### Dependencies *(debian packages)*
