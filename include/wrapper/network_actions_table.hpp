@@ -21,11 +21,9 @@ class NetworkActionsTable : public NamedCallTable<NetworkActionsTable, NetworkAc
   private:
     friend NamedCallTable<NetworkActionsTable, NetworkActionsHdl>;
 
-
-
     using Hdl = NetworkActionsHdl;
 
-    constexpr static std::array<std::string_view, 7> keys = {"power_mgt", "name", "memory", "max_memory", "autostart", "send_signal", "send_keys"};
-    constexpr static std::array<Hdl, 7> fcns = {};
+    constexpr static std::array<std::string_view, 1> keys = {"autostart", ""};
+    constexpr static std::array<Hdl, 1> fcns = {};
     static_assert(keys.size() == fcns.size());
 } constexpr static const network_actions_table{};

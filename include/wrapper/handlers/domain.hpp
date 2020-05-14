@@ -116,12 +116,7 @@ class DomainHandlers : public HandlerMethods {
             return DependsOutcome::SUCCESS;
         }
 
-        const auto fwd_err = [&](bool fwd, int code) -> bool {
-            if (!fwd)
-                error(code);
-            return fwd;
-        };
-        const auto fwd_as_if_err = [&](int code) { return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); }; };
+
 
         const auto outcome = parameterized_depends_scope(
             subquery("xml_desc", "options", ti<virt::enums::domain::XmlFlag>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
