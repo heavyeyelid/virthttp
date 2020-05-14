@@ -3,11 +3,10 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::BlockJobSetSpeedFlag : private VirtEnumStorage<virDomainBlockJobSetSpeedFlags>,
-                                     public VirtEnumBase<BlockJobSetSpeedFlag>,
-                                     public EnumSetHelper<BlockJobSetSpeedFlag> {
+namespace virt::enums::domain {
+class BlockJobSetSpeedFlag : private VirtEnumStorage<virDomainBlockJobSetSpeedFlags>,
+                             public VirtEnumBase<BlockJobSetSpeedFlag>,
+                             public EnumSetHelper<BlockJobSetSpeedFlag> {
     friend VirtEnumBase<BlockJobSetSpeedFlag>;
     friend EnumSetHelper<BlockJobSetSpeedFlag>;
     enum class Underlying {

@@ -13,8 +13,9 @@
 #include "../cexpr_algs.hpp"
 #include "enums/Connection/Decls.hpp"
 #include "enums/Domain/Decls.hpp"
+#include "enums/Domain/Domain.hpp"
+#include "enums/GFlags.hpp"
 #include "CpuMap.hpp"
-#include "GFlags.hpp"
 #include "fwd.hpp"
 #include "tfe.hpp"
 #include "utility.hpp"
@@ -100,43 +101,11 @@ class Domain {
   public:
     using Info = virDomainInfo;
 
-    class BlockCommitFlag;
-    class BlockCopyFlag;
-    class BlockJobAbortFlag;
-    class BlockJobInfoFlag;
-    class BlockJobSetSpeedFlag;
-    class BlockPullFlag;
-    class BlockRebaseFlag;
-    class BlockResizeFlag;
-    class ChannelFlag;
-    class ConsoleFlag;
-
-    class CreateFlag;
-    class DestroyFlag;
-    class DeviceModifyFlag;
-    class GetJobStatsFlag;
-
-    class KeycodeSet;
-    class Lifecycle;
-    class LifecycleAction;
-    class MemoryModFlag;
-    class OpenGraphicsFlag;
 
     class StatsRecord;
 
-    class ShutdownFlag;
-
     struct StateReason {};
     struct StateWReason;
-
-    class MetadataType;
-    class MigrateFlag;
-    class ModificationImpactFlag;
-    class ProcessSignal;
-
-    class XmlFlag;
-    class State;
-    class UndefineFlag;
 
     struct DiskError;
     struct FSInfo;
@@ -154,8 +123,6 @@ class Domain {
 
     using BlockStats = virDomainBlockStatsStruct;
 
-    using MITPFlags = EnumSetTie<ModificationImpactFlag, TypedParameterFlag>;
-
     constexpr inline explicit Domain(virDomainPtr ptr = nullptr) noexcept;
 
     Domain(const Domain&) = delete;
@@ -172,35 +139,36 @@ class Domain {
 
     bool abortJob() noexcept;
 
-    bool addIOThread(unsigned int iothread_id, ModificationImpactFlag flags) noexcept;
+    bool addIOThread(unsigned int iothread_id, enums::domain::ModificationImpactFlag flags) noexcept;
 
     bool attachDevice(gsl::czstring<> xml) noexcept;
 
-    bool attachDevice(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept;
+    bool attachDevice(gsl::czstring<> xml, enums::domain::DeviceModifyFlag flags) noexcept;
 
-    bool blockCommit(gsl::czstring<> disk, gsl::czstring<> base, gsl::czstring<> top, unsigned long bandwidth, BlockCommitFlag flags) noexcept;
+    bool blockCommit(gsl::czstring<> disk, gsl::czstring<> base, gsl::czstring<> top, unsigned long bandwidth,
+                     enums::domain::BlockCommitFlag flags) noexcept;
 
-    bool blockCopy(gsl::czstring<> disk, gsl::czstring<> destxml, const TypedParams& params, BlockCopyFlag flags) noexcept;
+    bool blockCopy(gsl::czstring<> disk, gsl::czstring<> destxml, const TypedParams& params, enums::domain::BlockCopyFlag flags) noexcept;
 
-    bool blockJobAbort(gsl::czstring<> disk, BlockJobAbortFlag flags) noexcept;
+    bool blockJobAbort(gsl::czstring<> disk, enums::domain::BlockJobAbortFlag flags) noexcept;
 
-    bool blockJobSetSpeed(gsl::czstring<> disk, unsigned long bandwidth, BlockJobSetSpeedFlag flags) noexcept;
+    bool blockJobSetSpeed(gsl::czstring<> disk, unsigned long bandwidth, enums::domain::BlockJobSetSpeedFlag flags) noexcept;
 
     bool blockPeek(gsl::czstring<> disk, unsigned long long offset, gsl::span<std::byte> buffer) const noexcept;
 
-    bool blockPull(gsl::czstring<> disk, unsigned long bandwidth, BlockPullFlag flags) noexcept;
+    bool blockPull(gsl::czstring<> disk, unsigned long bandwidth, enums::domain::BlockPullFlag flags) noexcept;
 
-    bool blockRebase(gsl::czstring<> disk, gsl::czstring<> base, unsigned long bandwidth, BlockRebaseFlag flags);
+    bool blockRebase(gsl::czstring<> disk, gsl::czstring<> base, unsigned long bandwidth, enums::domain::BlockRebaseFlag flags);
 
-    bool blockResize(gsl::czstring<> disk, unsigned long long size, BlockResizeFlag flags) noexcept;
+    bool blockResize(gsl::czstring<> disk, unsigned long long size, enums::domain::BlockResizeFlag flags) noexcept;
 
     auto blockStats(gsl::czstring<> disk, size_t size) const noexcept;
 
-    auto blockStatsFlags(gsl::czstring<> disk, TypedParameterFlag flags) const noexcept;
+    auto blockStatsFlags(gsl::czstring<> disk, enums::TypedParameterFlag flags) const noexcept;
 
     bool create() noexcept;
 
-    bool create(CreateFlag flag) noexcept;
+    bool create(enums::domain::CreateFlag flag) noexcept;
 
     // createWithFiles() // Left out
 
@@ -208,17 +176,17 @@ class Domain {
 
     bool coreDump(std::filesystem::path to, enums::domain::core_dump::Format format, enums::domain::core_dump::Flag flags) const noexcept;
 
-    bool delIOThread(unsigned int iothread_id, ModificationImpactFlag flags) noexcept;
+    bool delIOThread(unsigned int iothread_id, enums::domain::ModificationImpactFlag flags) noexcept;
 
     bool destroy() noexcept;
 
-    bool destroy(DestroyFlag flag) noexcept;
+    bool destroy(enums::domain::DestroyFlag flag) noexcept;
 
     bool detachDevice(gsl::czstring<> xml) noexcept;
 
-    bool detachDevice(gsl::czstring<> xml, DeviceModifyFlag flag) noexcept;
+    bool detachDevice(gsl::czstring<> xml, enums::domain::DeviceModifyFlag flag) noexcept;
 
-    bool detachDeviceAlias(gsl::czstring<> alias, DeviceModifyFlag flag) noexcept;
+    bool detachDeviceAlias(gsl::czstring<> alias, enums::domain::DeviceModifyFlag flag) noexcept;
 
     int fsFreeze(gsl::span<gsl::czstring<>> mountpoints) noexcept;
 
@@ -228,13 +196,13 @@ class Domain {
 
     [[nodiscard]] bool getAutostart() const noexcept;
 
-    [[nodiscard]] auto getBlkioParameters(MITPFlags flags) const noexcept;
+    [[nodiscard]] auto getBlkioParameters(enums::domain::MITPFlags flags) const noexcept;
 
     [[nodiscard]] auto getBlockInfo(gsl::czstring<> disk) const noexcept -> std::optional<virDomainBlockInfo>;
 
-    [[nodiscard]] auto getBlockIoTune(gsl::czstring<> disk, MITPFlags flags) const noexcept;
+    [[nodiscard]] auto getBlockIoTune(gsl::czstring<> disk, enums::domain::MITPFlags flags) const noexcept;
 
-    [[nodiscard]] auto getBlockJobInfo(gsl::czstring<> disk, BlockJobInfoFlag flags) const noexcept;
+    [[nodiscard]] auto getBlockJobInfo(gsl::czstring<> disk, enums::domain::BlockJobInfoFlag flags) const noexcept;
 
     [[nodiscard]] Connection getConnect() const noexcept;
 
@@ -254,7 +222,7 @@ class Domain {
 
     [[nodiscard]] std::vector<FSInfo> extractFSInfo() const;
 
-    [[nodiscard]] auto getJobStats(GetJobStatsFlag flags) const noexcept;
+    [[nodiscard]] auto getJobStats(enums::domain::GetJobStatsFlag flags) const noexcept;
 
     [[nodiscard]] std::optional<TypedParams> getGuestVcpus() const noexcept;
 
@@ -264,13 +232,13 @@ class Domain {
 
     [[nodiscard]] unsigned getID() const noexcept;
 
-    [[nodiscard]] auto getIOThreadInfo(ModificationImpactFlag flags) const noexcept;
+    [[nodiscard]] auto getIOThreadInfo(enums::domain::ModificationImpactFlag flags) const noexcept;
 
-    [[nodiscard]] auto extractIOThreadInfo(ModificationImpactFlag flags) const -> std::vector<heavy::IOThreadInfo>;
+    [[nodiscard]] auto extractIOThreadInfo(enums::domain::ModificationImpactFlag flags) const -> std::vector<heavy::IOThreadInfo>;
 
     [[nodiscard]] Info getInfo() const noexcept;
 
-    [[nodiscard]] auto getInterfaceParameters(gsl::czstring<> device, MITPFlags flags) const noexcept;
+    [[nodiscard]] auto getInterfaceParameters(gsl::czstring<> device, enums::domain::MITPFlags flags) const noexcept;
 
     [[nodiscard]] std::optional<JobInfo> getJobInfo() const noexcept;
 
@@ -278,15 +246,17 @@ class Domain {
 
     [[nodiscard]] int getMaxVcpus() const noexcept;
 
-    [[nodiscard]] auto getMemoryParameters(MITPFlags flags) const noexcept;
+    [[nodiscard]] auto getMemoryParameters(enums::domain::MITPFlags flags) const noexcept;
 
-    [[nodiscard]] UniqueZstring getMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlag flags) const noexcept;
+    [[nodiscard]] UniqueZstring getMetadata(enums::domain::MetadataType type, gsl::czstring<> ns,
+                                            enums::domain::ModificationImpactFlag flags) const noexcept;
 
-    [[nodiscard]] std::string extractMetadata(MetadataType type, gsl::czstring<> ns, ModificationImpactFlag flags) const;
+    [[nodiscard]] std::string extractMetadata(enums::domain::MetadataType type, gsl::czstring<> ns,
+                                              enums::domain::ModificationImpactFlag flags) const;
 
     [[nodiscard]] gsl::czstring<> getName() const noexcept;
 
-    [[nodiscard]] auto getNumaParameters(MITPFlags flags) const noexcept;
+    [[nodiscard]] auto getNumaParameters(enums::domain::MITPFlags flags) const noexcept;
 
     [[nodiscard]] int getNumVcpus(enums::domain::VCpuFlag flags) const noexcept;
 
@@ -316,15 +286,15 @@ class Domain {
 
     [[nodiscard]] auto getSchedulerParameters() const noexcept;
 
-    [[nodiscard]] auto getSchedulerParameters(MITPFlags flags) const noexcept;
+    [[nodiscard]] auto getSchedulerParameters(enums::domain::MITPFlags flags) const noexcept;
 
-    [[nodiscard]] auto getPerfEvents(MITPFlags flags) const noexcept;
+    [[nodiscard]] auto getPerfEvents(enums::domain::MITPFlags flags) const noexcept;
 
     [[nodiscard]] auto getVcpuPinInfo(enums::domain::VCpuFlag flags) -> std::optional<std::vector<unsigned char>>;
 
     [[nodiscard]] auto getVcpus() const noexcept;
 
-    [[nodiscard]] gsl::czstring<> getXMLDesc(XmlFlag flag) const noexcept;
+    [[nodiscard]] gsl::czstring<> getXMLDesc(enums::domain::XmlFlag flag) const noexcept;
 
     [[nodiscard]] TFE hasManagedSaveImage() const noexcept;
 
@@ -346,9 +316,9 @@ class Domain {
     // [[nodiscard]] static int listGetStats(gsl::basic_zstring<Domain> doms, StatsType stats, virDomainStatsRecordPtr** retStats,
     // GetAllDomainStatsFlag flags);
 
-    bool managedSave(SaveRestoreFlag flag) noexcept;
+    bool managedSave(enums::domain::SaveRestoreFlag flag) noexcept;
 
-    bool managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlag flag) noexcept;
+    bool managedSaveDefineXML(gsl::czstring<> dxml, enums::domain::SaveRestoreFlag flag) noexcept;
 
     [[nodiscard]] UniqueZstring managedSaveGetXMLDesc(enums::domain::SaveImageXMLFlag flag) const noexcept;
 
@@ -360,19 +330,20 @@ class Domain {
 
     auto memoryStats(unsigned int nr_stats) const noexcept;
 
-    [[nodiscard]] Domain migrate(Connection dconn, MigrateFlag flags, gsl::czstring<> dname, gsl::czstring<> uri, unsigned long bandwidth) noexcept;
-
-    [[nodiscard]] Domain migrate(Connection dconn, gsl::czstring<> dxml, MigrateFlag flags, gsl::czstring<> dname, gsl::czstring<> uri,
+    [[nodiscard]] Domain migrate(Connection dconn, enums::domain::MigrateFlag flags, gsl::czstring<> dname, gsl::czstring<> uri,
                                  unsigned long bandwidth) noexcept;
 
-    [[nodiscard]] Domain migrate(Connection dconn, const TypedParams& params, MigrateFlag flags) noexcept;
+    [[nodiscard]] Domain migrate(Connection dconn, gsl::czstring<> dxml, enums::domain::MigrateFlag flags, gsl::czstring<> dname, gsl::czstring<> uri,
+                                 unsigned long bandwidth) noexcept;
 
-    bool migrateToURI(gsl::czstring<> duri, MigrateFlag flags, gsl::czstring<> dname, unsigned long bandwidth) noexcept;
+    [[nodiscard]] Domain migrate(Connection dconn, const TypedParams& params, enums::domain::MigrateFlag flags) noexcept;
 
-    bool migrateToURI(gsl::czstring<> dconnuri, gsl::czstring<> miguri, gsl::czstring<> dxml, MigrateFlag flags, gsl::czstring<> dname,
+    bool migrateToURI(gsl::czstring<> duri, enums::domain::MigrateFlag flags, gsl::czstring<> dname, unsigned long bandwidth) noexcept;
+
+    bool migrateToURI(gsl::czstring<> dconnuri, gsl::czstring<> miguri, gsl::czstring<> dxml, enums::domain::MigrateFlag flags, gsl::czstring<> dname,
                       unsigned long bandwidth) noexcept;
 
-    bool migrateToURI(gsl::czstring<> dconnuri, const TypedParams& params, MigrateFlag flags) noexcept;
+    bool migrateToURI(gsl::czstring<> dconnuri, const TypedParams& params, enums::domain::MigrateFlag flags) noexcept;
 
     [[nodiscard]] auto migrateGetCompressionCache() const noexcept -> std::optional<unsigned long long>;
 
@@ -388,33 +359,33 @@ class Domain {
 
     bool migrateStartPostCopy(unsigned int flag) noexcept;
 
-    bool openChannel(gsl::czstring<> name, Stream& st, ChannelFlag flags) noexcept;
+    bool openChannel(gsl::czstring<> name, Stream& st, enums::domain::ChannelFlag flags) noexcept;
 
-    bool openConsole(gsl::czstring<> dev_name, Stream& st, ConsoleFlag flags) noexcept;
+    bool openConsole(gsl::czstring<> dev_name, Stream& st, enums::domain::ConsoleFlag flags) noexcept;
 
-    bool openGraphics(unsigned int idx, int fd, OpenGraphicsFlag flags) const noexcept;
+    bool openGraphics(unsigned int idx, int fd, enums::domain::OpenGraphicsFlag flags) const noexcept;
 
-    [[nodiscard]] int openGraphicsFD(unsigned int idx, OpenGraphicsFlag flags) const noexcept;
+    [[nodiscard]] int openGraphicsFD(unsigned int idx, enums::domain::OpenGraphicsFlag flags) const noexcept;
 
-    bool pinEmulator(CpuMap cpumap, ModificationImpactFlag flags) noexcept;
+    bool pinEmulator(CpuMap cpumap, enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool pinIOThread(unsigned int iothread_id, CpuMap cpumap, ModificationImpactFlag flags) noexcept;
+    bool pinIOThread(unsigned int iothread_id, CpuMap cpumap, enums::domain::ModificationImpactFlag flags) noexcept;
 
     bool pinVcpu(unsigned int vcpu, CpuMap cpumap) noexcept;
 
-    bool pinVcpuFlags(unsigned int vcpu, CpuMap cpumap, ModificationImpactFlag flags) noexcept;
+    bool pinVcpuFlags(unsigned int vcpu, CpuMap cpumap, enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool sendKey(KeycodeSet codeset, unsigned int holdtime, gsl::span<const unsigned int> keycodes) noexcept;
+    bool sendKey(enums::domain::KeycodeSet codeset, unsigned int holdtime, gsl::span<const unsigned int> keycodes) noexcept;
 
-    bool sendProcessSignal(long long pid_value, ProcessSignal signum) noexcept;
+    bool sendProcessSignal(long long pid_value, enums::domain::ProcessSignal signum) noexcept;
 
     bool setMaxMemory(unsigned long);
 
     bool setMemory(unsigned long);
 
-    bool setMemoryStatsPeriod(int period, MemoryModFlag flags) noexcept;
+    bool setMemoryStatsPeriod(int period, enums::domain::MemoryModFlag flags) noexcept;
 
-    bool reboot(ShutdownFlag flags);
+    bool reboot(enums::domain::ShutdownFlag flags);
     bool reboot();
 
     bool reset();
@@ -425,45 +396,47 @@ class Domain {
 
     bool save(gsl::czstring<> to) noexcept;
 
-    bool save(gsl::czstring<> to, gsl::czstring<> dxml, SaveRestoreFlag flags) noexcept;
+    bool save(gsl::czstring<> to, gsl::czstring<> dxml, enums::domain::SaveRestoreFlag flags) noexcept;
 
     UniqueZstring screenshot(Stream& stream, unsigned int screen) const noexcept;
 
     bool setAutoStart(bool);
 
-    bool setBlkioParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
+    bool setBlkioParameters(TypedParams params, enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool setBlockIoTune(gsl::czstring<> disk, TypedParams params, ModificationImpactFlag flags) noexcept;
+    bool setBlockIoTune(gsl::czstring<> disk, TypedParams params, enums::domain::ModificationImpactFlag flags) noexcept;
 
     bool setBlockThreshold(gsl::czstring<> dev, unsigned long long threshold) noexcept;
 
     bool setGuestVcpus(gsl::czstring<> cpumap, bool state) noexcept; // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainSetGuestVcpus
 
-    bool setIOThreadParams(unsigned int iothread_id, TypedParams params, MITPFlags flags) noexcept;
+    bool setIOThreadParams(unsigned int iothread_id, TypedParams params, enums::domain::MITPFlags flags) noexcept;
 
-    bool setInterfaceParameters(gsl::czstring<> device, TypedParams params, ModificationImpactFlag flags) noexcept;
+    bool setInterfaceParameters(gsl::czstring<> device, TypedParams params, enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool setLifecycleAction(Lifecycle type, LifecycleAction action, ModificationImpactFlag flags) noexcept;
+    bool setLifecycleAction(enums::domain::Lifecycle type, enums::domain::LifecycleAction action,
+                            enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool setMemoryFlags(unsigned long memory, MemoryModFlag flags) noexcept;
+    bool setMemoryFlags(unsigned long memory, enums::domain::MemoryModFlag flags) noexcept;
 
-    bool setMemoryParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
+    bool setMemoryParameters(TypedParams params, enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool setNumaParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
+    bool setNumaParameters(TypedParams params, enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool setPerfEvents(TypedParams params, ModificationImpactFlag flags) noexcept;
+    bool setPerfEvents(TypedParams params, enums::domain::ModificationImpactFlag flags) noexcept;
 
     bool setSchedulerParameters(TypedParams params) noexcept;
 
-    bool setSchedulerParameters(TypedParams params, ModificationImpactFlag flags) noexcept;
+    bool setSchedulerParameters(TypedParams params, enums::domain::ModificationImpactFlag flags) noexcept;
 
-    bool setMetadata(MetadataType type, gsl::czstring<> metadata, gsl::czstring<> key, gsl::czstring<> uri, ModificationImpactFlag flags) noexcept;
+    bool setMetadata(enums::domain::MetadataType type, gsl::czstring<> metadata, gsl::czstring<> key, gsl::czstring<> uri,
+                     enums::domain::ModificationImpactFlag flags) noexcept;
 
     bool setTime(long long seconds, unsigned int nseconds, enums::domain::SetTimeFlag flags) noexcept;
 
     bool setUserPassword(gsl::czstring<> user, gsl::czstring<> password, enums::domain::SetUserPasswordFlag flags) noexcept;
 
-    bool setVcpu(gsl::czstring<> vcpumap, bool state, ModificationImpactFlag flags) noexcept;
+    bool setVcpu(gsl::czstring<> vcpumap, bool state, enums::domain::ModificationImpactFlag flags) noexcept;
 
     bool setVcpus(unsigned int nvcpus) noexcept;
 
@@ -471,24 +444,22 @@ class Domain {
 
     bool shutdown() noexcept;
 
-    bool shutdown(ShutdownFlag flag) noexcept;
+    bool shutdown(enums::domain::ShutdownFlag flag) noexcept;
 
     bool suspend() noexcept;
 
     bool undefine() noexcept;
 
-    bool undefine(UndefineFlag) noexcept;
+    bool undefine(enums::domain::UndefineFlag) noexcept;
 
-    bool updateDeviceFlags(gsl::czstring<> xml, DeviceModifyFlag flags) noexcept;
+    bool updateDeviceFlags(gsl::czstring<> xml, enums::domain::DeviceModifyFlag flags) noexcept;
 
-    [[nodiscard]] static Domain createXML(Connection&, gsl::czstring<> xml, CreateFlag flags);
+    [[nodiscard]] static Domain createXML(Connection&, gsl::czstring<> xml, enums::domain::CreateFlag flags);
     [[nodiscard]] static Domain createXML(Connection&, gsl::czstring<> xml);
 
     // [[nodiscard]] static Domain defineXML();
 };
-} // namespace virt
-#include "virt_wrap/enums/Domain/Domain.hpp"
-namespace virt {
+
 class Domain::StatsRecord {
     friend Connection;
 
@@ -504,7 +475,7 @@ class Domain::StateWReason
     : public std::variant<enums::domain::state_reason::NoState, enums::domain::state_reason::Running, enums::domain::state_reason::Blocked,
                           enums::domain::state_reason::Paused, enums::domain::state_reason::Shutdown, enums::domain::state_reason::Shutoff,
                           enums::domain::state_reason::Crashed, enums::domain::state_reason::PMSuspended> {
-    constexpr State state() const noexcept { return State(EHTag{}, this->index()); }
+    constexpr enums::domain::State state() const noexcept { return enums::domain::State(EHTag{}, this->index()); }
 };
 
 struct alignas(alignof(virDomainDiskError)) Domain::DiskError {

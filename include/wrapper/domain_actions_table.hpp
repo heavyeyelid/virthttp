@@ -26,7 +26,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return DependsOutcome::SUCCESS;
             };
 
-            constexpr auto getShutdownFlag = getFlag<virt::Domain::ShutdownFlag>;
+            constexpr auto getShutdownFlag = getFlag<virt::enums::domain::ShutdownFlag>;
 
             const rapidjson::Value* json_flag = nullptr;
             gsl::czstring<> pm_req{};
@@ -45,7 +45,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(300);
             }
 
-            const auto dom_state = virt::Domain::State{EHTag{}, dom.getInfo().state}; // Verified use of EHTag
+            const auto dom_state = virt::enums::domain::State{EHTag{}, dom.getInfo().state}; // Verified use of EHTag
 
             const auto pm_hdl = [&](gsl::czstring<> req_tag, auto flag_ti, auto mem_fcn, int errc, gsl::czstring<> pm_msg, auto prereqs) {
                 using Flag = typename decltype(flag_ti)::type;
@@ -83,19 +83,19 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
             };
             constexpr auto no_flags = ti<Empty>;
             return action_scope(
-                pm_hdl("shutdown", ti<virt::Domain::ShutdownFlag>, PM_LIFT(dom.shutdown), 200, "Domain is being shutdown",
-                       PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
-                pm_hdl("destroy", ti<virt::Domain::DestroyFlag>, PM_LIFT(dom.destroy), 209, "Domain destroyed",
+                pm_hdl("shutdown", ti<virt::enums::domain::ShutdownFlag>, PM_LIFT(dom.shutdown), 200, "Domain is being shutdown",
+                       PM_PREREQ(if (dom_state != virt::enums::domain::State::RUNNING) return error(201);)),
+                pm_hdl("destroy", ti<virt::enums::domain::DestroyFlag>, PM_LIFT(dom.destroy), 209, "Domain destroyed",
                        PM_PREREQ(if (!dom.isActive()) return error(210);)),
-                pm_hdl("start", ti<virt::Domain::CreateFlag>, PM_LIFT(dom.create), 202, "Domain started",
+                pm_hdl("start", ti<virt::enums::domain::CreateFlag>, PM_LIFT(dom.create), 202, "Domain started",
                        PM_PREREQ(if (dom.isActive()) return error(203);)),
-                pm_hdl("reboot", ti<virt::Domain::ShutdownFlag>, PM_LIFT(dom.reboot), 213, "Domain is being rebooted",
-                       PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
+                pm_hdl("reboot", ti<virt::enums::domain::ShutdownFlag>, PM_LIFT(dom.reboot), 213, "Domain is being rebooted",
+                       PM_PREREQ(if (dom_state != virt::enums::domain::State::RUNNING) return error(201);)),
                 pm_hdl("reset", no_flags, PM_LIFT(dom.reset), 214, "Domain was reset", PM_PREREQ(if (!dom.isActive()) return error(210);)),
                 pm_hdl("suspend", no_flags, PM_LIFT(dom.suspend), 215, "Domain suspended",
-                       PM_PREREQ(if (dom_state != virt::Domain::State::RUNNING) return error(201);)),
+                       PM_PREREQ(if (dom_state != virt::enums::domain::State::RUNNING) return error(201);)),
                 pm_hdl("resume", no_flags, PM_LIFT(dom.resume), 212, "Domain resumed",
-                       PM_PREREQ(if (dom_state != virt::Domain::State::PAUSED) return error(211);)),
+                       PM_PREREQ(if (dom_state != virt::enums::domain::State::PAUSED) return error(211);)),
                 [&]() { return error(300); });
         },
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
@@ -133,7 +133,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             const auto res = wrap_fcn(
                 val, json_res, [&](auto... args) { return dom.sendProcessSignal(args...); }, WArg<JTag::Int64>{"pid"},
-                WArg<JTag::Enum, JTag::None, virt::Domain::ProcessSignal>{"signal"});
+                WArg<JTag::Enum, JTag::None, virt::enums::domain::ProcessSignal>{"signal"});
             return res ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
         },
         +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
@@ -141,7 +141,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
             if (!val.IsObject())
                 return error(0);
 
-            const auto keycodeset_opt = extract_param<JTag::Enum, JTag::None, virt::Domain::KeycodeSet>(val, "keycode_set", json_res);
+            const auto keycodeset_opt = extract_param<JTag::Enum, JTag::None, virt::enums::domain::KeycodeSet>(val, "keycode_set", json_res);
             if (!keycodeset_opt)
                 return error(0);
             const auto keycodeset = *keycodeset_opt;

@@ -3,9 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::ChannelFlag : private VirtEnumStorage<virDomainChannelFlags>, public VirtEnumBase<ChannelFlag>, public EnumSetHelper<ChannelFlag> {
+namespace virt::enums::domain {
+class ChannelFlag : private VirtEnumStorage<virDomainChannelFlags>, public VirtEnumBase<ChannelFlag>, public EnumSetHelper<ChannelFlag> {
     friend VirtEnumBase<ChannelFlag>;
     friend EnumSetHelper<ChannelFlag>;
     enum class Underlying {

@@ -49,14 +49,15 @@ class NetworkUnawareHandlers : public HandlerContext {
      * \return the flag, or `std::nullopt` on error
      * */
     [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept
-        -> std::optional<virt::Connection::List::Networks::Flag> {
-        auto flags = virt::Connection::List::Networks::Flag::DEFAULT;
+        -> std::optional<virt::enums::connection::list::networks::Flag> {
+        using namespace virt::enums::connection::list::networks;
+        auto flags = Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
-            flags |= *activity ? virt::Connection::List::Networks::Flag::ACTIVE : virt::Connection::List::Networks::Flag::INACTIVE;
+            flags |= *activity ? Flag::ACTIVE : Flag::INACTIVE;
         if (auto persistence = target.getBool("persistent"); persistence)
-            flags |= *persistence ? virt::Connection::List::Networks::Flag::PERSISTENT : virt::Connection::List::Networks::Flag::TRANSIENT;
+            flags |= *persistence ? Flag::PERSISTENT : Flag::TRANSIENT;
         if (auto autostart = target.getBool("autostart"); autostart)
-            flags |= *autostart ? virt::Connection::List::Networks::Flag::AUTOSTART : virt::Connection::List::Networks::Flag::NO_AUTOSTART;
+            flags |= *autostart ? Flag::AUTOSTART : Flag::NO_AUTOSTART;
         return {flags};
     }
 };

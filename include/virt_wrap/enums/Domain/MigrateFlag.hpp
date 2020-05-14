@@ -3,9 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::MigrateFlag : private VirtEnumStorage<virDomainMigrateFlags>, public VirtEnumBase<MigrateFlag>, public EnumSetHelper<MigrateFlag> {
+namespace virt::enums::domain {
+class MigrateFlag : private VirtEnumStorage<virDomainMigrateFlags>, public VirtEnumBase<MigrateFlag>, public EnumSetHelper<MigrateFlag> {
     friend VirtEnumBase<MigrateFlag>;
     friend EnumSetHelper<MigrateFlag>;
     enum class Underlying {

@@ -3,11 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::LifecycleAction : private VirtEnumStorage<virDomainLifecycleAction>,
-                                public VirtEnumBase<LifecycleAction>,
-                                public EnumHelper<LifecycleAction> {
+namespace virt::enums::domain {
+class LifecycleAction : private VirtEnumStorage<virDomainLifecycleAction>, public VirtEnumBase<LifecycleAction>, public EnumHelper<LifecycleAction> {
     friend VirtEnumBase<LifecycleAction>;
     friend EnumHelper<LifecycleAction>;
     enum class Underlying {

@@ -77,7 +77,9 @@ enum class Flag : unsigned {
     AUTOSTART = VIR_CONNECT_LIST_NETWORKS_AUTOSTART,
     NO_AUTOSTART = VIR_CONNECT_LIST_NETWORKS_NO_AUTOSTART,
 };
-}
+[[nodiscard]] constexpr Flag operator|(Flag lhs, Flag rhs) noexcept { return Flag{to_integral(lhs) | to_integral(rhs)}; }
+constexpr Flag& operator|=(Flag& lhs, Flag rhs) noexcept { return lhs = Flag{to_integral(lhs) | to_integral(rhs)}; }
+} // namespace networks
 } // namespace list
 namespace get_all_domains::stats {
 enum class Flags : unsigned {
@@ -98,4 +100,22 @@ enum class Flags : unsigned {
     ENFORCE_STATS = VIR_CONNECT_GET_ALL_DOMAINS_STATS_ENFORCE_STATS, // enforce requested stats
 };
 }
+
+[[nodiscard]] constexpr inline Flags operator|(Flags lhs, Flags rhs) noexcept;
+
+[[nodiscard]] constexpr inline get_all_domains::stats::Flags operator|(get_all_domains::stats::Flags lhs, get_all_domains::stats::Flags rhs) noexcept;
+
+constexpr inline list::devices::Flags operator|(list::devices::Flags lhs, list::devices::Flags rhs) noexcept;
+
+constexpr inline Flags operator|(Flags lhs, Flags rhs) noexcept { return Flags(to_integral(lhs) | to_integral(rhs)); }
+
+[[nodiscard]] constexpr inline get_all_domains::stats::Flags operator|(get_all_domains::stats::Flags lhs,
+                                                                       get_all_domains::stats::Flags rhs) noexcept {
+    return get_all_domains::stats::Flags(to_integral(lhs) | to_integral(rhs));
+}
+
+constexpr inline list::devices::Flags operator|(list::devices::Flags lhs, list::devices::Flags rhs) noexcept {
+    return list::devices::Flags{to_integral(lhs) | to_integral(rhs)};
+}
+
 } // namespace virt::enums::connection

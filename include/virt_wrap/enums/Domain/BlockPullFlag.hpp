@@ -3,11 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::BlockPullFlag : private VirtEnumStorage<virDomainBlockPullFlags>,
-                              public VirtEnumBase<BlockPullFlag>,
-                              public EnumSetHelper<BlockPullFlag> {
+namespace virt::enums::domain {
+class BlockPullFlag : private VirtEnumStorage<virDomainBlockPullFlags>, public VirtEnumBase<BlockPullFlag>, public EnumSetHelper<BlockPullFlag> {
     friend VirtEnumBase<BlockPullFlag>;
     friend EnumSetHelper<BlockPullFlag>;
     enum class Underlying {

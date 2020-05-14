@@ -4,12 +4,12 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt::enums {
+namespace virt::enums::domain {
 
-class domain::SaveRestoreFlag : private VirtEnumStorage<unsigned>,
-                                public VirtCustomEnum,
-                                public VirtEnumBase<SaveRestoreFlag>,
-                                public EnumSetHelper<SaveRestoreFlag> {
+class SaveRestoreFlag : private VirtEnumStorage<unsigned>,
+                        public VirtCustomEnum,
+                        public VirtEnumBase<SaveRestoreFlag>,
+                        public EnumSetHelper<SaveRestoreFlag> {
     // FIXME Redesign and fix all this mess
     friend VirtCustomEnum;
     friend VirtEnumBase<SaveRestoreFlag>;
@@ -52,7 +52,7 @@ class domain::SaveRestoreFlag : private VirtEnumStorage<unsigned>,
 
     using VirtEnumBase::VirtEnumBase;
     constexpr explicit SaveRestoreFlag(unsigned u) noexcept { underlying = u; }
-    constexpr explicit SaveRestoreFlag(virDomainSaveRestoreFlags u) noexcept { underlying = u; }
+    constexpr SaveRestoreFlag(virDomainSaveRestoreFlags u) noexcept { underlying = u; }
     template <typename T, typename = std::enable_if_t<std::is_base_of_v<EBase, T>>> constexpr explicit SaveRestoreFlag(T) noexcept {
         underlying = T::value;
     }
@@ -126,5 +126,6 @@ constexpr domain::SaveRestoreFlag operator|(domain::SaveRestoreFlag::PAUSED_t, d
     return virDomainSaveRestoreFlags(VIR_DOMAIN_SAVE_BYPASS_CACHE | VIR_DOMAIN_SAVE_PAUSED);
 }
 
+constexpr unsigned to_integral(SaveRestoreFlag f) noexcept { return impl_to_integral(f); }
+
 } // namespace virt::enums
-constexpr unsigned to_integral(virt::domain::SaveRestoreFlag f) noexcept { return impl_to_integral(f); }

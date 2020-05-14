@@ -3,10 +3,10 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-class Domain::BlockCommitFlag : private VirtEnumStorage<virDomainBlockCommitFlags>,
-                                public VirtEnumBase<BlockCommitFlag>,
-                                public EnumSetHelper<BlockCommitFlag> {
+namespace virt::enums::domain {
+class BlockCommitFlag : private VirtEnumStorage<virDomainBlockCommitFlags>,
+                        public VirtEnumBase<BlockCommitFlag>,
+                        public EnumSetHelper<BlockCommitFlag> {
     friend VirtEnumBase<BlockCommitFlag>;
     friend EnumSetHelper<BlockCommitFlag>;
     enum class Underlying {
@@ -31,4 +31,4 @@ class Domain::BlockCommitFlag : private VirtEnumStorage<virDomainBlockCommitFlag
     constexpr static auto BANDWIDTH_BYTES = Underlying::BANDWIDTH_BYTES;
 };
 
-} // namespace virt
+} // namespace virt::enums::domain

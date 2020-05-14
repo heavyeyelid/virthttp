@@ -3,11 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::UndefineFlag : private VirtEnumStorage<virDomainUndefineFlagsValues>,
-                             public VirtEnumBase<UndefineFlag>,
-                             public EnumSetHelper<UndefineFlag> {
+namespace virt::enums::domain {
+class UndefineFlag : private VirtEnumStorage<virDomainUndefineFlagsValues>, public VirtEnumBase<UndefineFlag>, public EnumSetHelper<UndefineFlag> {
     friend VirtEnumBase<UndefineFlag>;
     friend EnumSetHelper<UndefineFlag>;
     enum class Underlying {

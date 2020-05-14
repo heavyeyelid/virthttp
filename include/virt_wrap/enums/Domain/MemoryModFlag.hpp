@@ -3,11 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::MemoryModFlag : private VirtEnumStorage<virDomainMemoryModFlags>,
-                              public VirtEnumBase<MemoryModFlag>,
-                              public EnumSetHelper<MemoryModFlag> {
+namespace virt::enums::domain {
+class MemoryModFlag : private VirtEnumStorage<virDomainMemoryModFlags>, public VirtEnumBase<MemoryModFlag>, public EnumSetHelper<MemoryModFlag> {
     friend VirtEnumBase<MemoryModFlag>;
     friend EnumSetHelper<MemoryModFlag>;
     enum class Underlying {

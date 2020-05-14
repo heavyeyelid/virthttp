@@ -7,6 +7,7 @@
 #include <vector>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
+#include "enums/Connection/Connection.hpp"
 #include "enums/Connection/Decls.hpp"
 #include "enums/Domain/Decls.hpp"
 #include "enums/Domain/SaveRestoreFlag.hpp"
@@ -52,16 +53,6 @@ class Connection {
     friend Stream;
 
     virConnectPtr underlying = nullptr;
-
-  public:
-    struct List {
-        struct Domains {
-            class Flag;
-        };
-        struct StoragePool {
-            class Flag;
-        };
-    };
 
   private:
     constexpr explicit Connection(virConnectPtr p) : underlying(p) {}
@@ -121,7 +112,7 @@ class Connection {
 
     inline bool restore(gsl::czstring<> from) noexcept;
 
-    inline bool restore(gsl::czstring<> from, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept;
+    inline bool restore(gsl::czstring<> from, gsl::czstring<> dxml, enums::domain::SaveRestoreFlag flags) noexcept;
 
     [[nodiscard]] inline int numOfDomains() const noexcept;
 
@@ -131,10 +122,9 @@ class Connection {
 
     template <typename StrT>[[nodiscard]] auto listDefinedDomains() const = delete;
 
-    [[nodiscard]] inline auto listAllDomains(List::Domains::Flag flags) const -> std::vector<Domain>;
+    [[nodiscard]] inline auto listAllDomains(enums::connection::list::domains::Flag flags) const -> std::vector<Domain>;
 
-    [[nodiscard]] inline auto getAllDomainStats(enums::domain::stats::Types stats, enums::connection::get_all_domains::stats::Flags flags)
-        -> std::vector<enums::domain::stats::Record>;
+    [[nodiscard]] inline auto getAllDomainStats(enums::domain::stats::Types stats, enums::connection::get_all_domains::stats::Flags flags);
 
     [[nodiscard]] inline Domain domainLookupByID(int) const noexcept;
 
@@ -146,9 +136,9 @@ class Connection {
     [[nodiscard]] inline Domain domainLookupByUUIDString(gsl::czstring<>) const noexcept;
     [[nodiscard]] inline Domain domainLookupByUUIDString(const std::string&) const noexcept;
 
-    inline bool domainSaveImageDefineXML(gsl::czstring<> file, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept;
+    inline bool domainSaveImageDefineXML(gsl::czstring<> file, gsl::czstring<> dxml, enums::domain::SaveRestoreFlag flags) noexcept;
 
-    [[nodiscard]] inline UniqueZstring domainSaveImageGetXMLDesc(gsl::czstring<> file, Domain::SaveImageXMLFlag flags) const noexcept;
+    [[nodiscard]] inline UniqueZstring domainSaveImageGetXMLDesc(gsl::czstring<> file, enums::domain::SaveImageXMLFlag flags) const noexcept;
 
     [[nodiscard]] inline virNodeInfo nodeGetInfo() const;
 
@@ -165,15 +155,17 @@ class Connection {
     [[nodiscard]] inline Network networkLookupByUUIDString(gsl::czstring<> uuid_str) const noexcept;
     [[nodiscard]] inline Network networkLookupByUUIDString(const std::string& uuid_str) const noexcept;
 
-    [[nodiscard]] inline auto listAllNetworks(List::Networks::Flag) const noexcept;
+    [[nodiscard]] inline auto listAllNetworks(enums::connection::list::networks::Flag) const noexcept;
     [[nodiscard]] inline auto listDefinedNetworksNames() const noexcept;
     [[nodiscard]] inline auto listNetworksNames() const noexcept;
-    [[nodiscard]] inline std::vector<Network> extractAllNetworks(List::Networks::Flag) const;
+    [[nodiscard]] inline std::vector<Network> extractAllNetworks(enums::connection::list::networks::Flag) const;
     [[nodiscard]] inline std::vector<std::string> extractDefinedNetworksNames() const;
     [[nodiscard]] inline std::vector<std::string> extractNetworksNames() const;
 
-    [[nodiscard]] inline auto listAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const noexcept;
-    [[nodiscard]] inline std::vector<NodeDevice> extractAllDevices(List::Devices::Flags flags = List::Devices::Flags::DEFAULT) const;
+    [[nodiscard]] inline auto
+    listAllDevices(enums::connection::list::devices::Flags flags = enums::connection::list::devices::Flags::DEFAULT) const noexcept;
+    [[nodiscard]] inline std::vector<NodeDevice>
+    extractAllDevices(enums::connection::list::devices::Flags flags = enums::connection::list::devices::Flags::DEFAULT) const;
 
     [[nodiscard]] inline auto listDevicesNames(const std::string& capability) const noexcept;
     [[nodiscard]] inline std::vector<std::string> extractDevicesNames(const std::string& capability) const;
@@ -182,8 +174,8 @@ class Connection {
 
     [[nodiscard]] inline NodeDevice deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czstring<> wwpn) const noexcept;
 
-    [[nodiscard]] inline auto listAllStoragePools(List::StoragePool::Flag flags) const noexcept;
-    [[nodiscard]] inline std::vector<StoragePool> extractAllStoragePools(List::StoragePool::Flag) const;
+    [[nodiscard]] inline auto listAllStoragePools(enums::connection::list::storage_pool::Flag flags) const noexcept;
+    [[nodiscard]] inline std::vector<StoragePool> extractAllStoragePools(enums::connection::list::storage_pool::Flag) const;
     [[nodiscard]] inline auto listDefinedStoragePoolsNames() const noexcept;
     [[nodiscard]] inline auto listStoragePoolsNames() const noexcept;
     [[nodiscard]] inline int numOfDefinedStoragePools() const noexcept;
@@ -199,24 +191,6 @@ class Connection {
 };
 
 } // namespace virt
-#include "enums/Connection/Connection.hpp"
-namespace virt {
-
-[[nodiscard]] constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept;
-
-[[nodiscard]] constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Domains::Flag lhs,
-                                                                         Connection::List::Domains::Flag rhs) noexcept;
-constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept;
-[[nodiscard]] constexpr inline Connection::List::Networks::Flag operator|(Connection::List::Networks::Flag lhs,
-                                                                          Connection::List::Networks::Flag rhs) noexcept;
-constexpr inline Connection::List::Networks::Flag& operator|=(Connection::List::Networks::Flag& lhs, Connection::List::Networks::Flag rhs) noexcept;
-
-[[nodiscard]] constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
-                                                                                 Connection::GetAllDomains::Stats::Flags rhs) noexcept;
-
-constexpr inline Connection::List::Devices::Flags operator|(Connection::List::Devices::Flags lhs, Connection::List::Devices::Flags rhs) noexcept;
-} // namespace virt
-
 #include "impl/Connection.hpp"
 
 #endif
