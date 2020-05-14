@@ -95,11 +95,11 @@ inline bool Domain::create() noexcept { return virDomainCreate(underlying) == 0;
 
 inline bool Domain::create(CreateFlag flags) noexcept { return virDomainCreateWithFlags(underlying, to_integral(flags)) == 0; }
 
-inline bool Domain::coreDump(std::filesystem::path to, CoreDump::Flag flags) const noexcept {
+inline bool Domain::coreDump(std::filesystem::path to, enums::domain::core_dump::Flag flags) const noexcept {
     return virDomainCoreDump(underlying, to.c_str(), to_integral(flags)) == 0;
 }
 
-inline bool Domain::coreDump(std::filesystem::path to, CoreDump::Format format, CoreDump::Flag flags) const noexcept {
+inline bool Domain::coreDump(std::filesystem::path to, enums::domain::core_dump::Format format, enums::domain::core_dump::Flag flags) const noexcept {
     return virDomainCoreDumpWithFormat(underlying, to.c_str(), to_integral(format), to_integral(flags)) == 0;
 }
 
@@ -212,10 +212,10 @@ CpuMap ret;
 }
 
 [[nodiscard]] inline auto Domain::getJobStats(GetJobStatsFlag flags) const noexcept {
-    int jt = to_integral(JobType::NONE);
+    int jt = to_integral(enums::domain::JobType::NONE);
     auto res = TPImpl::wrap_oparm_set_tp(
         underlying, [&](auto* u, auto ptr, auto* n, auto f) { return virDomainGetJobStats(u, &jt, ptr, n, f); }, to_integral(flags));
-    return std::make_pair(JobType{jt}, std::move(res));
+    return std::make_pair(enums::domain::JobType{jt}, std::move(res));
 }
 
 [[nodiscard]] std::optional<TypedParams> Domain::getGuestVcpus() const noexcept {
@@ -280,7 +280,9 @@ CpuMap ret;
 
 [[nodiscard]] inline unsigned Domain::getID() const noexcept { return virDomainGetID(underlying); }
 
-[[nodiscard]] inline int Domain::getNumVcpus(VCpuFlag flags) const noexcept { return virDomainGetVcpusFlags(underlying, to_integral(flags)); }
+[[nodiscard]] inline int Domain::getNumVcpus(enums::domain::VCpuFlag flags) const noexcept {
+    return virDomainGetVcpusFlags(underlying, to_integral(flags));
+}
 
 [[nodiscard]] inline auto Domain::getSchedulerType() const noexcept -> std::pair<UniqueZstring, int> {
     std::pair<UniqueZstring, int> ret{};
@@ -309,21 +311,21 @@ CpuMap ret;
         return StateWReason{};
     switch (state) {
     case VIR_DOMAIN_NOSTATE:
-        return StateWReason{StateReason::NoState{reason}};
+        return StateWReason{enums::domain::state_reason::NoState{reason}};
     case VIR_DOMAIN_RUNNING:
-        return StateWReason{StateReason::Running{reason}};
+        return StateWReason{enums::domain::state_reason::Running{reason}};
     case VIR_DOMAIN_BLOCKED:
-        return StateWReason{StateReason::Blocked{reason}};
+        return StateWReason{enums::domain::state_reason::Blocked{reason}};
     case VIR_DOMAIN_PAUSED:
-        return StateWReason{StateReason::Paused{reason}};
+        return StateWReason{enums::domain::state_reason::Paused{reason}};
     case VIR_DOMAIN_SHUTDOWN:
-        return StateWReason{StateReason::Shutdown{reason}};
+        return StateWReason{enums::domain::state_reason::Shutdown{reason}};
     case VIR_DOMAIN_SHUTOFF:
-        return StateWReason{StateReason::Shutoff{reason}};
+        return StateWReason{enums::domain::state_reason::Shutoff{reason}};
     case VIR_DOMAIN_CRASHED:
-        return StateWReason{StateReason::Crashed{reason}};
+        return StateWReason{enums::domain::state_reason::Crashed{reason}};
     case VIR_DOMAIN_PMSUSPENDED:
-        return StateWReason{StateReason::PMSuspended{reason}};
+        return StateWReason{enums::domain::state_reason::PMSuspended{reason}};
     }
     UNREACHABLE;
 }
@@ -397,7 +399,7 @@ CpuMap ret;
         virDomainGetSchedulerParametersFlags, to_integral(flags));
 }
 
-[[nodiscard]] inline auto Domain::getVcpuPinInfo(VCpuFlag flags) -> std::optional<std::vector<unsigned char>> {
+[[nodiscard]] inline auto Domain::getVcpuPinInfo(enums::domain::VCpuFlag flags) -> std::optional<std::vector<unsigned char>> {
     return meta::light::wrap_oparm_owning_fill_autodestroyable_arr(
         underlying, [&](decltype(underlying) u) -> int { return getInfo().nrVirtCpu; },
         [=](decltype(underlying) u, unsigned char* ptr, int n) { return virDomainGetVcpuPinInfo(u, n, ptr, VIR_CPU_MAPLEN(n), to_integral(flags)); });
@@ -425,12 +427,12 @@ CpuMap ret;
 
 [[nodiscard]] inline bool Domain::injectNMI() noexcept { return virDomainInjectNMI(underlying, 0) == 0; }
 
-[[nodiscard]] inline auto Domain::interfaceAddressesView(InterfaceAddressesSource source) const noexcept {
+[[nodiscard]] inline auto Domain::interfaceAddressesView(enums::domain::InterfaceAddressesSource source) const noexcept {
     return meta::light::wrap_opram_owning_set_destroyable_arr<InterfaceView, UniqueSpan>(underlying, virDomainInterfaceAddresses, to_integral(source),
                                                                                          0u);
 }
 
-[[nodiscard]] inline auto Domain::interfaceAddresses(InterfaceAddressesSource source) const -> std::vector<Interface> {
+[[nodiscard]] inline auto Domain::interfaceAddresses(enums::domain::InterfaceAddressesSource source) const -> std::vector<Interface> {
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<Interface>(underlying, virDomainInterfaceAddresses, to_integral(source), 0u);
 }
 
@@ -456,17 +458,17 @@ inline bool Domain::managedSaveDefineXML(gsl::czstring<> dxml, SaveRestoreFlag f
     return virDomainManagedSaveDefineXML(underlying, dxml, to_integral(flags)) == 0;
 }
 
-[[nodiscard]] inline UniqueZstring Domain::managedSaveGetXMLDesc(SaveImageXMLFlag flags) const noexcept {
+[[nodiscard]] inline UniqueZstring Domain::managedSaveGetXMLDesc(enums::domain::SaveImageXMLFlag flags) const noexcept {
     return UniqueZstring{virDomainManagedSaveGetXMLDesc(underlying, to_integral(flags))};
 }
 
-[[nodiscard]] inline std::string Domain::managedSaveExtractXMLDesc(SaveImageXMLFlag flags) const noexcept {
+[[nodiscard]] inline std::string Domain::managedSaveExtractXMLDesc(enums::domain::SaveImageXMLFlag flags) const noexcept {
     return {static_cast<const char*>(managedSaveGetXMLDesc(flags))};
 }
 
 inline bool Domain::managedSaveRemove() noexcept { return virDomainManagedSaveRemove(underlying, 0) == 0; }
 
-inline bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, MemoryFlag flags) const noexcept {
+inline bool Domain::memoryPeek(unsigned long long start, gsl::span<unsigned char> buffer, enums::domain::MemoryFlag flags) const noexcept {
     return virDomainMemoryPeek(underlying, start, buffer.size(), buffer.data(), to_integral(flags)) == 0;
 }
 
@@ -656,11 +658,11 @@ inline bool Domain::setMetadata(MetadataType type, gsl::czstring<> metadata, gsl
     return virDomainSetMetadata(underlying, to_integral(type), metadata, key, uri, to_integral(flags)) >= 0;
 }
 
-inline bool Domain::setTime(long long seconds, unsigned int nseconds, Domain::SetTimeFlag flags) noexcept {
+inline bool Domain::setTime(long long seconds, unsigned int nseconds, enums::domain::SetTimeFlag flags) noexcept {
     return virDomainSetTime(underlying, seconds, nseconds, to_integral(flags));
 }
 
-inline bool Domain::setUserPassword(gsl::czstring<> user, gsl::czstring<> password, Domain::SetUserPasswordFlag flags) noexcept {
+inline bool Domain::setUserPassword(gsl::czstring<> user, gsl::czstring<> password, enums::domain::SetUserPasswordFlag flags) noexcept {
     return virDomainSetUserPassword(underlying, user, password, to_integral(flags));
 }
 
@@ -670,7 +672,7 @@ inline bool Domain::setVcpu(gsl::czstring<> vcpumap, bool state, ModificationImp
 
 inline bool Domain::setVcpus(unsigned int nvcpus) noexcept { return virDomainSetVcpus(underlying, nvcpus) == 0; }
 
-inline bool Domain::setVcpus(unsigned int nvcpus, Domain::VCpuFlag flags) noexcept {
+inline bool Domain::setVcpus(unsigned int nvcpus, enums::domain::VCpuFlag flags) noexcept {
     return virDomainSetVcpusFlags(underlying, nvcpus, to_integral(flags)) == 0;
 }
 
@@ -688,9 +690,9 @@ inline bool Domain::updateDeviceFlags(gsl::czstring<> xml, DeviceModifyFlag flag
     return virDomainUpdateDeviceFlags(underlying, xml, to_integral(flags)) >= 0;
 }
 
-inline Domain::Stats::Record::Record(const virDomainStatsRecord& from) noexcept : dom(from.dom) {
+inline Domain::StatsRecord::StatsRecord(const virDomainStatsRecord& from) noexcept : dom(from.dom) {
     params.reserve(static_cast<std::size_t>(from.nparams));
     std::transform(from.params, from.params + from.nparams, std::back_inserter(params),
                    [](const virTypedParameter& tp) { return TypedParameter{tp}; });
 }
-}
+} // namespace virt

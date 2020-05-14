@@ -1,7 +1,7 @@
 #pragma once
 #include <tuple>
 #include <rapidjson/rapidjson.h>
-#include "wrapper/actions_table.hpp"
+//#include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
 #include "wrapper/dispatch.hpp"
 #include "base.hpp"
@@ -104,6 +104,8 @@ class NetworkHandlers : public HandlerMethods {
         json_res.result(std::move(nw_json));
         return DependsOutcome::SUCCESS;
     }
-    DependsOutcome alter(const rapidjson::Value& action) override { return error(-1), DependsOutcome::FAILURE; }
+    DependsOutcome alter(const rapidjson::Value& action) override {
+        return error(-1), DependsOutcome::SUCCESS;
+    }
     DependsOutcome vacuum(const rapidjson::Value& action) override { return error(-1), DependsOutcome::FAILURE; }
 };

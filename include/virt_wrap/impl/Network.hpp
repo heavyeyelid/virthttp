@@ -120,4 +120,4 @@ inline bool Network::undefine() noexcept { return virNetworkUndefine(underlying)
 inline Network Network::createXML(Connection& conn, gsl::czstring<> xml) { return Network{virNetworkCreateXML(conn.underlying, xml)}; }
 inline Network Network::defineXML(Connection& conn, gsl::czstring<> xml) { return Network{virNetworkDefineXML(conn.underlying, xml)}; }
 
-}
+} // namespace virt

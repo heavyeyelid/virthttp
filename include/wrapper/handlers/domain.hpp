@@ -3,9 +3,9 @@
 #include <tuple>
 #include <rapidjson/rapidjson.h>
 #include <virt_wrap/Error.hpp>
-#include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
 #include "wrapper/dispatch.hpp"
+#include "wrapper/domain_actions_table.hpp"
 #include "wrapper/virt2json.hpp"
 #include "base.hpp"
 #include "flagwork.hpp"

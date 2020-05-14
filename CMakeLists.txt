@@ -151,7 +151,7 @@ add_executable(virthttp
         include/urlparser.hpp
         include/wrapper/decoder_support/compression.hpp
         include/wrapper/decoder_support/libdeflate.hpp
-        )
+        include/wrapper/network_actions_table.hpp)
 
 target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} ${LibDeflate_LIBRARIES} pthread deflate)
 if (WIN32)
