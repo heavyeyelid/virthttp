@@ -15,7 +15,8 @@
  * \internal
  * jdispatcher values for network handlers as a type list
  **/
-using NetworkJDispatcherVals = std::tuple<JDispatchVals<JAll>, JDispatchVals<JAll>, JDispatchVals<JAll>, JDispatchVals<JAll>>;
+using NetworkJDispatcherVals = std::tuple<JDispatchVals<JAll>, JDispatchVals<JAll>,
+                                          JDispatchVals<JTypeList<rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>>;
 /**
  * \internal
  * jdispatcher values for network handlers as a tuple
@@ -92,7 +93,7 @@ class NetworkHandlers : public HandlerMethods {
         if (obj.IsString())
             return create_nw(obj.GetString());
         if (obj.IsArray()) {
-            for (const auto & item : obj.GetArray()) {
+            for (const auto& item : obj.GetArray()) {
                 if (!item.IsString())
                     return error(-999), DependsOutcome::FAILURE; // Not a string array
                 if (create_nw(item.GetString()) == DependsOutcome::FAILURE)
