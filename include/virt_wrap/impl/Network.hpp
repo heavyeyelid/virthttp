@@ -59,7 +59,7 @@ inline Network::~Network() noexcept {
     return ret;
 }
 
-[[nodiscard]] inline auto Network::getXMLDesc(Network::XMLFlags flags) const noexcept {
+[[nodiscard]] inline UniqueZstring Network::getXMLDesc(Network::XMLFlags flags) const noexcept {
     return UniqueZstring{virNetworkGetXMLDesc(underlying, to_integral(flags))};
 }
 
