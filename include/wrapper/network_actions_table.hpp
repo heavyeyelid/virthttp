@@ -23,7 +23,7 @@ class NetworkActionsTable : public NamedCallTable<NetworkActionsTable, NetworkAc
 
     using Hdl = NetworkActionsHdl;
 
-    constexpr static std::array<std::string_view, 1> keys = {"autostart", ""};
+    constexpr static std::array<std::string_view, 1> keys = {"autostart"};
     constexpr static std::array<Hdl, 1> fcns = {};
     static_assert(keys.size() == fcns.size());
 } constexpr static const network_actions_table{};

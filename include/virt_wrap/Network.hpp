@@ -55,6 +55,7 @@ class Network {
     [[nodiscard]] inline auto getDHCPLeases(gsl::czstring<> mac) const noexcept;
 
     [[nodiscard]] inline auto extractDHCPLeases(gsl::czstring<> mac) const -> std::optional<std::vector<virNetworkDHCPLease>>;
+    [[nodiscard]] inline auto extractDHCPLeases(std::string mac) const -> std::optional<std::vector<virNetworkDHCPLease>>;
 
     inline bool setAutostart(bool autostart) noexcept;
     [[nodiscard]] inline TFE getAutostart() const noexcept;

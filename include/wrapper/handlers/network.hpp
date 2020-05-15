@@ -81,59 +81,46 @@ class NetworkHandlers : public HandlerMethods {
 
     DependsOutcome query(const rapidjson::Value& action) override {
         rapidjson::Value res_val;
+        auto& jalloc = json_res.GetAllocator();
+        const auto& path_parts = target.getPathParts();
+        if (path_parts.size() < 5) {
+            rapidjson::Value jsonActive;
+            {
+                TFE nwActive = nw.isActive();
+                if (nwActive.err()) {
+                    logger.error("Error occurred while getting network status");
+                    return error(500), DependsOutcome::FAILURE;
+                }
+                jsonActive.SetBool(static_cast<bool>(nwActive));
+            }
+            rapidjson::Value jsonAS;
+            {
+                TFE nwAS = nw.getAutostart();
+                if (nwAS.err()) {
+                    logger.error("Error occurred while getting network autostart policy");
+                    return error(500), DependsOutcome::FAILURE;
+                }
+                jsonActive.SetBool(static_cast<bool>(nwAS));
+            }
+
+            res_val.SetObject();
+            res_val.AddMember("name", rapidjson::Value(nw.getName(), jalloc), jalloc);
+            res_val.AddMember("uuid", nw.extractUUIDString(), jalloc);
+            res_val.AddMember("active", jsonActive, jalloc);
+            res_val.AddMember("autostart", jsonAS, jalloc);
+            json_res.result(std::move(res_val));
+            return DependsOutcome::SUCCESS;
+        }
 
         const auto outcome =
-            parameterized_depends_scope(subquery("dhcp-leases", SUBQ_LIFT(nw.extractDHCPLeases), fwd_as_if_err(-2), [&](auto& jalloc) {
-                rapidjson::Value json_dhcp_leases_array;
-                json_dhcp_leases_array.SetArray();
+            parameterized_depends_scope(subquery("dhcp-leases", "mac", ti<std::string>, SUBQ_LIFT(nw.extractDHCPLeases), fwd_as_if_err(-2))
+                                        // subquery("dumpxml"), subquery("event"),
+                                        // subquery("info"), subquery("name"), subquery("uuid"), subquery("port-list"), subquery("port-dumpxml")
+                                        )(4, target, res_val, json_res.GetAllocator(), [&](auto... args) { return error(args...); });
 
-                auto dhcp_leases = nw.extractDHCPLeases("Test");
-                if (!dhcp_leases) {
-                    logger.error("Error occured while getting DHCP Leases");
-                    return error(-999), DependsOutcome::FAILURE;
-                }
-                for (auto& lease : *dhcp_leases) {
-                    rapidjson::Value json_lease;
-                    json_lease.AddMember("type", lease.type, json_res.GetAllocator());
-                    json_lease.AddMember("client-id", to_json(lease.clientid, json_res.GetAllocator()), json_res.GetAllocator());
-                    json_lease.AddMember("expiry-time", lease.expirytime, json_res.GetAllocator());
-                    json_lease.AddMember("hostname", to_json(lease.hostname, json_res.GetAllocator()), json_res.GetAllocator());
-                    json_lease.AddMember("iaid", to_json(lease.iaid, json_res.GetAllocator()), json_res.GetAllocator());
-                    json_lease.AddMember("interface", to_json(lease.iface, json_res.GetAllocator()), json_res.GetAllocator());
-                    json_lease.AddMember("ip-address", to_json(lease.ipaddr, json_res.GetAllocator()), json_res.GetAllocator());
-                    json_lease.AddMember("mac-address", to_json(lease.mac, json_res.GetAllocator()), json_res.GetAllocator());
-                    json_lease.AddMember("prefix", lease.prefix, json_res.GetAllocator());
-                    json_dhcp_leases_array.PushBack(json_lease, json_res.GetAllocator());
-                }
-                return json_dhcp_leases_array;
-            }))();
-        //            subquery("dumpxml"), subquery("event"),
-        //            subquery("info"), subquery("name"), subquery("uuid"), subquery("port-list"), subquery("port-dumpxml"));
-
-        rapidjson::Value jsonActive;
-        {
-            TFE nwActive = nw.isActive();
-            if (nwActive.err()) {
-                logger.error("Error occurred while getting network status");
-                return error(500), DependsOutcome::FAILURE;
-            }
-            jsonActive.SetBool(static_cast<bool>(nwActive));
-        }
-        {
-            TFE nwAS = nw.isActive();
-            if (nwAS.err()) {
-                logger.error("Error occurred while getting network autostart policy");
-                return error(500), DependsOutcome::FAILURE;
-            }
-            jsonActive.SetBool(static_cast<bool>(nwAS));
-        }
-
-        res_val.SetObject();
-        res_val.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-        res_val.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
-        res_val.AddMember("active", jsonActive, json_res.GetAllocator());
-        json_res.result(std::move(res_val));
-        return DependsOutcome::SUCCESS;
+        if (outcome == DependsOutcome::SUCCESS)
+            json_res.result(std::move(res_val));
+        return outcome;
     }
     DependsOutcome alter(const rapidjson::Value& action) override {
         const auto& action_obj = *action.MemberBegin();

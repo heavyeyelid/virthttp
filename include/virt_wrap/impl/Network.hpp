@@ -102,6 +102,9 @@ inline Network::~Network() noexcept {
     freeany(lease_arr);
     return ret;
 }
+[[nodiscard]] inline auto Network::extractDHCPLeases(std::string mac) const -> std::optional<std::vector<virNetworkDHCPLease>> {
+    return extractDHCPLeases(mac.c_str());
+}
 
 inline bool Network::setAutostart(bool autostart) noexcept { return virNetworkSetAutostart(underlying, autostart) == 0; }
 

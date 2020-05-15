@@ -99,7 +99,7 @@ class DomainHandlers : public HandlerMethods {
     DependsOutcome query(const rapidjson::Value& action) override {
         rapidjson::Value res_val;
         auto& jalloc = json_res.GetAllocator();
-        auto& path_parts = target.getPathParts();
+        const auto& path_parts = target.getPathParts();
         if (path_parts.size() < 5) {
             res_val.SetObject();
             const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
