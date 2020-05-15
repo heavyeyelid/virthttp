@@ -1,0 +1,19 @@
+var searchData=
+[
+  ['default',['DEFAULT',['../classvirt_1_1enums_1_1connection_1_1list_1_1domains_1_1_flag.html#a7af1f2674e0bebc968d8a43959a40cca',1,'virt::enums::connection::list::domains::Flag::DEFAULT()'],['../classvirt_1_1enums_1_1connection_1_1list_1_1storage__pool_1_1_flag.html#a32c40250b5b7faaf8c1fbfc1246a136a',1,'virt::enums::connection::list::storage_pool::Flag::DEFAULT()'],['../classvirt_1_1enums_1_1domain_1_1_destroy_flag.html#ab78c2dd15199a099234b28fc9247852b',1,'virt::enums::domain::DestroyFlag::DEFAULT()'],['../classvirt_1_1enums_1_1domain_1_1_save_restore_flag.html#ae32f0910a1be870213a205d30137b14e',1,'virt::enums::domain::SaveRestoreFlag::DEFAULT()'],['../classvirt_1_1enums_1_1domain_1_1_shutdown_flag.html#a9552cb0bd25f02902a1f7ef25c504ed1',1,'virt::enums::domain::ShutdownFlag::DEFAULT()'],['../classvirt_1_1enums_1_1domain_1_1_x_m_l_flags.html#a7fd4557edbb247cabe98002a66d62e89',1,'virt::enums::domain::XMLFlags::DEFAULT()'],['../classvirt_1_1enums_1_1network_1_1_x_m_l_flags.html#a1bfa60bb524fd17503052d87a653efdb',1,'virt::enums::network::XMLFlags::DEFAULT()']]],
+  ['default_5fexpire',['default_expire',['../struct_async_store.html#af874b6573f9f1a6bcb310a07e39be26b',1,'AsyncStore']]],
+  ['defresult',['defresult',['../structvirt_1_1_connect_credential.html#a0c22adf8f0490cd5a25b2234d12fc02f',1,'virt::ConnectCredential']]],
+  ['degraded',['DEGRADED',['../classvirt_1_1_storage_pool_1_1_state.html#ad5c43d918495014c4ef06e1bef998aea',1,'virt::StoragePool::State']]],
+  ['delete',['DELETE',['../classvirt_1_1enums_1_1domain_1_1_block_commit_flag.html#a5c63eed03dbeef9f22cb1f1a1c47bcfe',1,'virt::enums::domain::BlockCommitFlag']]],
+  ['delta',['DELTA',['../classvirt_1_1_storage_vol_1_1_resize_flag.html#a5f3393b17b2face82bf90469b643454d',1,'virt::StorageVol::ResizeFlag']]],
+  ['description',['DESCRIPTION',['../classvirt_1_1enums_1_1domain_1_1_metadata_type.html#ae7e3f83cfabe5623b4e81225b1000d21',1,'virt::enums::domain::MetadataType']]],
+  ['destroy',['DESTROY',['../classvirt_1_1enums_1_1domain_1_1_lifecycle_action.html#a67cc0ac4cc812e2343f32719ca85ad11',1,'virt::enums::domain::LifecycleAction']]],
+  ['dev_5falias',['dev_alias',['../structvirt_1_1_domain_1_1_f_s_info.html#a8895d51e593e6ceeeae7e53b38ab4791',1,'virt::Domain::FSInfo']]],
+  ['dir',['DIR',['../classvirt_1_1enums_1_1connection_1_1list_1_1storage__pool_1_1_flag.html#a962ebbc41f0281f7090f06b45ee2e435',1,'virt::enums::connection::list::storage_pool::Flag::DIR()'],['../classvirt_1_1_storage_vol_1_1_type.html#ac21bc249be4f9e0461dcfa469b0e87b5',1,'virt::StorageVol::Type::DIR()']]],
+  ['disk',['disk',['../structvirt_1_1_domain_1_1_disk_error.html#ac954e0b72e1f373cdab1f595cf2eba85',1,'virt::Domain::DiskError::disk()'],['../classvirt_1_1enums_1_1connection_1_1list_1_1storage__pool_1_1_flag.html#a77b0ebafde935786158889ab053abc35',1,'virt::enums::connection::list::storage_pool::Flag::DISK()']]],
+  ['dod',['DOD',['../classvirt_1_1_storage_vol_1_1_wipe_algorithm.html#a010bf1158049160b055ea99889373305',1,'virt::StorageVol::WipeAlgorithm']]],
+  ['domain',['Domain',['../classvirt_1_1_stream.html#a43066e86dfe6716768de4ffbb43b4a8d',1,'virt::Stream']]],
+  ['domain_5factions_5ftable',['domain_actions_table',['../domain__actions__table_8hpp.html#a789d2cde934452605d219e8c1ebd35b3',1,'domain_actions_table.hpp']]],
+  ['domain_5fjdispatcher_5fvals',['domain_jdispatcher_vals',['../domain_8hpp.html#aa5d4f3e5ac5fcd96b07fbb9df88ee185',1,'domain.hpp']]],
+  ['domain_5fjdispatchers',['domain_jdispatchers',['../domain_8hpp.html#a0d1d558e259cf6e514c34ee9cc4fa7b3',1,'domain.hpp']]]
+];

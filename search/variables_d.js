@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['name',['name',['../structvirt_1_1_domain_1_1_f_s_info.html#ac29166faeff2442b9b292085109ffc92',1,'virt::Domain::FSInfo::name()'],['../classvirt_1_1_domain_1_1_interface.html#a7100ffc46dbe036b38085e19fb1a1be0',1,'virt::Domain::Interface::name()'],['../struct_w_arg.html#a7825da4f251ceb20bf9b5236a1f22f19',1,'WArg::name()']]],
+  ['nested_5ftype',['nested_type',['../struct_w_arg.html#a4582ed3ad318daac5a3f397da6af97f7',1,'WArg']]],
+  ['netdir',['NETDIR',['../classvirt_1_1_storage_vol_1_1_type.html#aa7826549eaa17011b3d97ef1521c57fe',1,'virt::StorageVol::Type']]],
+  ['netfs',['NETFS',['../classvirt_1_1enums_1_1connection_1_1list_1_1storage__pool_1_1_flag.html#a4666d26216896929d54734b00fc05aae',1,'virt::enums::connection::list::storage_pool::Flag']]],
+  ['network',['NETWORK',['../classvirt_1_1_storage_vol_1_1_type.html#a8f09fa1aca5302283bd1b015a99af782',1,'virt::StorageVol::Type']]],
+  ['network_5factions_5ftable',['network_actions_table',['../network__actions__table_8hpp.html#af54d6c21bc2e9fbc3d1ae0bdf9812184',1,'network_actions_table.hpp']]],
+  ['network_5fjdispatcher_5fvals',['network_jdispatcher_vals',['../network_8hpp.html#a5c3296147d3b0af83f7f6e0f1addeb28',1,'network.hpp']]],
+  ['network_5fjdispatchers',['network_jdispatchers',['../network_8hpp.html#af9bed76d6c67bb264df400bdf37f41ac',1,'network.hpp']]],
+  ['new',['NEW',['../classvirt_1_1_storage_pool_1_1_build_flag.html#aea5bd2459337675a6f9077e39d4f28d4',1,'virt::StoragePool::BuildFlag']]],
+  ['nnsa',['NNSA',['../classvirt_1_1_storage_vol_1_1_wipe_algorithm.html#a235f6df9c99385091b588fa0ce964f60',1,'virt::StorageVol::WipeAlgorithm']]],
+  ['no_5fautostart',['NO_AUTOSTART',['../classvirt_1_1enums_1_1connection_1_1list_1_1domains_1_1_flag.html#a8e16b1ab04c289ce18ec09cc7cc82fff',1,'virt::enums::connection::list::domains::Flag::NO_AUTOSTART()'],['../classvirt_1_1enums_1_1connection_1_1list_1_1storage__pool_1_1_flag.html#abb7b415e1d9e723c370fb05f52c344fa',1,'virt::enums::connection::list::storage_pool::Flag::NO_AUTOSTART()']]],
+  ['no_5fmanagedsave',['NO_MANAGEDSAVE',['../classvirt_1_1enums_1_1connection_1_1list_1_1domains_1_1_flag.html#a2da2a03ea25824753bda005229876cee',1,'virt::enums::connection::list::domains::Flag']]],
+  ['no_5foverwrite',['NO_OVERWRITE',['../classvirt_1_1_storage_pool_1_1_build_flag.html#ae66b46d56b24fede0ac45f45e737c544',1,'virt::StoragePool::BuildFlag']]],
+  ['no_5fsnapshot',['NO_SNAPSHOT',['../classvirt_1_1enums_1_1connection_1_1list_1_1domains_1_1_flag.html#a8818c9d9996dfa0cd03d1f0230224376',1,'virt::enums::connection::list::domains::Flag']]],
+  ['non_5fshared_5fdisk',['NON_SHARED_DISK',['../classvirt_1_1enums_1_1domain_1_1_migrate_flag.html#abc3df6341c8f6e99901a01fd0583416d',1,'virt::enums::domain::MigrateFlag']]],
+  ['non_5fshared_5finc',['NON_SHARED_INC',['../classvirt_1_1enums_1_1domain_1_1_migrate_flag.html#a8780332a3983cb934e45fc37ad105d8f',1,'virt::enums::domain::MigrateFlag']]],
+  ['nonblock',['NONBLOCK',['../classvirt_1_1_stream_1_1_flag.html#a1c4499293e405af9bf534fff3493d65a',1,'virt::Stream::Flag']]],
+  ['none',['NONE',['../classvirt_1_1enums_1_1domain_1_1_create_flag.html#a830420b182059a735bf9fd775d380f28',1,'virt::enums::domain::CreateFlag']]],
+  ['nop',['NOP',['../classvirt_1_1enums_1_1domain_1_1_process_signal.html#afb71fb0bead2cd1c4ffeb086e1b0f75f',1,'virt::enums::domain::ProcessSignal']]],
+  ['normal',['NORMAL',['../classvirt_1_1_storage_pool_1_1_create_flag.html#aaae14af3d6e927c6fac5833f5d033339',1,'virt::StoragePool::CreateFlag::NORMAL()'],['../classvirt_1_1_storage_pool_1_1_delete_flag.html#a4ec9d3f051a51f29e38cf8ad586c7a55',1,'virt::StoragePool::DeleteFlag::NORMAL()'],['../classvirt_1_1_storage_vol_1_1_delete_flag.html#a7d1846e64c4efa5040d090abb51416f4',1,'virt::StorageVol::DeleteFlag::NORMAL()']]],
+  ['nostate',['NOSTATE',['../classvirt_1_1enums_1_1domain_1_1_state.html#ac2982e8534d525051ba1aabbfb71bc07',1,'virt::enums::domain::State']]],
+  ['numeric_5fid_5fpattern',['numeric_id_pattern',['../async__handler_8hpp.html#afe7a12603d31bcaa61d4abac9aabd7d1',1,'async_handler.hpp']]],
+  ['nvram',['NVRAM',['../classvirt_1_1enums_1_1domain_1_1_undefine_flag.html#a27fd7672daaa91b37612c5ef2c63e041',1,'virt::enums::domain::UndefineFlag']]]
+];

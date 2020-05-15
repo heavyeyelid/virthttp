@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['safe',['SAFE',['../classvirt_1_1enums_1_1domain_1_1_console_flag.html#a35e05eea5f02f5f17a07fffe291ea85e',1,'virt::enums::domain::ConsoleFlag']]],
+  ['schneier',['SCHNEIER',['../classvirt_1_1_storage_vol_1_1_wipe_algorithm.html#aebde071bad93c69ebe064dc319c49076',1,'virt::StorageVol::WipeAlgorithm']]],
+  ['scsi',['SCSI',['../classvirt_1_1enums_1_1connection_1_1list_1_1storage__pool_1_1_flag.html#ab62d371b8bf95491a0d2acda97875e8f',1,'virt::enums::connection::list::storage_pool::Flag']]],
+  ['secure',['SECURE',['../classvirt_1_1enums_1_1domain_1_1_x_m_l_flags.html#acc920b16f21bfc4ba0efa761564ad099',1,'virt::enums::domain::XMLFlags']]],
+  ['segv',['SEGV',['../classvirt_1_1enums_1_1domain_1_1_process_signal.html#a9ee5c09433ee8e46653b09d937181fbe',1,'virt::enums::domain::ProcessSignal']]],
+  ['shallow',['SHALLOW',['../classvirt_1_1enums_1_1domain_1_1_block_commit_flag.html#a10118bbf0f48416a7156752c3d6e9f97',1,'virt::enums::domain::BlockCommitFlag::SHALLOW()'],['../classvirt_1_1enums_1_1domain_1_1_block_copy_flag.html#adc6758b9904342494c8b04c4487b79f6',1,'virt::enums::domain::BlockCopyFlag::SHALLOW()'],['../classvirt_1_1enums_1_1domain_1_1_block_rebase_flag.html#ae77a4c84bd33d2ad0f6706bc1e50f08c',1,'virt::enums::domain::BlockRebaseFlag::SHALLOW()']]],
+  ['sheepdog',['SHEEPDOG',['../classvirt_1_1enums_1_1connection_1_1list_1_1storage__pool_1_1_flag.html#a8e6b8cbfe35ab1b2f9984b2e49f79c84',1,'virt::enums::connection::list::storage_pool::Flag']]],
+  ['shrink',['SHRINK',['../classvirt_1_1_storage_vol_1_1_resize_flag.html#a4e1679381ea839c3ab27c2dad1ffe8f5',1,'virt::StorageVol::ResizeFlag']]],
+  ['shutdown',['SHUTDOWN',['../classvirt_1_1enums_1_1domain_1_1_state.html#a66344f7840c93d159bb183aa7fbd98cc',1,'virt::enums::domain::State']]],
+  ['shutoff',['SHUTOFF',['../classvirt_1_1enums_1_1connection_1_1list_1_1domains_1_1_flag.html#a62e0c50c8e7554641fd84fe1de4aaeb9',1,'virt::enums::connection::list::domains::Flag::SHUTOFF()'],['../classvirt_1_1enums_1_1domain_1_1_state.html#a8e3d912d8c56c6713342463cfe6a40bc',1,'virt::enums::domain::State::SHUTOFF()']]],
+  ['signal',['SIGNAL',['../classvirt_1_1enums_1_1domain_1_1_shutdown_flag.html#afb4ba11f72ed020bed90becea6039557',1,'virt::enums::domain::ShutdownFlag']]],
+  ['skipauth',['SKIPAUTH',['../classvirt_1_1enums_1_1domain_1_1_open_graphics_flag.html#af6e52e4d6a386e745b7a0c1d6ab54a8c',1,'virt::enums::domain::OpenGraphicsFlag']]],
+  ['snapshots_5fmetadata',['SNAPSHOTS_METADATA',['../classvirt_1_1enums_1_1domain_1_1_undefine_flag.html#a6b26cfd709fa9fffe3a886718b5bcfd7',1,'virt::enums::domain::UndefineFlag']]],
+  ['sparse_5fstream',['SPARSE_STREAM',['../classvirt_1_1_storage_vol_1_1_download_flag.html#ae0a2e9511ebf56e1e5345fba25334f2b',1,'virt::StorageVol::DownloadFlag::SPARSE_STREAM()'],['../classvirt_1_1_storage_vol_1_1_upload_flag.html#a5a91affc6b6e3a21958fb55f1a9d35e7',1,'virt::StorageVol::UploadFlag::SPARSE_STREAM()']]],
+  ['stkflt',['STKFLT',['../classvirt_1_1enums_1_1domain_1_1_process_signal.html#a35a234c142eaa6d4e514a644764c5c53',1,'virt::enums::domain::ProcessSignal']]],
+  ['stop',['STOP',['../classvirt_1_1enums_1_1domain_1_1_process_signal.html#ac3a819b9ad0a9e96efcaad936af88c8b',1,'virt::enums::domain::ProcessSignal']]],
+  ['stop_5fat_5fhole',['STOP_AT_HOLE',['../classvirt_1_1_stream_1_1_recv_flag.html#aae23be1c32f97b8b3021df32b3301872',1,'virt::Stream::RecvFlag']]],
+  ['storagepool',['StoragePool',['../structvirt_1_1_storage_pool_1_1_info.html#a68469e99a2674a14b7e3ebedcd9ab86f',1,'virt::StoragePool::Info']]],
+  ['storagevol',['StorageVol',['../structvirt_1_1_storage_vol_1_1_info.html#a1a2a1cd1ea6ee8fa2f9b7638128c401f',1,'virt::StorageVol::Info::StorageVol()'],['../classvirt_1_1_stream.html#a2603c52998c3af60fcb4c7514ea97713',1,'virt::Stream::StorageVol()']]],
+  ['string_5fokay',['STRING_OKAY',['../classvirt_1_1enums_1_1_typed_parameter_flag.html#a0fbcc15d1b218ea2e3e9c352f018a5c7',1,'virt::enums::TypedParameterFlag']]],
+  ['subquery',['subquery',['../flagwork_8hpp.html#a948ed7d31c06d5cccdfabe28aa0507b1',1,'flagwork.hpp']]],
+  ['sv',['sv',['../struct_c_s_v_iterator.html#af4d030e44f1dfafe390e5084312472d6',1,'CSVIterator']]],
+  ['sys',['SYS',['../classvirt_1_1enums_1_1domain_1_1_process_signal.html#a798ab779d41df2339ff5f601c6e0796f',1,'virt::enums::domain::ProcessSignal']]]
+];

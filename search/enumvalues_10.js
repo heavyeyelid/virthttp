@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['save',['SAVE',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#ae472c2f6b51b317d9060ed084ef107b0af5cf47ab06d0d98b0d16d10c82d87953',1,'virt::enums::domain::state_reason']]],
+  ['save_5fcanceled',['SAVE_CANCELED',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#ab9e8c394c78b83fd435478675bae5ac6a47ea9397bc81f058fe6732d3abf29df0',1,'virt::enums::domain::state_reason']]],
+  ['saved',['SAVED',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#aa6f0d0fbfba8ade1e6ed2f02cc993b67aec09e9e688c30b57cd64c0180da5c34a',1,'virt::enums::domain::state_reason']]],
+  ['scsi_5fdev',['SCSI_DEV',['../namespacevirt_1_1enums_1_1connection_1_1list_1_1devices.html#a2c1c98327bfd39a150b0d8ca5c098059a0d05ebad8ab5d9bc066d7b2d9c6136eb',1,'virt::enums::connection::list::devices']]],
+  ['scsi_5fgeneric',['SCSI_GENERIC',['../namespacevirt_1_1enums_1_1connection_1_1list_1_1devices.html#a2c1c98327bfd39a150b0d8ca5c098059a59a0d4d716d86985c4cda18165394b32',1,'virt::enums::connection::list::devices']]],
+  ['scsi_5fhost',['SCSI_HOST',['../namespacevirt_1_1enums_1_1connection_1_1list_1_1devices.html#a2c1c98327bfd39a150b0d8ca5c098059aed4fb75e14b1add74c09c67f3a5d29d0',1,'virt::enums::connection::list::devices']]],
+  ['scsi_5ftarget',['SCSI_TARGET',['../namespacevirt_1_1enums_1_1connection_1_1list_1_1devices.html#a2c1c98327bfd39a150b0d8ca5c098059aa455ccb83d7015b745e0725d0c4a1fd5',1,'virt::enums::connection::list::devices']]],
+  ['secure',['SECURE',['../namespacevirt_1_1enums_1_1domain.html#ac4e2d9031ccc222252368ce79c666537aedc93ee6a56a49ef22369e109c7fe0ab',1,'virt::enums::domain']]],
+  ['shutdown',['SHUTDOWN',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#aa6f0d0fbfba8ade1e6ed2f02cc993b67ab9984206799a7f9fe4bd1b6c18db8112',1,'virt::enums::domain::state_reason']]],
+  ['shutoff',['SHUTOFF',['../namespacevirt_1_1enums_1_1connection.html#af8e15f47580ff489dde0d1d2029f4c40a4e521938ff949e4b41badacdd7769221',1,'virt::enums::connection::SHUTOFF()'],['../namespacevirt_1_1enums_1_1connection_1_1get__all__domains_1_1stats.html#aa2605badec6baa399345e31ad517650ca4e521938ff949e4b41badacdd7769221',1,'virt::enums::connection::get_all_domains::stats::SHUTOFF()']]],
+  ['shutting_5fdown',['SHUTTING_DOWN',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#ae472c2f6b51b317d9060ed084ef107b0a89e5325b1f9acbf5dde5c70b84bbdcb1',1,'virt::enums::domain::state_reason']]],
+  ['skipped',['SKIPPED',['../depends_8hpp.html#af8583d340f983b9e4ab945e99408198aa203ec08f57cb105eeb2b121ba6503b52',1,'depends.hpp']]],
+  ['snapshot',['SNAPSHOT',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#ae472c2f6b51b317d9060ed084ef107b0a46b8744c6bc840d2cb241fa165f3e204',1,'virt::enums::domain::state_reason']]],
+  ['starting_5fup',['STARTING_UP',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#ae472c2f6b51b317d9060ed084ef107b0aa9bfce157354569e91f3d9af1544c5d1',1,'virt::enums::domain::state_reason']]],
+  ['state',['STATE',['../namespacevirt_1_1enums_1_1domain_1_1stats.html#a3fd58da75a9e34512c173f066cb72d2ca2b848a8cc886d253d21a77c43cd50aae',1,'virt::enums::domain::stats::STATE()'],['../namespacevirt_1_1enums_1_1domain.html#a5f21f67687070d7900d997495abab373a2b848a8cc886d253d21a77c43cd50aae',1,'virt::enums::domain::STATE()']]],
+  ['stats',['STATS',['../namespacevirt_1_1enums_1_1connection.html#af8e15f47580ff489dde0d1d2029f4c40a426708f5e123b45ded3bdc67cd895db5',1,'virt::enums::connection']]],
+  ['storage',['STORAGE',['../namespacevirt_1_1enums_1_1connection_1_1list_1_1devices.html#a2c1c98327bfd39a150b0d8ca5c098059a754a5d433173b5ddc7debc2110ac575f',1,'virt::enums::connection::list::devices']]],
+  ['string',['String',['../json2virt_8hpp.html#a089a7b4c0518b573edf38012a162a555a27118326006d3829667a400ad23d5d98',1,'json2virt.hpp']]],
+  ['success',['SUCCESS',['../depends_8hpp.html#af8583d340f983b9e4ab945e99408198aad0749aaba8b833466dfcbb0428e4f89c',1,'depends.hpp']]],
+  ['swap_5fin',['SWAP_IN',['../namespacevirt_1_1enums_1_1domain.html#afd1be76826030be45c21883fe1b88fa8a87b0f4ed1757a6a1036e94af3849de13',1,'virt::enums::domain']]],
+  ['swap_5fout',['SWAP_OUT',['../namespacevirt_1_1enums_1_1domain.html#afd1be76826030be45c21883fe1b88fa8ac6f9baaf541ca8b4b7a298529141af5e',1,'virt::enums::domain']]],
+  ['sync',['SYNC',['../namespacevirt_1_1enums_1_1domain.html#aa91702eb4d6e6bd532d852a6dde4dd29a274ccef15a21e829d03293a6fd1974f3',1,'virt::enums::domain']]],
+  ['system',['SYSTEM',['../namespacevirt_1_1enums_1_1connection_1_1list_1_1devices.html#a2c1c98327bfd39a150b0d8ca5c098059afa177138f94a7ea01f549b1aa7893d03',1,'virt::enums::connection::list::devices']]]
+];

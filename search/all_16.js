@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['wakeup',['WAKEUP',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#ab9e8c394c78b83fd435478675bae5ac6ab1850cc82ad99880312747def331d1b3',1,'virt::enums::domain::state_reason']]],
+  ['warg',['WArg',['../struct_w_arg.html',1,'']]],
+  ['warning',['warning',['../class_logger.html#a7e0fe271295df9636baf419f60bf47d1',1,'Logger']]],
+  ['watchdog',['WATCHDOG',['../namespacevirt_1_1enums_1_1domain_1_1state__reason.html#ae472c2f6b51b317d9060ed084ef107b0ae8e0182f554bb505df81621069717de7',1,'virt::enums::domain::state_reason']]],
+  ['websockets',['WebSockets',['../protocols_8hpp.html#ab9d477e464e3fa232ca6b9675d4d1d7babf4e3c3f0fc3aee351d560e6e026f805',1,'protocols.hpp']]],
+  ['weigthed_5fencodings_5fpattern',['weigthed_encodings_pattern',['../compression_8hpp.html#a8fd52d40f26750ba7b326946e69e6f02',1,'compression.hpp']]],
+  ['win32',['WIN32',['../classvirt_1_1enums_1_1domain_1_1_keycode_set.html#a499ea660be8b2ed65b49820157c0076f',1,'virt::enums::domain::KeycodeSet']]],
+  ['winch',['WINCH',['../classvirt_1_1enums_1_1domain_1_1_process_signal.html#a716a662467d9c0b655b939e749b310fd',1,'virt::enums::domain::ProcessSignal']]],
+  ['wipe',['wipe',['../structvirt_1_1_storage_vol.html#a23471d52234ffe4ff7d73a4cbcbdd5a4',1,'virt::StorageVol']]],
+  ['wipealgorithm',['WipeAlgorithm',['../classvirt_1_1_storage_vol_1_1_wipe_algorithm.html',1,'virt::StorageVol']]],
+  ['wipepattern',['wipePattern',['../structvirt_1_1_storage_vol.html#a3bc7c1c399498c05cbc0e6fd3c715d55',1,'virt::StorageVol']]],
+  ['with_5fbuild',['WITH_BUILD',['../classvirt_1_1_storage_pool_1_1_create_flag.html#aefefbbbf73fc67c41d52deb9f77f2ed4',1,'virt::StoragePool::CreateFlag']]],
+  ['with_5fbuild_5fno_5foverwrite',['WITH_BUILD_NO_OVERWRITE',['../classvirt_1_1_storage_pool_1_1_create_flag.html#aee6c45dbd56f7219991f9adc4154b14c',1,'virt::StoragePool::CreateFlag']]],
+  ['with_5fbuild_5foverwrite',['WITH_BUILD_OVERWRITE',['../classvirt_1_1_storage_pool_1_1_create_flag.html#af8d7d635358bc68aff4d626377bbfbdf',1,'virt::StoragePool::CreateFlag']]],
+  ['with_5fsnapshots',['WITH_SNAPSHOTS',['../classvirt_1_1_storage_vol_1_1_delete_flag.html#ab5fc1dc47077a789efe69cd56adc0033',1,'virt::StorageVol::DeleteFlag']]],
+  ['wrap_5ffcn',['wrap_fcn',['../json2virt_8hpp.html#a397998a7306936df2574d3be1b879cf4',1,'json2virt.hpp']]],
+  ['wrap_5ffcn_5fargs',['wrap_fcn_args',['../json2virt_8hpp.html#ab06ee7fb78f51cad2d94ff9bf4a5600f',1,'json2virt.hpp']]],
+  ['wrap_5ffcn_5fargs_5fimpl',['wrap_fcn_args_impl',['../json2virt_8hpp.html#a517ab2fa3d9df95d52f52621bde47055',1,'json2virt.hpp']]],
+  ['wrap_5foparm_5ffill_5ftp',['wrap_oparm_fill_tp',['../struct_t_p_impl.html#a452b1529465b2784984f21c0df0c937e',1,'TPImpl::wrap_oparm_fill_tp(U *underlying, CountFcn count_fcn, DataFcn data_fcn, Args...args) -&gt; std::optional&lt; virt::TypedParams &gt;'],['../struct_t_p_impl.html#a855a34c16ed41956c68e9c970e86e841',1,'TPImpl::wrap_oparm_fill_tp(U *underlying, DataFcn data_fcn, Args...args) -&gt; std::optional&lt; virt::TypedParams &gt;']]],
+  ['wrap_5foparm_5fowning_5ffill_5fautodestroyable_5farr',['wrap_oparm_owning_fill_autodestroyable_arr',['../namespacevirt_1_1meta_1_1light.html#a5c1152842036fc76fd0b0ff0eee64cc2',1,'virt::meta::light::wrap_oparm_owning_fill_autodestroyable_arr()'],['../namespacevirt_1_1meta_1_1heavy.html#a6d045d6736af66a7be8d19ded02f5dde',1,'virt::meta::heavy::wrap_oparm_owning_fill_autodestroyable_arr()']]],
+  ['wrap_5foparm_5fowning_5ffill_5ffreeable_5farr',['wrap_oparm_owning_fill_freeable_arr',['../namespacevirt_1_1meta_1_1light.html#a2b835c5cf464cb468ce1546b1fe01211',1,'virt::meta::light::wrap_oparm_owning_fill_freeable_arr()'],['../namespacevirt_1_1meta_1_1heavy.html#adc60fd13654b49d675bfcafdf3297e1e',1,'virt::meta::heavy::wrap_oparm_owning_fill_freeable_arr()']]],
+  ['wrap_5foparm_5fowning_5ffill_5fstatic_5farr',['wrap_oparm_owning_fill_static_arr',['../namespacevirt_1_1meta_1_1light.html#ad0f8ffbbf5ad184ad366eda9667d5af3',1,'virt::meta::light::wrap_oparm_owning_fill_static_arr()'],['../namespacevirt_1_1meta_1_1heavy.html#adc6beccd369b179f6bea2279f534de7b',1,'virt::meta::heavy::wrap_oparm_owning_fill_static_arr()']]],
+  ['wrap_5foparm_5fset_5ftp',['wrap_oparm_set_tp',['../struct_t_p_impl.html#a9b074752e661f147640653e73fce35b7',1,'TPImpl']]],
+  ['wrap_5fopram_5fowning_5fset_5fdestroyable_5farr',['wrap_opram_owning_set_destroyable_arr',['../namespacevirt_1_1meta_1_1light.html#a8ed68dd72109247df551fa1c3af39260',1,'virt::meta::light::wrap_opram_owning_set_destroyable_arr()'],['../namespacevirt_1_1meta_1_1heavy.html#a8e7851323386b45bf3636eae1a686583',1,'virt::meta::heavy::wrap_opram_owning_set_destroyable_arr()']]],
+  ['wrapped',['wrapped',['../struct_json_span.html#aa1cf2ea4426bb62a368b077e54f692d9',1,'JsonSpan']]]
+];
