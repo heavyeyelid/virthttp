@@ -423,8 +423,8 @@ CpuMap ret;
     return res >= 0 ? ret : std::nullopt;
 }
 
-[[nodiscard]] inline gsl::czstring<> Domain::getXMLDesc(enums::domain::XmlFlag flags) const noexcept {
-    return virDomainGetXMLDesc(underlying, to_integral(flags));
+[[nodiscard]] inline UniqueZstring Domain::getXMLDesc(enums::domain::XmlFlag flags) const noexcept {
+    return UniqueZstring{virDomainGetXMLDesc(underlying, to_integral(flags))};
 }
 
 [[nodiscard]] inline TFE Domain::hasManagedSaveImage() const noexcept { return TFE{virDomainHasManagedSaveImage(underlying, 0)}; }

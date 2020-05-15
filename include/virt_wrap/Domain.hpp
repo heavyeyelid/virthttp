@@ -294,7 +294,7 @@ class Domain {
 
     [[nodiscard]] auto getVcpus() const noexcept;
 
-    [[nodiscard]] gsl::czstring<> getXMLDesc(enums::domain::XmlFlag flag) const noexcept;
+    [[nodiscard]] UniqueZstring getXMLDesc(enums::domain::XmlFlag flag) const noexcept;
 
     [[nodiscard]] TFE hasManagedSaveImage() const noexcept;
 

@@ -60,7 +60,7 @@ inline Network::~Network() noexcept {
 }
 
 [[nodiscard]] inline auto Network::getXMLDesc(Network::XMLFlags flags) const noexcept {
-    return std::unique_ptr<char[], void (*)(char*)>(virNetworkGetXMLDesc(underlying, to_integral(flags)), freeany<char[]>);
+    return UniqueZstring{virNetworkGetXMLDesc(underlying, to_integral(flags))};
 }
 
 [[nodiscard]] inline std::string Network::extractXMLDesc(Network::XMLFlags flags) const noexcept {

@@ -44,7 +44,7 @@ class Network {
 
     [[nodiscard]] inline auto extractUUIDString() const -> std::string;
 
-    [[nodiscard]] inline auto getXMLDesc(XMLFlags flags = XMLFlags::DEFAULT) const noexcept;
+    [[nodiscard]] inline UniqueZstring getXMLDesc(XMLFlags flags = XMLFlags::DEFAULT) const noexcept;
 
     [[nodiscard]] inline std::string extractXMLDesc(XMLFlags flags = XMLFlags::DEFAULT) const noexcept;
 
