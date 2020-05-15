@@ -65,6 +65,13 @@ template <class JAllocator> auto to_json(virNetworkDHCPLease lease, JAllocator&&
     return json_lease;
 }
 
+auto to_json(TFE tfe) -> rapidjson::Value {
+    assert(!tfe.err());
+    rapidjson::Value v;
+    v.SetBool(static_cast<bool>(tfe));
+    return v;
+}
+
 template <class T, class JAllocator> auto to_json(std::vector<T> vec, JAllocator&& jalloc) -> rapidjson::Value {
     rapidjson::Value arr;
     arr.SetArray();

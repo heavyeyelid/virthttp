@@ -49,7 +49,7 @@ class NetworkUnawareHandlers : public HandlerContext {
      * \param[in] target the target to extract the flag from
      * \return the flag, or `std::nullopt` on error
      * */
-    [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept
+    [[nodiscard]] static constexpr auto search_all_flags(const TargetParser& target) noexcept
         -> std::optional<virt::enums::connection::list::networks::Flag> {
         using namespace virt::enums::connection::list::networks;
         auto flags = Flag::DEFAULT;
@@ -77,56 +77,110 @@ class NetworkHandlers : public HandlerMethods {
      **/
     explicit NetworkHandlers(HandlerContext& ctx, virt::Network& nw) : HandlerMethods(ctx), nw(nw) {}
 
-    DependsOutcome create(const rapidjson::Value& obj) override { return error(-1), DependsOutcome::FAILURE; }
+    auto create(const rapidjson::Value& obj) -> DependsOutcome override {
+        const auto create_nw = [&](std::string_view xml) {
+            nw = virt::Network::createXML(conn, xml.data());
+            if (!nw)
+                return error(-999), DependsOutcome::FAILURE;
+            rapidjson::Value res_val;
+            res_val.SetObject();
+            res_val.AddMember("created", true, json_res.GetAllocator());
+            json_res.result(std::move(res_val));
+            return DependsOutcome::SUCCESS;
+        };
 
-    DependsOutcome query(const rapidjson::Value& action) override {
+        if (obj.IsString())
+            return create_nw(obj.GetString());
+        if (obj.IsArray()) {
+            for (const auto & item : obj.GetArray()) {
+                if (!item.IsString())
+                    return error(-999), DependsOutcome::FAILURE; // Not a string array
+                if (create_nw(item.GetString()) == DependsOutcome::FAILURE)
+                    return DependsOutcome::FAILURE; // Error while creating network
+            }
+            return DependsOutcome::SUCCESS;
+        }
+        return error(-1), DependsOutcome::FAILURE;
+    }
+
+    auto query(const rapidjson::Value& action) -> DependsOutcome override {
         rapidjson::Value res_val;
         auto& jalloc = json_res.GetAllocator();
         const auto& path_parts = target.getPathParts();
         if (path_parts.size() < 5) {
-            rapidjson::Value jsonActive;
+            rapidjson::Value json_active;
             {
-                TFE nwActive = nw.isActive();
-                if (nwActive.err()) {
+                const TFE tfe = nw.isActive();
+                if (tfe.err()) {
                     logger.error("Error occurred while getting network status");
                     return error(500), DependsOutcome::FAILURE;
                 }
-                jsonActive.SetBool(static_cast<bool>(nwActive));
+                json_active = to_json(tfe);
             }
-            rapidjson::Value jsonAS;
+            rapidjson::Value json_AS;
             {
-                TFE nwAS = nw.getAutostart();
-                if (nwAS.err()) {
+                const TFE tfe = nw.getAutostart();
+                if (tfe.err()) {
                     logger.error("Error occurred while getting network autostart policy");
                     return error(500), DependsOutcome::FAILURE;
                 }
-                jsonActive.SetBool(static_cast<bool>(nwAS));
+                json_AS = to_json(tfe);
+            }
+            rapidjson::Value json_is_persistent;
+            {
+                const TFE tfe = nw.isPersistent();
+                if (tfe.err()) {
+                    logger.error("Error occurred while getting network persistence");
+                    return error(500), DependsOutcome::FAILURE;
+                }
+                json_is_persistent = to_json(tfe);
             }
 
             res_val.SetObject();
             res_val.AddMember("name", rapidjson::Value(nw.getName(), jalloc), jalloc);
             res_val.AddMember("uuid", nw.extractUUIDString(), jalloc);
-            res_val.AddMember("active", jsonActive, jalloc);
-            res_val.AddMember("autostart", jsonAS, jalloc);
+            res_val.AddMember("active", json_active, jalloc);
+            res_val.AddMember("autostart", json_AS, jalloc);
+            res_val.AddMember("persistent", json_is_persistent, jalloc);
+            if (path_parts.size() == 4)
+                res_val.AddMember("bridge", to_json(nw.getBridgeName(), jalloc), jalloc);
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         }
 
-        const auto outcome =
-            parameterized_depends_scope(subquery("dhcp-leases", "mac", ti<std::string>, SUBQ_LIFT(nw.extractDHCPLeases), fwd_as_if_err(-2))
-                                        // subquery("dumpxml"), subquery("event"),
-                                        // subquery("info"), subquery("name"), subquery("uuid"), subquery("port-list"), subquery("port-dumpxml")
-                                        )(4, target, res_val, json_res.GetAllocator(), [&](auto... args) { return error(args...); });
+        const auto outcome = parameterized_depends_scope(
+            subquery("dhcp-leases", "mac", ti<std::string>, SUBQ_LIFT(nw.extractDHCPLeases), fwd_as_if_err(-2)),
+            subquery("dumpxml", "options", ti<virt::enums::network::XMLFlags>, SUBQ_LIFT(nw.getXMLDesc), fwd_as_if_err(-2)))(
+            4, target, res_val, json_res.GetAllocator(), [&](auto... args) { return error(args...); });
 
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
         return outcome;
     }
-    DependsOutcome alter(const rapidjson::Value& action) override {
+
+    auto alter(const rapidjson::Value& action) -> DependsOutcome override {
         const auto& action_obj = *action.MemberBegin();
         const auto& [action_name, action_val] = action_obj;
         const auto hdl = network_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
         return hdl ? hdl(action_val, json_res, nw) : (error(123), DependsOutcome::FAILURE);
     }
-    DependsOutcome vacuum(const rapidjson::Value& action) override { return error(-1), DependsOutcome::FAILURE; }
+
+    auto vacuum(const rapidjson::Value& action) -> DependsOutcome override {
+        auto& jalloc = json_res.GetAllocator();
+        const auto success = [&] {
+            rapidjson::Value res_val;
+            res_val.SetObject();
+            res_val.AddMember("deleted", true, jalloc);
+            json_res.result(std::move(res_val));
+            return DependsOutcome::SUCCESS;
+        };
+        const auto failure = [&] {
+            rapidjson::Value msg_val;
+            msg_val.SetObject();
+            msg_val.AddMember("libvirt", rapidjson::Value(virt::extractLastError().message, jalloc), jalloc);
+            json_res.message(std::move(msg_val));
+            return error(-999), DependsOutcome::FAILURE;
+        };
+        return nw.undefine() ? success() : failure();
+    }
 };

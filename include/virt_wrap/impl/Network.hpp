@@ -24,9 +24,7 @@ inline Network::~Network() noexcept {
         virNetworkFree(underlying);
 }
 
-[[nodiscard]] inline auto Network::getBridgeName() const noexcept {
-    return std::unique_ptr<char[], void (*)(char*)>(virNetworkGetBridgeName(underlying), freeany<char[]>);
-}
+[[nodiscard]] inline UniqueZstring Network::getBridgeName() const noexcept { return UniqueZstring(virNetworkGetBridgeName(underlying)); }
 
 [[nodiscard]] inline Connection Network::getConnect() const noexcept {
     const auto res = virNetworkGetConnect(underlying);
@@ -59,11 +57,11 @@ inline Network::~Network() noexcept {
     return ret;
 }
 
-[[nodiscard]] inline UniqueZstring Network::getXMLDesc(Network::XMLFlags flags) const noexcept {
+[[nodiscard]] inline UniqueZstring Network::getXMLDesc(enums::network::XMLFlags flags) const noexcept {
     return UniqueZstring{virNetworkGetXMLDesc(underlying, to_integral(flags))};
 }
 
-[[nodiscard]] inline std::string Network::extractXMLDesc(Network::XMLFlags flags) const noexcept {
+[[nodiscard]] inline std::string Network::extractXMLDesc(enums::network::XMLFlags flags) const noexcept {
     const auto res = virNetworkGetXMLDesc(underlying, to_integral(flags));
     const auto ret = std::string{res};
     freeany(res);
@@ -103,7 +101,7 @@ inline Network::~Network() noexcept {
     return ret;
 }
 [[nodiscard]] inline auto Network::extractDHCPLeases(std::string mac) const -> std::optional<std::vector<virNetworkDHCPLease>> {
-    return extractDHCPLeases(mac.c_str());
+    return extractDHCPLeases(mac.empty() ? nullptr : mac.c_str());
 }
 
 inline bool Network::setAutostart(bool autostart) noexcept { return virNetworkSetAutostart(underlying, autostart) == 0; }

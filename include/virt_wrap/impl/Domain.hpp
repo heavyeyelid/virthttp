@@ -423,7 +423,7 @@ CpuMap ret;
     return res >= 0 ? ret : std::nullopt;
 }
 
-[[nodiscard]] inline UniqueZstring Domain::getXMLDesc(enums::domain::XmlFlag flags) const noexcept {
+[[nodiscard]] inline UniqueZstring Domain::getXMLDesc(enums::domain::XMLFlags flags) const noexcept {
     return UniqueZstring{virDomainGetXMLDesc(underlying, to_integral(flags))};
 }
 

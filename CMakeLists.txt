@@ -93,7 +93,7 @@ add_executable(virthttp
         include/virt_wrap/enums/Domain/MITPFlag.hpp
         include/virt_wrap/enums/Domain/ModificationImpactFlag.hpp
         include/virt_wrap/enums/Domain/ProcessSignal.hpp
-        include/virt_wrap/enums/Domain/XmlFlag.hpp
+        include/virt_wrap/enums/Domain/XMLFlags.hpp
         include/virt_wrap/enums/Domain/State.hpp
         include/virt_wrap/enums/Domain/UndefineFlag.hpp
         include/virt_wrap/enums/Domain/SaveRestoreFlag.hpp

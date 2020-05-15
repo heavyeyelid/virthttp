@@ -8,18 +8,18 @@ namespace virt {
 struct Error;
 class ErrorRef;
 
-ErrorRef getLastError() noexcept;
-Error extractLastError();
+auto getLastError() noexcept -> ErrorRef;
+auto extractLastError() -> Error;
 
 class ErrorRef {
     virErrorPtr underlying;
     constexpr explicit ErrorRef(virErrorPtr&& u) : underlying(u) {}
-    friend ErrorRef getLastError() noexcept;
-    friend Error extractLastError();
+    friend auto getLastError() noexcept -> ErrorRef;
+    friend auto extractLastError() -> Error;
 
   public:
     inline ~ErrorRef() noexcept { virFreeError(underlying); }
-    [[nodiscard]] constexpr gsl::czstring<> message() const noexcept { return underlying->message; };
+    [[nodiscard]] constexpr auto message() const noexcept -> gsl::czstring<> { return underlying->message; };
 };
 
 struct Error {
@@ -34,14 +34,14 @@ struct Error {
   private:
     inline explicit Error(virErrorPtr p)
         : code(Code((p ? p->code : 0))), level(p ? p->level : Level(0)), message(p ? std::string{p->message} : std::string{}) {}
-    friend Error extractLastError();
+    friend auto extractLastError() -> Error;
 
   public:
     inline explicit operator bool() const noexcept { return !message.empty(); }
 };
 
-inline ErrorRef getLastError() noexcept { return ErrorRef{virGetLastError()}; }
-inline Error extractLastError() {
+inline auto getLastError() noexcept -> ErrorRef { return ErrorRef{virGetLastError()}; }
+inline auto extractLastError() -> Error {
     const auto e = Error{virGetLastError()};
     virResetLastError();
     return e;

@@ -74,7 +74,7 @@ rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Bo
 
     [&] {
         auto& config = gstore.config();
-        if (config.isHTTPAuthRequired() && req["X-Auth-Key"] != gstore.config().http_auth_key)
+        if (config.isHTTPAuthRequired() && req["X-Auth-Key"] != config.http_auth_key)
             return error(1);
         auto path_parts = target.getPathParts();
         if (path_parts.empty())

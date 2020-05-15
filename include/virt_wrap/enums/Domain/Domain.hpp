@@ -29,4 +29,4 @@
 #include "ShutdownFlag.hpp"
 #include "State.hpp"
 #include "UndefineFlag.hpp"
-#include "XmlFlag.hpp"
+#include "XMLFlags.hpp"

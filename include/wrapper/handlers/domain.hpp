@@ -119,7 +119,7 @@ class DomainHandlers : public HandlerMethods {
 
 
         const auto outcome = parameterized_depends_scope(
-            subquery("xml_desc", "options", ti<virt::enums::domain::XmlFlag>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
+            subquery("xml_desc", "options", ti<virt::enums::domain::XMLFlags>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
             subquery("fs_info", SUBQ_LIFT(dom.getFSInfo), fwd_as_if_err(201), // getting filesystem information failed
                      [&](auto fs_infos, auto& jalloc) {
                          rapidjson::Value jvres;
