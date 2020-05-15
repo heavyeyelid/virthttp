@@ -3,9 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::MetadataType : private VirtEnumStorage<virDomainMetadataType>, public VirtEnumBase<MetadataType>, public EnumHelper<MetadataType> {
+namespace virt::enums::domain {
+class MetadataType : private VirtEnumStorage<virDomainMetadataType>, public VirtEnumBase<MetadataType>, public EnumHelper<MetadataType> {
     friend VirtEnumBase<MetadataType>;
     friend EnumHelper<MetadataType>;
     enum class Underlying {

@@ -3,11 +3,10 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::DeviceModifyFlag : private VirtEnumStorage<virDomainDeviceModifyFlags>,
-                                 public VirtEnumBase<DeviceModifyFlag>,
-                                 public EnumSetHelper<DeviceModifyFlag> {
+namespace virt::enums::domain {
+class DeviceModifyFlag : private VirtEnumStorage<virDomainDeviceModifyFlags>,
+                         public VirtEnumBase<DeviceModifyFlag>,
+                         public EnumSetHelper<DeviceModifyFlag> {
     friend VirtEnumBase<DeviceModifyFlag>;
     friend EnumSetHelper<DeviceModifyFlag>;
     enum class Underlying {

@@ -4,6 +4,7 @@
 #include <vector>
 #include <gsl/gsl>
 #include <libvirt/libvirt.h>
+#include "enums/Network/XMLFlags.hpp"
 #include "fwd.hpp"
 #include "tfe.hpp"
 #include "utility.hpp"
@@ -12,10 +13,6 @@ namespace virt {
 
 class Network {
     friend Connection;
-    enum class XMLFlags : unsigned {
-        DEFAULT = 0,
-        INACTIVE = VIR_NETWORK_XML_INACTIVE,
-    };
 
   private:
     virNetworkPtr underlying = nullptr;
@@ -30,7 +27,7 @@ class Network {
     constexpr explicit inline Network(virNetworkPtr p) : underlying(p) {}
 
     constexpr explicit operator bool() const noexcept { return underlying != nullptr; }
-    [[nodiscard]] inline auto getBridgeName() const noexcept;
+    [[nodiscard]] inline UniqueZstring getBridgeName() const noexcept;
 
     [[nodiscard]] inline Connection getConnect() const noexcept;
 
@@ -44,9 +41,9 @@ class Network {
 
     [[nodiscard]] inline auto extractUUIDString() const -> std::string;
 
-    [[nodiscard]] inline auto getXMLDesc(XMLFlags flags = XMLFlags::DEFAULT) const noexcept;
+    [[nodiscard]] inline UniqueZstring getXMLDesc(enums::network::XMLFlags flags = enums::network::XMLFlags::DEFAULT) const noexcept;
 
-    [[nodiscard]] inline std::string extractXMLDesc(XMLFlags flags = XMLFlags::DEFAULT) const noexcept;
+    [[nodiscard]] inline std::string extractXMLDesc(enums::network::XMLFlags flags = enums::network::XMLFlags::DEFAULT) const noexcept;
 
     [[nodiscard]] inline TFE isActive() const noexcept;
 
@@ -55,6 +52,7 @@ class Network {
     [[nodiscard]] inline auto getDHCPLeases(gsl::czstring<> mac) const noexcept;
 
     [[nodiscard]] inline auto extractDHCPLeases(gsl::czstring<> mac) const -> std::optional<std::vector<virNetworkDHCPLease>>;
+    [[nodiscard]] inline auto extractDHCPLeases(std::string mac) const -> std::optional<std::vector<virNetworkDHCPLease>>;
 
     inline bool setAutostart(bool autostart) noexcept;
     [[nodiscard]] inline TFE getAutostart() const noexcept;

@@ -26,8 +26,6 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
         return res;
     };
 
-    logger.info("Received from a Session: HTTP ", boost::beast::http::to_string(req.method()), ' ', req.target());
-
     // Returns a not found response
     const auto not_found = [&](boost::beast::string_view target) {
         boost::beast::http::response<boost::beast::http::string_body> res{boost::beast::http::status::not_found, req.version()};
@@ -50,10 +48,23 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
         return res;
     };
 
+    auto req_method = req.method();
+    logger.info("Received from a Session: HTTP ", boost::beast::http::to_string(req.method()), ' ', req.target());
+
+    // Respond to HEAD request
+    if (req_method == boost::beast::http::verb::head) {
+        http::response<http::empty_body> res{http::status::ok, req.version()};
+        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(http::field::content_type, "application/json");
+        res.content_length(0);
+        res.keep_alive(req.keep_alive());
+        return send(std::move(res));
+    }
+
     constexpr std::array supported_methods = {boost::beast::http::verb::get, boost::beast::http::verb::patch, boost::beast::http::verb::post,
                                               boost::beast::http::verb::delete_};
     // Make sure we can handle the method
-    if (std::find(supported_methods.begin(), supported_methods.end(), req.method()) == supported_methods.end())
+    if (std::find(supported_methods.begin(), supported_methods.end(), req_method) == supported_methods.end())
         return send(bad_request("Unknown/Unsupported HTTP-method"));
 
     // Request path must be absolute and not contain "..".
@@ -65,7 +76,6 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
             res.set("X-Packet-ID", pakid);
     };
 
-    auto req_method = req.method();
     auto target = TargetParser{req.target()};
     const auto& path_parts = target.getPathParts();
 
@@ -138,19 +148,6 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     // Cache the size since we need it after the move
     auto const size = body.size();
     */
-
-    /*
-    // Respond to HEAD request
-    if (req_method == boost::beast::http::verb::head) {
-        boost::beast::http::response<boost::beast::http::empty_body> res{boost::beast::http::status::ok, req.version()};
-        res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(boost::beast::http::field::content_type, "application/json");
-        forward_packid(res);
-        res.content_length(std::size_t{buffer.GetSize()});
-        res.keep_alive(req.keep_alive());
-        return send(std::move(res));
-    }
-     */
 
     boost::beast::http::response<boost::beast::http::string_body> res{boost::beast::http::status::ok, req.version()};
     res.body() = std::string{buffer.GetString()};

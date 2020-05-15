@@ -55,7 +55,6 @@ add_executable(virthttp
         include/virt_wrap/tfe.hpp
         include/virt_wrap/utility.hpp
         include/virt_wrap/Error.hpp
-        include/virt_wrap/GFlags.hpp
         include/virt_wrap/Network.hpp
         include/virt_wrap/NodeDevice.hpp
         include/virt_wrap/CpuMap.hpp
@@ -64,6 +63,7 @@ add_executable(virthttp
         include/virt_wrap/Stream.hpp
         include/virt_wrap/impl/Stream.hpp
         include/virt_wrap/enums/Base.hpp
+        include/virt_wrap/enums/GFlags.hpp
         include/virt_wrap/enums/Connection/Connection.hpp
         include/virt_wrap/enums/Connection/ListDomainFlag.hpp
         include/virt_wrap/enums/Connection/ListStoragePoolsFlag.hpp
@@ -90,9 +90,10 @@ add_executable(virthttp
         include/virt_wrap/enums/Domain/ShutdownFlag.hpp
         include/virt_wrap/enums/Domain/MetadataType.hpp
         include/virt_wrap/enums/Domain/MigrateFlag.hpp
+        include/virt_wrap/enums/Domain/MITPFlag.hpp
         include/virt_wrap/enums/Domain/ModificationImpactFlag.hpp
         include/virt_wrap/enums/Domain/ProcessSignal.hpp
-        include/virt_wrap/enums/Domain/XmlFlag.hpp
+        include/virt_wrap/enums/Domain/XMLFlags.hpp
         include/virt_wrap/enums/Domain/State.hpp
         include/virt_wrap/enums/Domain/UndefineFlag.hpp
         include/virt_wrap/enums/Domain/SaveRestoreFlag.hpp
@@ -151,7 +152,7 @@ add_executable(virthttp
         include/urlparser.hpp
         include/wrapper/decoder_support/compression.hpp
         include/wrapper/decoder_support/libdeflate.hpp
-        )
+        include/wrapper/network_actions_table.hpp)
 
 target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} ${LibDeflate_LIBRARIES} pthread deflate)
 if (WIN32)

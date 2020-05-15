@@ -3,11 +3,9 @@
 #include "virt_wrap/enums/Base.hpp"
 #include "virt_wrap/utility.hpp"
 
-namespace virt {
+namespace virt::enums::connection::list::storage_pool {
 
-class Connection::List::StoragePool::Flag : private VirtEnumStorage<virConnectListAllStoragePoolsFlags>,
-                                            public VirtEnumBase<Flag>,
-                                            public EnumSetHelper<Flag> {
+class Flag : private VirtEnumStorage<virConnectListAllStoragePoolsFlags>, public VirtEnumBase<Flag>, public EnumSetHelper<Flag> {
     friend VirtEnumBase<Flag>;
     friend EnumSetHelper<Flag>;
     enum class Underlying : unsigned {

@@ -3,11 +3,9 @@
 #include "virt_wrap/enums/Base.hpp"
 #include "virt_wrap/utility.hpp"
 
-namespace virt {
+namespace virt::enums::connection::list::domains {
 
-class Connection::List::Domains::Flag : private VirtEnumStorage<virConnectListAllDomainsFlags>,
-                                        public VirtEnumBase<Flag>,
-                                        public EnumSetHelper<Flag> {
+class Flag : private VirtEnumStorage<virConnectListAllDomainsFlags>, public VirtEnumBase<Flag>, public EnumSetHelper<Flag> {
     friend VirtEnumBase<Flag>;
     friend EnumSetHelper<Flag>;
     enum class Underlying : unsigned {
@@ -57,4 +55,10 @@ class Connection::List::Domains::Flag : private VirtEnumStorage<virConnectListAl
     constexpr static auto HAS_SNAPSHOT = Underlying::HAS_SNAPSHOT;
     constexpr static auto NO_SNAPSHOT = Underlying::NO_SNAPSHOT;
 };
-}
+
+[[nodiscard]] constexpr inline Flag operator|(Flag lhs, Flag rhs) noexcept;
+constexpr inline Flag& operator|=(Flag& lhs, Flag rhs) noexcept;
+
+[[nodiscard]] constexpr inline Flag operator|(Flag lhs, Flag rhs) noexcept { return Flag(EHTag{}, to_integral(lhs) | to_integral(rhs)); }
+constexpr inline Flag& operator|=(Flag& lhs, Flag rhs) noexcept { return lhs = lhs | rhs; }
+} // namespace virt::enums::connection::list::domains

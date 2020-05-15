@@ -3,9 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::ProcessSignal : private VirtEnumStorage<virDomainProcessSignal>, public VirtEnumBase<ProcessSignal>, public EnumHelper<ProcessSignal> {
+namespace virt::enums::domain {
+class ProcessSignal : private VirtEnumStorage<virDomainProcessSignal>, public VirtEnumBase<ProcessSignal>, public EnumHelper<ProcessSignal> {
     friend VirtEnumBase<ProcessSignal>;
     friend EnumHelper<ProcessSignal>;
     enum class Underlying {

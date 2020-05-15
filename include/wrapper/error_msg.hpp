@@ -63,8 +63,8 @@ class ErrorMessages {
      * \param[in] errc virthttp error code
      * \return the associated error message, or "Unknown error" if the code does exist in ErrorMessages::pairs
      **/
-    constexpr std::string_view operator[](int errc) const noexcept {
-        const auto it = cexpr::find_if(pairs.begin(), pairs.end(), [=](auto p) { return p.first == errc; });
+    constexpr auto operator[](int errc) const noexcept -> std::string_view {
+        const auto* const it = cexpr::find_if(pairs.begin(), pairs.end(), [=](auto p) { return p.first == errc; });
         return it != pairs.end() ? it->second : "Unknown error"sv;
     }
 } constexpr inline static error_messages;
