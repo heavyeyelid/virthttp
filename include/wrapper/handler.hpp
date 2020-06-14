@@ -6,9 +6,9 @@
 
 #include <utility>
 #include <boost/beast/http/message.hpp>
-#include <rapidjson/document.h>
+#include <boost/json.hpp>
 #include "handlers/domain.hpp"
-#include "wrapper/handlers/network.hpp"
+#include "handlers/network.hpp"
 #include "actions_table.hpp"
 #include "dispatch.hpp"
 #include "general_store.hpp"
@@ -22,7 +22,7 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 
 template <class Body, class Allocator>
-rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Body, http::basic_fields<Allocator>>& req, const TargetParser& target) {
+boost::json::string handle_json(GeneralStore& gstore, const http::request<Body, http::basic_fields<Allocator>>& req, const TargetParser& target) {
     JsonRes json_res{};
     auto error = [&](auto... args) { return json_res.error(args...); };
 
@@ -39,8 +39,7 @@ rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Bo
         if (idx < 0)
             return error(3);
         const auto mth = HandlerMethods::methods[idx];
-        rapidjson::Document json_req{};
-        json_req.Parse(req.body().data());
+        auto json_req = boost::json::parse(req.body());
 
         auto exec = jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
         if (skip_resolve)
@@ -103,10 +102,5 @@ rapidjson::StringBuffer handle_json(GeneralStore& gstore, const http::request<Bo
         });
     }();
 
-    rapidjson::StringBuffer buffer;
-    using UTF8_Writer = rapidjson::Writer<rapidjson::StringBuffer, rapidjson::Document::EncodingType, rapidjson::UTF8<>>;
-    UTF8_Writer writer(buffer);
-    json_res.Accept(writer);
-
-    return buffer;
+    return boost::json::to_string(json_res);
 }

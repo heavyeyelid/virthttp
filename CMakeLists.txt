@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
 
 add_subdirectory(thirdparty/virtxml++)
+set(BOOST_JSON_STANDALONE ON)
+add_subdirectory(thirdparty/CppAl.JSON)
 
 include_directories(thirdparty/gsl/include
         thirdparty/rapidjson/include
@@ -153,7 +155,7 @@ add_executable(virthttp
         include/wrapper/decoder_support/libdeflate.hpp
         )
 
-target_link_libraries(virthttp virtxml++ ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} ${LibDeflate_LIBRARIES} pthread deflate)
+target_link_libraries(virthttp virtxml++ Boost::json ${Boost_LIBRARIES} ${LibVirt_LIBRARIES} ${LibDeflate_LIBRARIES} pthread deflate)
 if (WIN32)
     target_link_libraries(virthttp Ws2_32.lib WSock32.lib)
 endif ()

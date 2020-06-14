@@ -41,7 +41,7 @@ struct HandlerMethods : public HandlerContext {
      * \param[in] obj the HTTP request body, parsed as JSON
      * \return DependsOutcome::SUCCESS or DependsOutcome::FAILURE
      * */
-    virtual DependsOutcome create(const rapidjson::Value& obj) = 0;
+    virtual DependsOutcome create(const boost::json::value& obj) = 0;
     /**
      * \internal
      * Retrieves information about the associated libvirt object(s)
@@ -50,7 +50,7 @@ struct HandlerMethods : public HandlerContext {
      * \param[in] obj the HTTP request body, parsed as JSON
      * \return DependsOutcome::SUCCESS or DependsOutcome::FAILURE
      * */
-    virtual DependsOutcome query(const rapidjson::Value& obj) = 0;
+    virtual DependsOutcome query(const boost::json::value& obj) = 0;
     /**
      * \internal
      * Performs the described modification on the associated libvirt object(s)
@@ -59,7 +59,7 @@ struct HandlerMethods : public HandlerContext {
      * \param[in] obj the HTTP request body, parsed as JSON
      * \return DependsOutcome::SUCCESS or DependsOutcome::FAILURE
      * */
-    virtual DependsOutcome alter(const rapidjson::Value& obj) = 0;
+    virtual DependsOutcome alter(const boost::json::value& obj) = 0;
     /**
      * \internal
      * Removes the associated libvirt object(s)
@@ -68,7 +68,7 @@ struct HandlerMethods : public HandlerContext {
      * \param[in] obj the HTTP request body, parsed as JSON
      * \return DependsOutcome::SUCCESS or DependsOutcome::FAILURE
      * */
-    virtual DependsOutcome vacuum(const rapidjson::Value& obj) = 0;
+    virtual DependsOutcome vacuum(const boost::json::value& obj) = 0;
 
     /**
      * \internal

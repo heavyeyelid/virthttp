@@ -1,8 +1,6 @@
 #pragma once
 #include <boost/beast.hpp>
-#include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
+#include <boost/json.hpp>
 #include "../general_store.hpp"
 #include "../handler.hpp"
 #include "../handlers/async/async_handler.hpp"
@@ -93,10 +91,8 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
     }
 
     if (auto opt = target.getBool("async"); opt && *opt) {
-        auto launch_res = gstore.async_store.launch([&gstore, target = std::move(target), req = std::move(req)]() {
-            auto buf = handle_json(gstore, req, target);
-            return std::string{buf.GetString(), buf.GetLength()};
-        });
+        auto launch_res = gstore.async_store.launch(
+            [&gstore, target = std::move(target), req = std::move(req)]() { return std::string{handle_json(gstore, req, target)}; });
 
         if (!launch_res)
             return send(server_error("Unable to enqueue async request"));
@@ -153,7 +149,7 @@ void handle_request(GeneralStore& gstore, boost::beast::http::request<Body, boos
      */
 
     boost::beast::http::response<boost::beast::http::string_body> res{boost::beast::http::status::ok, req.version()};
-    res.body() = std::string{buffer.GetString()};
+    res.body() = std::move(buffer);
     res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(boost::beast::http::field::content_type, "application/json");
     forward_packid(res);

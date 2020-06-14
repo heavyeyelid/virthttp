@@ -1,41 +1,37 @@
 #include "wrapper/json2virt.hpp"
 
-std::optional<virt::TypedParams> json_to_typed_parameters(const rapidjson::Value& obj) {
+std::optional<virt::TypedParams> json_to_typed_parameters(const boost::json::value& obj) {
     virt::TypedParams ret{};
-    if (!obj.IsObject())
+    if (!obj.is_object())
         return std::nullopt;
-    for (auto it = obj.MemberBegin(); it != obj.MemberEnd(); ++it) {
-        const auto& val = *it;
-        if (val.value.IsObject() || val.value.IsArray())
+    for (const auto& key_val : obj.get_object()) {
+        const auto key = key_val.key_c_str();
+        const auto& val = key_val.value();
+        if (val.is_structured())
             return std::nullopt;
-        switch (val.value.GetType()) {
-        case rapidjson::kNullType:
+        switch (val.kind()) {
+            using boost::json::kind;
+        case kind::null:
+            [[fallthrough]];
+        case kind::object:
+            [[fallthrough]];
+        case kind::array:
             return std::nullopt;
-        case rapidjson::kFalseType:
-            ret.add(val.name.GetString(), false);
+        case kind::bool_:
+            ret.add(key, val.get_bool());
             break;
-        case rapidjson::kTrueType:
-            ret.add(val.name.GetString(), true);
+        case kind::string: {
+            const auto str = val.get_string();
+            ret.add(key, str.c_str());
+        } break;
+        case kind::double_:
+            ret.add(key, val.get_double());
             break;
-        case rapidjson::kObjectType:
-        case rapidjson::kArrayType:
-            return std::nullopt;
-        case rapidjson::kStringType:
-            ret.add(val.name.GetString(), val.value.GetString());
+        case kind::int64:
+            ret.add(key, static_cast<long long int>(val.get_int64()));
             break;
-        case rapidjson::kNumberType:
-            if (val.value.IsDouble() || val.value.IsLosslessDouble())
-                ret.add(val.name.GetString(), val.value.GetDouble());
-            else if (val.value.IsFloat() || val.value.IsLosslessFloat())
-                ret.add(val.name.GetString(), val.value.GetFloat());
-            else if (val.value.IsInt64())
-                ret.add(val.name.GetString(), static_cast<long long int>(val.value.GetInt64()));
-            else if (val.value.GetUint64())
-                ret.add(val.name.GetString(), static_cast<unsigned long long int>(val.value.GetUint64()));
-            else if (val.value.IsUint())
-                ret.add(val.name.GetString(), val.value.GetUint());
-            else if (val.value.IsInt())
-                ret.add(val.name.GetString(), val.value.GetInt());
+        case kind::uint64:
+            ret.add(key, static_cast<unsigned long long int>(val.get_uint64()));
             break;
         }
     }

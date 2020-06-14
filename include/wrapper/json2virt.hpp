@@ -1,21 +1,18 @@
 #pragma once
-#include <rapidjson/document.h>
+#include <boost/json.hpp>
 #include "../utils.hpp"
 #include "virt_wrap/TypesParam.hpp"
 #include "json_utils.hpp"
 
-std::optional<virt::TypedParams> json_to_typed_parameters(const rapidjson::Value& val);
+std::optional<virt::TypedParams> json_to_typed_parameters(const boost::json::value& val);
 
 enum class JTag {
     None,
     // Object,
     Array,
     Bool,
-    Int32,
-    Uint32,
     Int64,
     Uint64,
-    Float,
     Double,
     String,
     Enum,
@@ -24,11 +21,8 @@ enum class JTag {
 template <JTag tag, class = void> struct JTagRepr { using type = void; };
 
 template <> struct JTagRepr<JTag::Bool, void> { using type = bool; };
-template <> struct JTagRepr<JTag::Int32, void> { using type = long; };
-template <> struct JTagRepr<JTag::Uint32, void> { using type = unsigned; };
 template <> struct JTagRepr<JTag::Int64, void> { using type = long long; };
 template <> struct JTagRepr<JTag::Uint64, void> { using type = unsigned long long; };
-template <> struct JTagRepr<JTag::Float, void> { using type = float; };
 template <> struct JTagRepr<JTag::Double, void> { using type = double; };
 template <> struct JTagRepr<JTag::String, void> { using type = std::string; };
 template <class F> struct JTagRepr<JTag::Enum, F> { using type = F; };
@@ -43,7 +37,7 @@ template <JTag tag_, class Extra_> struct JTagReverse<JTagRepr<tag_, Extra_>> {
 template <JTag tag, class Extra = void> using JTagRepr_t = typename JTagRepr<tag, Extra>::type;
 
 template <JTag type, JTag nested_type = JTag::None, class Extra = void>
-auto extract_param_val(const rapidjson::Value& el_json, JsonRes& json_res) noexcept {
+auto extract_param_val(const boost::json::value& el_json, JsonRes& json_res) noexcept {
     static_assert(type != JTag::None, "Extracted type must exist");
     using SubRepr = JTagRepr_t<nested_type, Extra>;
     using RawRepr = JTagRepr<type, Extra>;
@@ -57,10 +51,10 @@ auto extract_param_val(const rapidjson::Value& el_json, JsonRes& json_res) noexc
     if constexpr (type == JTag::Array) {
         static_assert(nested_type != JTag::None, "Sub-extracted type must exist");
 
-        if (!el_json.IsArray())
+        if (!el_json.is_array())
             return error(0);
-        const auto el_jsonarr = el_json.GetArray();
-        ret_val.reserve(el_jsonarr.Size());
+        const auto el_jsonarr = el_json.get_array();
+        ret_val.reserve(el_jsonarr.size());
         for (const auto& sub_el : el_jsonarr) {
             auto res = extract_param_val<nested_type, JTag::None>(sub_el, json_res);
             if (!res)
@@ -70,41 +64,29 @@ auto extract_param_val(const rapidjson::Value& el_json, JsonRes& json_res) noexc
     } else {
         static_assert(nested_type == JTag::None, "Sub-extracted type shall not exist");
         if constexpr (type == JTag::Bool) {
-            if (!el_json.IsBool())
+            if (!el_json.is_bool())
                 return error(0);
-            ret_val = el_json.GetBool();
-        } else if constexpr (type == JTag::Int32) {
-            if (!el_json.IsInt())
-                return error(0);
-            ret_val = el_json.GetInt();
-        } else if constexpr (type == JTag::Uint32) {
-            if (!el_json.IsUint())
-                return error(0);
-            ret_val = el_json.GetUint();
+            ret_val = el_json.get_bool();
         } else if constexpr (type == JTag::Int64) {
-            if (!(el_json.IsInt() || el_json.IsInt64()))
+            if (!el_json.is_int64())
                 return error(0);
-            ret_val = el_json.IsInt64() ? el_json.GetInt64() : el_json.GetInt();
+            ret_val = el_json.get_int64();
         } else if constexpr (type == JTag::Uint64) {
-            if (!(el_json.IsUint() || el_json.IsUint64()))
+            if (!el_json.is_uint64())
                 return error(0);
-            ret_val = el_json.IsUint64() ? el_json.GetUint64() : el_json.GetUint();
-        } else if constexpr (type == JTag::Float) {
-            if (!el_json.IsFloat())
-                return error(0);
-            ret_val = el_json.GetFloat();
+            ret_val = el_json.get_uint64();
         } else if constexpr (type == JTag::Double) {
-            if (!el_json.IsDouble())
+            if (!el_json.is_double())
                 return error(0);
-            ret_val = el_json.GetDouble();
+            ret_val = el_json.get_double();
         } else if constexpr (type == JTag::String) {
-            if (!el_json.IsString())
+            if (!el_json.is_string())
                 return error(0);
-            ret_val = std::string{el_json.GetString(), el_json.GetStringLength()};
+            ret_val = el_json.get_string();
         } else if constexpr (type == JTag::Enum) {
-            if (!el_json.IsString())
+            if (!el_json.is_string())
                 return error(0);
-            const auto enum_opt = Repr::from_string({el_json.GetString(), el_json.GetStringLength()});
+            const auto enum_opt = Repr::from_string(el_json.get_string());
             if (!enum_opt)
                 return Ret{std::nullopt};
             ret_val = *enum_opt;
@@ -114,12 +96,11 @@ auto extract_param_val(const rapidjson::Value& el_json, JsonRes& json_res) noexc
 }
 
 template <JTag type, JTag nested_type = JTag::None, class Extra = void>
-auto extract_param(const rapidjson::Value& val, gsl::czstring<> name, JsonRes& json_res, bool consider_optional = false) noexcept
+auto extract_param(const boost::json::object& val, gsl::czstring<> name, JsonRes& json_res, bool consider_optional = false) noexcept
     -> decltype(extract_param_val<type, nested_type, Extra>(std::declval<decltype(val)>(), json_res)) {
     using Ret = decltype(extract_param_val<type, nested_type, Extra>(std::declval<decltype(val)>(), json_res));
-    auto error = [&](auto... args) { return json_res.error(args...), std::nullopt; };
-    const auto el_it = val.FindMember(name);
-    if (el_it == val.MemberEnd()) {
+    const auto el_it = val.find(name);
+    if (el_it == val.end()) {
         if (consider_optional) {
             Ret ret{};
             ret.emplace(); // Requires the type to have a default ctor
@@ -127,14 +108,13 @@ auto extract_param(const rapidjson::Value& val, gsl::czstring<> name, JsonRes& j
         }
         return std::nullopt;
     }
-    const auto& el_json = el_it->value;
-    return extract_param_val<type, nested_type, Extra>(el_json, json_res);
+    return extract_param_val<type, nested_type, Extra>(el_it->value(), json_res);
 }
 
 template <JTag tag, JTag nested_type_ = JTag::None, class Extra = void> struct WArg {
     using JTagRepr = ::JTagRepr<tag, Extra>;
     using Ret =
-        RemoveOptional_t<decltype(extract_param_val<tag, nested_type_, Extra>(std::declval<const rapidjson::Value&>(), std::declval<JsonRes&>()))>;
+        RemoveOptional_t<decltype(extract_param_val<tag, nested_type_, Extra>(std::declval<const boost::json::value&>(), std::declval<JsonRes&>()))>;
     constexpr static auto nested_type = nested_type_;
 
     gsl::czstring<> name;
@@ -142,13 +122,13 @@ template <JTag tag, JTag nested_type_ = JTag::None, class Extra = void> struct W
 };
 
 template <size_t... I, class... Args>
-auto wrap_fcn_args_impl(const rapidjson::Value& val, JsonRes& json_res, std::index_sequence<I...> is, Args... args) noexcept {
+auto wrap_fcn_args_impl(const boost::json::value& val, JsonRes& json_res, std::index_sequence<I...> is, Args... args) noexcept {
     using Tup = std::tuple<typename Args::Ret...>;
     std::optional<Tup> ret{};
     auto& vals = ret.emplace();
 
     if constexpr (sizeof...(args) > 1) {
-        if (!val.IsObject())
+        if (!val.is_object())
             return json_res.error(0), decltype(ret){std::nullopt};
         auto proc_parm = [&](auto warg, auto ic) {
             using JTagRev = JTagReverse<typename decltype(warg)::JTagRepr>;
@@ -156,7 +136,7 @@ auto wrap_fcn_args_impl(const rapidjson::Value& val, JsonRes& json_res, std::ind
             constexpr JTag tag = JTagRev::tag;
             constexpr JTag nested_tag = decltype(warg)::nested_type;
             constexpr auto idx = decltype(ic)::value;
-            const auto res = extract_param<tag, nested_tag, Extra>(val, warg.name, json_res);
+            const auto res = extract_param<tag, nested_tag, Extra>(val.get_object(), warg.name, json_res);
             if (res)
                 std::get<idx>(vals) = std::move(*res);
             return static_cast<bool>(res);
@@ -179,11 +159,11 @@ auto wrap_fcn_args_impl(const rapidjson::Value& val, JsonRes& json_res, std::ind
     }
 }
 
-template <class... Args> auto wrap_fcn_args(const rapidjson::Value& val, JsonRes& json_res, Args... args) noexcept {
+template <class... Args> auto wrap_fcn_args(const boost::json::value& val, JsonRes& json_res, Args... args) noexcept {
     return wrap_fcn_args_impl(val, json_res, std::index_sequence_for<Args...>{}, args...);
 }
 
-template <class Fcn, class... Args> auto wrap_fcn(const rapidjson::Value& val, JsonRes& json_res, Fcn fcn, Args... args) noexcept {
+template <class Fcn, class... Args> auto wrap_fcn(const boost::json::value& val, JsonRes& json_res, Fcn fcn, Args... args) noexcept {
     const auto tup = wrap_fcn_args(val, json_res, args...);
     return tup ? std::optional{std::apply(fcn, *tup)} : std::nullopt;
 }

@@ -1,32 +1,32 @@
 #pragma once
+#include <boost/json.hpp>
 #include <libvirt/libvirt.h>
-#include <rapidjson/pointer.h>
 #include "virt_wrap/impl/TypedParams.hpp"
 
-template <class JAllocator> auto to_json(const virt::TypedParams& tp, JAllocator&& jalloc) noexcept -> rapidjson::Value {
-    rapidjson::Value ret;
+inline auto to_json(const virt::TypedParams& tp) noexcept -> boost::json::value {
+    boost::json::object ret;
     for (const virt::TypedParams::Element& v : tp) {
         switch (v.type()) {
         case VIR_TYPED_PARAM_INT:
-            ret.AddMember(rapidjson::Value(v.name(), jalloc), rapidjson::Value(v.value().i), jalloc);
+            ret.emplace(v.name(), v.value().i);
             break;
         case VIR_TYPED_PARAM_UINT:
-            ret.AddMember(rapidjson::Value(v.name(), jalloc), rapidjson::Value(v.value().ui), jalloc);
+            ret.emplace(v.name(), v.value().ui);
             break;
         case VIR_TYPED_PARAM_LLONG:
-            ret.AddMember(rapidjson::Value(v.name(), jalloc), rapidjson::Value(int64_t{v.value().l}), jalloc);
+            ret.emplace(v.name(), v.value().l);
             break;
         case VIR_TYPED_PARAM_ULLONG:
-            ret.AddMember(rapidjson::Value(v.name(), jalloc), rapidjson::Value(uint64_t{v.value().ul}), jalloc);
+            ret.emplace(v.name(), v.value().ul);
             break;
         case VIR_TYPED_PARAM_DOUBLE:
-            ret.AddMember(rapidjson::Value(v.name(), jalloc), rapidjson::Value(v.value().d), jalloc);
+            ret.emplace(v.name(), v.value().d);
             break;
         case VIR_TYPED_PARAM_BOOLEAN:
-            ret.AddMember(rapidjson::Value(v.name(), jalloc), rapidjson::Value(v.value().b), jalloc);
+            ret.emplace(v.name(), v.value().b);
             break;
         case VIR_TYPED_PARAM_STRING:
-            ret.AddMember(rapidjson::Value(v.name(), jalloc), rapidjson::Value(v.value().s, jalloc), jalloc);
+            ret.emplace(v.name(), v.value().s);
             break;
         default:
             UNREACHABLE;
@@ -35,22 +35,14 @@ template <class JAllocator> auto to_json(const virt::TypedParams& tp, JAllocator
     return ret;
 }
 
-template <class JAllocator> auto to_json(const char* cstr, JAllocator&& jalloc) -> rapidjson::Value { return {cstr, jalloc}; }
+inline auto to_json(const char* cstr) -> boost::json::value { return {cstr}; }
 
-template <class JAllocator> auto to_json(UniqueZstring zstr, JAllocator&& jalloc) -> rapidjson::Value {
-    return to_json(static_cast<const char*>(zstr), std::forward<JAllocator>(jalloc));
-}
+inline auto to_json(UniqueZstring zstr) -> boost::json::value { return to_json(static_cast<const char*>(zstr)); }
 
 using VirtWrappedDomainTime = decltype(*std::declval<virt::Domain>().getTime());
 
-template <class JAllocator> auto to_json(VirtWrappedDomainTime time, JAllocator&& jalloc) -> rapidjson::Value {
-    rapidjson::Value ret{};
-    ret.SetObject();
-    ret.AddMember("seconds", static_cast<int64_t>(time.seconds), jalloc);
-    ret.AddMember("nanosec", static_cast<unsigned>(time.nanosec), jalloc);
-    return ret;
+inline auto to_json(VirtWrappedDomainTime time) -> boost::json::value {
+    return {{"seconds", static_cast<int64_t>(time.seconds)}, {"nanosec", static_cast<unsigned>(time.nanosec)}};
 }
 
-template <class T, class JAllocator> auto get_to_json(std::optional<T> opt, JAllocator&& jalloc) -> rapidjson::Value {
-    return to_json(std::move(*opt), std::forward<JAllocator>(jalloc));
-}
+template <class T> auto get_to_json(std::optional<T> opt) -> boost::json::value { return to_json(std::move(*opt)); }

@@ -1,53 +1,37 @@
 #pragma once
-#include <rapidjson/document.h>
+#include <boost/json.hpp>
 #include <virt_wrap/Error.hpp>
 #include <virt_wrap/utility.hpp>
 #include "wrapper/error_msg.hpp"
-
-template <typename T> struct JsonSpan {
-    T& wrapped;
-    constexpr JsonSpan() = delete;
-    constexpr explicit JsonSpan(T& ref) : wrapped(ref) {}
-    auto begin() const noexcept(noexcept(wrapped.Begin())) { return wrapped.Begin(); }
-    auto begin() noexcept(noexcept(wrapped.Begin())) { return wrapped.Begin(); }
-    auto end() const noexcept(noexcept(wrapped.End())) { return wrapped.End(); }
-    auto end() noexcept(noexcept(wrapped.End())) { return wrapped.End(); }
-};
 
 /**
  * \internal
  * JSON Response
  **/
-struct JsonRes : public rapidjson::Document {
+struct JsonRes : public boost::json::object {
   private:
-    [[nodiscard]] decltype(auto) json() const noexcept { return static_cast<const rapidjson::Document&>(*this); };
-    [[nodiscard]] decltype(auto) json() noexcept { return static_cast<rapidjson::Document&>(*this); };
+    [[nodiscard]] decltype(auto) json() const noexcept { return static_cast<const boost::json::object&>(*this); };
+    [[nodiscard]] decltype(auto) json() noexcept { return static_cast<boost::json::object&>(*this); };
 
   public:
     JsonRes() {
-        SetObject();
-        rapidjson::Value results{}, success{}, errors{}, messages{};
-        results.SetArray();
-        success.SetBool(false);
-        errors.SetArray();
-        messages.SetArray();
-
-        AddMember("results", results, GetAllocator());
-        AddMember("success", true, GetAllocator());
-        AddMember("errors", errors, GetAllocator());
-        AddMember("messages", messages, GetAllocator());
+        using boost::json::array_kind;
+        emplace("results", array_kind);
+        emplace("success", true);
+        emplace("errors", array_kind);
+        emplace("messages", array_kind);
     }
 
     /**
      * \internal
      * Append a result
      **/
-    template <typename T> void result(T&& val) { (*this)["results"].PushBack(val, GetAllocator()); }
+    template <typename T> void result(T&& val) { (*this)["results"].get_array().push_back(val); }
     /**
      * \internal
      * Append a message
      **/
-    template <typename T> void message(T&& val) { (*this)["messages"].PushBack(val, GetAllocator()); }
+    template <typename T> void message(T&& val) { (*this)["messages"].get_array().push_back(val); }
     /**
      * \internal
      * Append an error
@@ -56,19 +40,13 @@ struct JsonRes : public rapidjson::Document {
      **/
     void error(int code) {
         (*this)["success"] = false;
-        rapidjson::Value err{};
-        err.SetObject();
-        err.AddMember("code", code, GetAllocator());
-        {
-            const auto msg = error_messages[code];
-            err.AddMember("message", rapidjson::StringRef(msg.data(), msg.length()), GetAllocator());
-        }
+        boost::json::object err{};
+        err.emplace("code", code);
+        err.emplace("message", error_messages[code]);
 
-        if (auto vir_err = virt::extractLastError(); vir_err){
-            const auto& msg = vir_err.message;
-            err.AddMember("libvirt", rapidjson::Value(msg.data(), msg.length(), GetAllocator()), GetAllocator());
-        }
+        if (auto vir_err = virt::extractLastError(); vir_err)
+            err.emplace("libvirt", vir_err.message);
 
-        (*this)["errors"].PushBack(err, GetAllocator());
+        (*this)["errors"].get_array().push_back(err);
     };
 };

@@ -82,35 +82,31 @@ namespace subq_impl {
  * SFINAE detection helper for the `to_json` function overload set
  *
  * \tparam T the type of the object to be serialized
- * \tparam A the allocator type
  **/
-template <class T, class A> using ToJson = decltype(to_json(std::declval<T&&>(), std::declval<A&>()));
+template <class T> using ToJson = decltype(to_json(std::declval<T&&>()));
 /**
  * \internal
  * SFINAE detection helper for the `get_to_json` function overload set
  *
  * \tparam T the type of the object to be serialized
- * \tparam A the allocator type
  **/
-template <class T, class A> using GetToJson = decltype(get_to_json(std::declval<T&&>(), std::declval<A&>()));
+template <class T> using GetToJson = decltype(get_to_json(std::declval<T&&>()));
 
 /**
  * \internal
  * SFINAE detection wrapper to select the correct serialization function
  * The function template instanciation will fail to compile by `static_assert` if the object has no way of being automatically serialized
  *
- * \tparam T, A (deduced)
+ * \tparam T, (deduced)
  * \param[in] v the object to be JSON-serialized; perfect-forwarded
- * \param[in] al a reference to the allocator to be used during serialization
  * \return (`decltype(auto)`) the perfectly forwarded result of the serialization function call
  **/
-template <class T, class A> constexpr decltype(auto) auto_serialize(T&& v, A& al) {
+template <class T> constexpr decltype(auto) auto_serialize(T&& v) {
     using Value = std::remove_reference_t<T>;
-    using Alloc = std::remove_reference_t<A>;
-    if constexpr (nstd::is_detected_v<ToJson, Value, Alloc>)
-        return to_json(std::move(v), al);
-    else if constexpr (nstd::is_detected_v<GetToJson, Value, Alloc>)
-        return get_to_json(std::move(v), al);
+    if constexpr (nstd::is_detected_v<ToJson, Value>)
+        return to_json(std::move(v));
+    else if constexpr (nstd::is_detected_v<GetToJson, Value>)
+        return get_to_json(std::move(v));
     else
         static_assert(std::is_void_v<Value>, "T is not auto-serializable");
     UNREACHABLE;
@@ -135,8 +131,8 @@ template <class T, class A> constexpr decltype(auto) auto_serialize(T&& v, A& al
 template <class TI, class F, class VC, class TJ>
 auto subquery(std::string_view name, std::string_view opt_tag, [[maybe_unused]] TI ti, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept(
     std::is_nothrow_move_constructible_v<F>&& std::is_nothrow_move_constructible_v<VC>&& std::is_nothrow_move_constructible_v<TJ>) {
-    return [name, opt_tag, lifted = std::forward<F>(lifted), valid_check = std::forward<VC>(valid_check), to_json = std::forward<TJ>(to_json)](
-               int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
+    return [name, opt_tag, lifted = std::forward<F>(lifted), valid_check = std::forward<VC>(valid_check),
+            to_json = std::forward<TJ>(to_json)](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             using Flag = typename TI::type;
             Flag flag{};
@@ -145,7 +141,7 @@ auto subquery(std::string_view name, std::string_view opt_tag, [[maybe_unused]] 
                 return error(301), DependsOutcome::FAILURE;
             flag = *opt_flags;
             auto&& res = lifted(flag);
-            return valid_check(res) ? (res_val = std::move(to_json(std::move(res), allocator)), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
+            return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };
@@ -189,11 +185,11 @@ auto subquery(std::string_view name, std::string_view opt_tag, TI ti, F&& lifted
 template <class F, class VC, class TJ, class = std::enable_if_t<!std::is_same_v<F, std::string_view>>>
 auto subquery(std::string_view name, F&& lifted, VC&& valid_check, TJ&& to_json) noexcept(
     std::is_nothrow_move_constructible_v<F>&& std::is_nothrow_move_constructible_v<VC>&& std::is_nothrow_move_constructible_v<TJ>) {
-    return [&, name, lifted = std::forward<F>(lifted), valid_check = std::forward<VC>(valid_check), to_json = std::forward<TJ>(to_json)](
-               int sq_lev, const TargetParser& target, auto& res_val, auto& allocator, auto&& error) -> DependsOutcome {
+    return [&, name, lifted = std::forward<F>(lifted), valid_check = std::forward<VC>(valid_check),
+            to_json = std::forward<TJ>(to_json)](int sq_lev, const TargetParser& target, auto& res_val, auto&& error) -> DependsOutcome {
         if (target.getPathParts()[sq_lev] == name) {
             auto&& res = lifted();
-            return valid_check(res) ? (res_val = std::move(to_json(std::move(res), allocator)), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
+            return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;
     };
@@ -230,7 +226,6 @@ auto subquery(std::string_view name, F&& lifted,
  *   - [in] `sq_lev` is the target path part index where the subquery to look for is located
  *   - [in] `target` is the target parser object containing the currently parsed URI target
  *   - [out] `res_val` is the place where to put the JSON result to be sent back to the client
- *   - [in] `allocator` is the JSON allocator to be used when serializing
  *   - [in] `error` is a callable used for error reporting
  *
  * \param args the subquery description; see the different versions of subq_impl::subquery to know the possible description formats

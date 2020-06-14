@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <rapidjson/document.h>
+#include <boost/json.hpp>
 #include "json_utils.hpp"
 #include "utils.hpp"
 
@@ -19,7 +19,7 @@ enum class DependsOutcome { SUCCESS, FAILURE, SKIPPED };
  * \param[in] json_res the response body, as JSON
  * \return `true` if the dependency chain is holding, `false` if broken
  **/
-bool check_depends(const rapidjson::Value& depends_json, std::vector<DependsOutcome>& outcomes, JsonRes& json_res) noexcept;
+bool check_depends(const boost::json::value& depends_json, std::vector<DependsOutcome>& outcomes, JsonRes& json_res) noexcept;
 
 /**
  * \internal
@@ -30,16 +30,16 @@ bool check_depends(const rapidjson::Value& depends_json, std::vector<DependsOutc
  * \param[in] json_res the response body, as JSON
  * \param[in] hdl the action handler; callable of signature DependsOutcome(const rapidjson::Value&)
  **/
-template <typename Hdl> void handle_depends(const rapidjson::Value& json_req, JsonRes& json_res, Hdl&& hdl) {
+template <typename Hdl> void handle_depends(const boost::json::value& json_req, JsonRes& json_res, Hdl&& hdl) {
     auto error = [&](auto... args) { return json_res.error(args...); };
 
-    if (!json_req.IsArray())
+    if (!json_req.is_array())
         return error(298);
 
     std::vector<DependsOutcome> outcomes{};
-    outcomes.reserve(json_req.Size());
+    outcomes.reserve(json_req.get_array().size());
 
-    for (const auto& action : json_req.GetArray()) {
+    for (const auto& action : json_req.get_array()) {
         if (check_depends(action, outcomes, json_res))
             outcomes.push_back(hdl(action));
     }

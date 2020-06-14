@@ -1,6 +1,6 @@
 #pragma once
 #include <tuple>
-#include <rapidjson/rapidjson.h>
+#include <boost/json.hpp>
 #include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
 #include "wrapper/dispatch.hpp"
@@ -75,35 +75,31 @@ class NetworkHandlers : public HandlerMethods {
      **/
     explicit NetworkHandlers(HandlerContext& ctx, virt::Network& nw) : HandlerMethods(ctx), nw(nw) {}
 
-    DependsOutcome create(const rapidjson::Value& obj) override { return error(-1), DependsOutcome::FAILURE; }
+    DependsOutcome create(const boost::json::value& obj) override { return error(-1), DependsOutcome::FAILURE; }
 
-    DependsOutcome query(const rapidjson::Value& action) override {
-        rapidjson::Value jsonActive;
-        {
-            TFE nwActive = nw.isActive();
-            if (nwActive.err()) {
-                logger.error("Error occurred while getting network status");
-                return error(500), DependsOutcome::FAILURE;
-            }
-            jsonActive.SetBool(static_cast<bool>(nwActive));
+    DependsOutcome query(const boost::json::value& action) override {
+        const TFE nw_active = nw.isActive();
+        if (nw_active.err()) {
+            logger.error("Error occurred while getting network status");
+            return error(500), DependsOutcome::FAILURE;
         }
-        rapidjson::Value jsonAS;
-        {
-            TFE nwAS = nw.isActive();
-            if (nwAS.err()) {
-                logger.error("Error occurred while getting network autostart policy");
-                return error(500), DependsOutcome::FAILURE;
-            }
-            jsonActive.SetBool(static_cast<bool>(nwAS));
+        const auto json_active = static_cast<bool>(nw_active);
+
+        const TFE nw_autostart = nw.getAutostart();
+        if (nw_autostart.err()) {
+            logger.error("Error occurred while getting network autostart policy");
+            return error(500), DependsOutcome::FAILURE;
         }
-        rapidjson::Value nw_json;
-        nw_json.SetObject();
-        nw_json.AddMember("name", rapidjson::Value(nw.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-        nw_json.AddMember("uuid", nw.extractUUIDString(), json_res.GetAllocator());
-        nw_json.AddMember("active", jsonActive, json_res.GetAllocator());
-        json_res.result(std::move(nw_json));
+        const auto json_autostart = static_cast<bool>(nw_autostart);
+
+        json_res.result(boost::json::object{
+            {"name", nw.getName()},
+            {"uuid", nw.extractUUIDString()},
+            {"active", json_active},
+            {"autostart", json_autostart},
+        });
         return DependsOutcome::SUCCESS;
     }
-    DependsOutcome alter(const rapidjson::Value& action) override { return error(-1), DependsOutcome::FAILURE; }
-    DependsOutcome vacuum(const rapidjson::Value& action) override { return error(-1), DependsOutcome::FAILURE; }
+    DependsOutcome alter(const boost::json::value& action) override { return error(-1), DependsOutcome::FAILURE; }
+    DependsOutcome vacuum(const boost::json::value& action) override { return error(-1), DependsOutcome::FAILURE; }
 };

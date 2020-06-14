@@ -4,9 +4,9 @@
 [submodule "thirdparty/rapidxml_ns"]
 	path = thirdparty/rapidxml_ns
 	url = https://github.com/svgpp/rapidxml_ns.git
-[submodule "thirdparty/rapidjson"]
-	path = thirdparty/rapidjson
-	url = https://github.com/Tencent/rapidjson.git
+[submodule "thirdparty/CppAl.JSON"]
+	path = thirdparty/CppAl.JSON
+	url = https://github.com/CPPAlliance/json.git
 [submodule "thirdparty/lift"]
 	path = thirdparty/lift
 	url = https://github.com/rollbear/lift.git

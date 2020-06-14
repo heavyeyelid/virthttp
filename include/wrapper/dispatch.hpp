@@ -1,8 +1,8 @@
 #pragma once
 #include <array>
 #include <boost/beast/http/verb.hpp>
+#include <boost/json.hpp>
 #include <gsl/gsl>
-#include <rapidjson/document.h>
 #include "handlers/hdl_ctx.hpp"
 #include "cexpr_algs.hpp"
 #include "depends.hpp"
@@ -13,8 +13,8 @@
  *
  * \tparam Vs the rapidjson value types
  **/
-template <rapidjson::Type... Vs> struct JTypeList {
-    constexpr static std::array<rapidjson::Type, sizeof...(Vs)> values = {Vs...}; // note: cannot use CTAD because of the empty list case
+template <boost::json::kind... Vs> struct JTypeList {
+    constexpr static std::array<boost::json::kind, sizeof...(Vs)> values = {Vs...}; // note: cannot use CTAD because of the empty list case
 };
 
 template <class S, class R = JTypeList<>> class JDispatchVals;
@@ -23,7 +23,7 @@ class JDispatch;
 /**
  * A special JTypeList reprensenting the full set of JSON value types
  **/
-using JAll = JTypeList<static_cast<rapidjson::Type>(-1)>;
+using JAll = JTypeList<static_cast<boost::json::kind>(-1)>;
 
 /**
  * \internal
@@ -32,7 +32,7 @@ using JAll = JTypeList<static_cast<rapidjson::Type>(-1)>;
  * \tparam Ss the value types allowed to be passed to the handler
  * \tparam Rs the container types allowed to be passed to the handler
  **/
-template <rapidjson::Type... Ss, rapidjson::Type... Rs> class JDispatchVals<JTypeList<Ss...>, JTypeList<Rs...>> {
+template <boost::json::kind... Ss, boost::json::kind... Rs> class JDispatchVals<JTypeList<Ss...>, JTypeList<Rs...>> {
     friend JDispatch;
     constexpr static auto singles = JTypeList<Ss...>{}.values; ///< Value types allowed to be passed to the handler
     constexpr static auto ranges = JTypeList<Rs...>{}.values;  ///< Container types allowed to be passed to the handler
@@ -60,8 +60,8 @@ template <rapidjson::Type... Ss, rapidjson::Type... Rs> class JDispatchVals<JTyp
  * De-templatized reference to a JDispatchVals so it can be stored in an array
  **/
 class JDispatch {
-    gsl::span<const rapidjson::Type> singles; // C++2a use std::span
-    gsl::span<const rapidjson::Type> ranges;  // C++2a use std::span
+    gsl::span<const boost::json::kind> singles; // C++2a use std::span
+    gsl::span<const boost::json::kind> ranges;  // C++2a use std::span
 
   public:
     /**
@@ -82,16 +82,16 @@ class JDispatch {
      * \param[in] hdl the callable which will process jval if the JSON value type is allowed
      * \return a closure of signature void(HandlerContext&)
      **/
-    template <class Hdl> auto operator()(const rapidjson::Value& jval, Hdl&& hdl) const {
+    template <class Hdl> auto operator()(const boost::json::value& jval, Hdl&& hdl) const {
         return [&, this, hdl = std::forward<Hdl>(hdl)](HandlerContext& hc) {
-            const auto jtype = jval.GetType();
+            const auto jkind = jval.kind();
             if (!singles.empty() && static_cast<int>(singles[0]) == -1) {
                 return (void)hdl(jval);
             } else {
-                if (cexpr::find(singles.begin(), singles.end(), jtype) != singles.end())
+                if (cexpr::find(singles.begin(), singles.end(), jkind) != singles.end())
                     return (void)hdl(jval);
             }
-            if (cexpr::find(ranges.begin(), ranges.end(), jtype) != ranges.end())
+            if (cexpr::find(ranges.begin(), ranges.end(), jkind) != ranges.end())
                 return handle_depends(jval, hc.json_res, hdl);
             return hc.json_res.error(3);
         };

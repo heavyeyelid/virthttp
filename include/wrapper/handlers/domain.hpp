@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
 #include <tuple>
-#include <rapidjson/rapidjson.h>
+#include <boost/json.hpp>
 #include <virt_wrap/Error.hpp>
 #include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
@@ -18,8 +18,8 @@
  * jdispatcher values for domain handlers as a type list
  **/
 using DomainJDispatcherVals =
-    std::tuple<JDispatchVals<JTypeList<rapidjson::kStringType, rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>,
-               JDispatchVals<JTypeList<rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>>;
+    std::tuple<JDispatchVals<JTypeList<boost::json::kind::string, boost::json::kind::object>, JTypeList<boost::json::kind::array>>,
+               JDispatchVals<JAll>, JDispatchVals<JTypeList<boost::json::kind::object>, JTypeList<boost::json::kind::array>>, JDispatchVals<JAll>>;
 /**
  * \internal
  * jdispatcher values for domain handlers as a tuple
@@ -78,38 +78,37 @@ class DomainHandlers : public HandlerMethods {
      **/
     explicit DomainHandlers(HandlerContext& ctx, virt::Domain& dom) : HandlerMethods(ctx), dom(dom) {}
 
-    DependsOutcome create(const rapidjson::Value& obj) override {
-        if (obj.IsString()) {
-            dom = virt::Domain::createXML(conn, obj.GetString());
+    DependsOutcome create(const boost::json::value& obj) override {
+        if (obj.is_string()) {
+            const auto& jstr = obj.get_string();
+            dom = virt::Domain::createXML(conn, jstr.c_str());
             if (!dom)
                 return error(105), DependsOutcome::FAILURE;
-            rapidjson::Value res_val;
-            res_val.SetObject();
-            res_val.AddMember("created", true, json_res.GetAllocator());
+            boost::json::object res_val;
+            res_val.emplace("created", true);
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         }
-        if (obj.IsObject())
+        if (obj.is_object())
             return error(-1), DependsOutcome::FAILURE;
         return error(0), DependsOutcome::FAILURE;
     }
 
-    DependsOutcome query(const rapidjson::Value& action) override {
-        rapidjson::Value res_val;
-        auto& jalloc = json_res.GetAllocator();
+    DependsOutcome query(const boost::json::value& action) override {
+        boost::json::value res_val;
         auto& path_parts = target.getPathParts();
         if (path_parts.size() < 5) {
-            res_val.SetObject();
+            auto& res_obj = res_val.emplace_object();
             const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
             const auto os_type = dom.getOSType();
-            res_val.AddMember("name", rapidjson::Value(dom.getName(), jalloc), jalloc);
-            res_val.AddMember("uuid", dom.extractUUIDString(), jalloc);
-            res_val.AddMember("id", static_cast<int>(dom.getID()), jalloc);
-            res_val.AddMember("status", rapidjson::StringRef(virt::Domain::State(EHTag{}, state).to_string().data()), jalloc);
-            res_val.AddMember("os", rapidjson::Value(os_type.get(), jalloc), jalloc);
-            res_val.AddMember("ram", memory, jalloc);
-            res_val.AddMember("ram_max", max_mem, jalloc);
-            res_val.AddMember("cpu", nvirt_cpu, jalloc);
+            res_obj.emplace("name", dom.getName());
+            res_obj.emplace("uuid", dom.extractUUIDString());
+            res_obj.emplace("id", static_cast<int>(dom.getID()));
+            res_obj.emplace("status", virt::Domain::State(EHTag{}, state).to_string());
+            res_obj.emplace("os", os_type.get());
+            res_obj.emplace("ram", memory);
+            res_obj.emplace("ram_max", max_mem);
+            res_obj.emplace("cpu", nvirt_cpu);
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         }
@@ -124,60 +123,43 @@ class DomainHandlers : public HandlerMethods {
         const auto outcome = parameterized_depends_scope(
             subquery("xml_desc", "options", ti<virt::Domain::XmlFlag>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
             subquery("fs_info", SUBQ_LIFT(dom.getFSInfo), fwd_as_if_err(201), // getting filesystem information failed
-                     [&](auto fs_infos, auto& jalloc) {
-                         rapidjson::Value jvres;
+                     [&](auto fs_infos) {
+                         boost::json::array jvres;
                          for (const virDomainFSInfo& fs_info : fs_infos) {
-                             rapidjson::Value sub;
-                             sub.AddMember("name", rapidjson::Value(fs_info.name, jalloc), jalloc);
-                             sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, jalloc), jalloc);
-                             sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, jalloc), jalloc);
-                             {
-                                 rapidjson::Value dev_aliases;
-                                 dev_aliases.SetArray();
-                                 for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
-                                     dev_aliases.PushBack(rapidjson::Value(dev_alias, jalloc), jalloc);
-                                 sub.AddMember("disk_dev_aliases", dev_aliases, jalloc);
-                             }
-                             jvres.PushBack(sub, jalloc);
+                             auto& sub = jvres.emplace_back(boost::json::object_kind).get_object();
+                             sub.emplace("name", fs_info.name);
+                             sub.emplace("mountpoint", fs_info.mountpoint);
+                             sub.emplace("fs_type", fs_info.fstype);
+                             auto& dev_aliases = sub["disk_dev_aliases"].emplace_array();
+                             for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
+                                 dev_aliases.emplace_back(dev_alias);
                          }
                          return jvres;
                      }),
             subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(-2)), subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2)),
             subquery(
                 "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
-                [&](auto sp, auto& jalloc) {
-                    rapidjson::Value ret{};
-                    ret.SetObject();
-                    ret.AddMember("type", rapidjson::Value(static_cast<const char*>(sp.first), jalloc), jalloc);
-                    ret.AddMember("params_count", static_cast<int>(sp.second), jalloc);
-                    return ret;
+                [&](auto sp) -> boost::json::object {
+                    return {{"type", static_cast<const char*>(sp.first)}, {"params_count", static_cast<int>(sp.second)}};
                 }),
-            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2)))(4, target, res_val, json_res.GetAllocator(),
+            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2)))(4, target, res_val,
                                                                                                        [&](auto... args) { return error(args...); });
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
         return outcome;
     }
-    DependsOutcome alter(const rapidjson::Value& action) override {
-        const auto& action_obj = *action.MemberBegin();
-        const auto& [action_name, action_val] = action_obj;
-        const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-        return hdl ? hdl(action_val, json_res, dom) : (error(123), DependsOutcome::FAILURE);
+    DependsOutcome alter(const boost::json::value& action) override {
+        const auto& action_obj = *action.get_object().begin();
+        const auto hdl = domain_actions_table[action_obj.key()];
+        return hdl ? hdl(action_obj.value(), json_res, dom) : (error(123), DependsOutcome::FAILURE);
     }
-    DependsOutcome vacuum(const rapidjson::Value& action) override {
-        auto& jalloc = json_res.GetAllocator();
+    DependsOutcome vacuum(const boost::json::value& action) override {
         auto success = [&] {
-            rapidjson::Value res_val;
-            res_val.SetObject();
-            res_val.AddMember("deleted", true, jalloc);
-            json_res.result(std::move(res_val));
+            json_res.result(boost::json::object{{"deleted", true}});
             return DependsOutcome::SUCCESS;
         };
         auto failure = [&] {
-            rapidjson::Value msg_val;
-            msg_val.SetObject();
-            msg_val.AddMember("libvirt", rapidjson::Value(virt::extractLastError().message, jalloc), jalloc);
-            json_res.message(std::move(msg_val));
+            json_res.message(boost::json::object{{"libvirt", virt::extractLastError().message}});
             return error(216), DependsOutcome::FAILURE;
         };
         const auto opt_flags = target_get_composable_flag<virt::Domain::UndefineFlag>(target, "options");
