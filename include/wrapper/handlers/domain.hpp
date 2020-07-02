@@ -149,9 +149,9 @@ class DomainHandlers : public HandlerMethods {
         return outcome;
     }
     DependsOutcome alter(const boost::json::value& action) override {
-        const auto& action_obj = *action.get_object().begin();
-        const auto hdl = domain_actions_table[action_obj.key()];
-        return hdl ? hdl(action_obj.value(), json_res, dom) : (error(123), DependsOutcome::FAILURE);
+        const auto& [key, value] = *action.get_object().begin();
+        const auto hdl = domain_actions_table[key];
+        return hdl ? hdl(value, json_res, dom) : (error(123), DependsOutcome::FAILURE);
     }
     DependsOutcome vacuum(const boost::json::value& action) override {
         auto success = [&] {
