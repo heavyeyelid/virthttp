@@ -7,8 +7,10 @@
 #include <flatmap.hpp>
 #include "libdeflate.hpp"
 
-inline bool inflate_zlib(std::string& body, int wbits);
-
+/**
+ * \internal
+ * Available compression algorithms
+ **/
 enum class Algs {
     // compress, // unsupported
     deflate,
@@ -17,10 +19,25 @@ enum class Algs {
     // br, // unsupported
 };
 
+/**
+ * \internal
+ * Regex pattern for parsing boost::beast::http::field::accept_encoding's value
+ **/
 constexpr static ctll::fixed_string weigthed_encodings_pattern = R"(([a-z]+|\*)(?:;q=([0-1].?(?:[\d]+)?)?)?(?:,\s*)?)";
 
-bool handle_compression(const boost::beast::http::basic_fields<std::allocator<char>>& in_head,
-                        boost::beast::http::basic_fields<std::allocator<char>>& out_head, std::string& body) {
+/**
+ * \internal
+ * Perform the appropriate compression on the response body
+ *
+ * \tparam Allocator (deduced)
+ * \param[in] in_head request header fields
+ * \param[in] out_head response header fields
+ * \param[in,out] body response body
+ * \return `true` on success, `false` on failure
+ **/
+template <class Allocator>
+bool handle_compression(const boost::beast::http::basic_fields<Allocator>& in_head, boost::beast::http::basic_fields<Allocator>& out_head,
+                        std::string& body) {
     /// TODO check if the content-type looks like it could be compressed
     /// TODO check if the body is large enough to have any advantage compressing it
     const auto in_algs = in_head[boost::beast::http::field::accept_encoding];

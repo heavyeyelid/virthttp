@@ -3,11 +3,10 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::OpenGraphicsFlag : private VirtEnumStorage<virDomainOpenGraphicsFlags>,
-                                 public VirtEnumBase<OpenGraphicsFlag>,
-                                 public EnumSetHelper<OpenGraphicsFlag> {
+namespace virt::enums::domain {
+class OpenGraphicsFlag : private VirtEnumStorage<virDomainOpenGraphicsFlags>,
+                         public VirtEnumBase<OpenGraphicsFlag>,
+                         public EnumSetHelper<OpenGraphicsFlag> {
     friend VirtEnumBase<OpenGraphicsFlag>;
     friend EnumSetHelper<OpenGraphicsFlag>;
     enum class Underlying {

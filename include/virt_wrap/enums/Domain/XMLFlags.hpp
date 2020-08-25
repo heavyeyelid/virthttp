@@ -3,11 +3,10 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::XmlFlag : private VirtEnumStorage<virDomainXMLFlags>, public VirtEnumBase<XmlFlag>, public EnumSetHelper<XmlFlag> {
-    friend VirtEnumBase<XmlFlag>;
-    friend EnumSetHelper<XmlFlag>;
+namespace virt::enums::domain {
+class XMLFlags : private VirtEnumStorage<virDomainXMLFlags>, public VirtEnumBase<XMLFlags>, public EnumSetHelper<XMLFlags> {
+    friend VirtEnumBase<XMLFlags>;
+    friend EnumSetHelper<XMLFlags>;
     enum class Underlying {
         DEFAULT = 0,
         SECURE = VIR_DOMAIN_XML_SECURE,         /* dump security sensitive information too */

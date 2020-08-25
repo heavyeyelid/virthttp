@@ -7,6 +7,12 @@
 #include "cexpr_algs.hpp"
 #include "depends.hpp"
 
+/**
+ * \internal
+ * rapidjson::Type variadic template to array conversion class
+ *
+ * \tparam Vs the rapidjson value types
+ **/
 template <rapidjson::Type... Vs> struct JTypeList {
     constexpr static std::array<rapidjson::Type, sizeof...(Vs)> values = {Vs...}; // note: cannot use CTAD because of the empty list case
 };
@@ -14,13 +20,29 @@ template <rapidjson::Type... Vs> struct JTypeList {
 template <class S, class R = JTypeList<>> class JDispatchVals;
 class JDispatch;
 
+/**
+ * A special JTypeList reprensenting the full set of JSON value types
+ **/
 using JAll = JTypeList<static_cast<rapidjson::Type>(-1)>;
 
+/**
+ * \internal
+ * JSON value type dispatching values
+ *
+ * \tparam Ss the value types allowed to be passed to the handler
+ * \tparam Rs the container types allowed to be passed to the handler
+ **/
 template <rapidjson::Type... Ss, rapidjson::Type... Rs> class JDispatchVals<JTypeList<Ss...>, JTypeList<Rs...>> {
     friend JDispatch;
-    constexpr static auto singles = JTypeList<Ss...>{}.values;
-    constexpr static auto ranges = JTypeList<Rs...>{}.values;
+    constexpr static auto singles = JTypeList<Ss...>{}.values; ///< Value types allowed to be passed to the handler
+    constexpr static auto ranges = JTypeList<Rs...>{}.values;  ///< Container types allowed to be passed to the handler
 
+    /**
+     * \internal
+     * Checks whether #singles and #ranges share at least one JSON type in common
+     *
+     * \return `true` if the intersection of #singles and #ranges is not an empty set, `false` otherwise
+     **/
     constexpr static bool has_one_in_both() noexcept {
         for (auto s : singles) {
             for (auto r : ranges) {
@@ -33,16 +55,35 @@ template <rapidjson::Type... Ss, rapidjson::Type... Rs> class JDispatchVals<JTyp
     static_assert(!has_one_in_both());
 };
 
+/**
+ * \internal
+ * De-templatized reference to a JDispatchVals so it can be stored in an array
+ **/
 class JDispatch {
     gsl::span<const rapidjson::Type> singles; // C++2a use std::span
     gsl::span<const rapidjson::Type> ranges;  // C++2a use std::span
 
   public:
-    template <class JDV>
-    explicit constexpr JDispatch(const JDV& jdv) noexcept
-        : singles(jdv.singles.data(), jdv.singles.size()), ranges(jdv.ranges.data(), jdv.ranges.size()) {}
+    /**
+     * \internal
+     * Constructs a JDispatch from a JDispatcherVals
+     *
+     * \tparam JDV (deduced)
+     * \param[in] jdv JDispatcherVals object to use as a source
+     **/
+    template <class JDV> explicit constexpr JDispatch(const JDV& jdv) noexcept : singles(jdv.singles), ranges(jdv.ranges) {}
+
+    /**
+     * \internal
+     * Dispatching-closure factory
+     *
+     * \tparam Hdl (deduced)
+     * \param[in] jval the JSON input value
+     * \param[in] hdl the callable which will process jval if the JSON value type is allowed
+     * \return a closure of signature void(HandlerContext&)
+     **/
     template <class Hdl> auto operator()(const rapidjson::Value& jval, Hdl&& hdl) const {
-        return [&, this, hdl](HandlerContext& hc) {
+        return [&, this, hdl = std::forward<Hdl>(hdl)](HandlerContext& hc) {
             const auto jtype = jval.GetType();
             if (!singles.empty() && static_cast<int>(singles[0]) == -1) {
                 return (void)hdl(jval);
@@ -63,6 +104,14 @@ constexpr auto gen_jdispatchers_impl(const std::tuple<JDVs...>& tup, std::index_
     return std::array{mk_jdisp(std::get<I>(tup))...};
 }
 
+/**
+ * \internal
+ * Generates an array of JDispatch from a tuple of various JDispatcherVals
+ *
+ * \tparam JDV (deduced)
+ * \param[in] tup the input tuple
+ * \return the output array
+ **/
 template <class... JDVs> constexpr auto gen_jdispatchers(const std::tuple<JDVs...>& tup) noexcept -> std::array<JDispatch, sizeof...(JDVs)> {
     return gen_jdispatchers_impl(tup, std::index_sequence_for<JDVs...>{});
 }

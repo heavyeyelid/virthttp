@@ -3,9 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::KeycodeSet : private VirtEnumStorage<virKeycodeSet>, public VirtEnumBase<KeycodeSet>, public EnumHelper<KeycodeSet> {
+namespace virt::enums::domain {
+class KeycodeSet : private VirtEnumStorage<virKeycodeSet>, public VirtEnumBase<KeycodeSet>, public EnumHelper<KeycodeSet> {
     friend VirtEnumBase<KeycodeSet>;
     friend EnumHelper<KeycodeSet>;
     enum class Underlying {

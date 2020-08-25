@@ -60,7 +60,7 @@ class TypedParams {
     constexpr TypedParams() = default;
     constexpr TypedParams(const TypedParams&) = delete;
     constexpr TypedParams(TypedParams&&) = default;
-    template <class Container> TypedParams(Container); /* container of TypedParam */
+    template <class Container> explicit TypedParams(Container); /* container of TypedParam */
     inline ~TypedParams() noexcept;
 
     constexpr Iterator begin() const noexcept;

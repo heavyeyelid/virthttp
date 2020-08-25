@@ -18,6 +18,7 @@
 #include "KeycodeSet.hpp"
 #include "Lifecycle.hpp"
 #include "LifecycleAction.hpp"
+#include "MITPFlag.hpp"
 #include "MemoryModFlag.hpp"
 #include "MetadataType.hpp"
 #include "MigrateFlag.hpp"
@@ -28,4 +29,4 @@
 #include "ShutdownFlag.hpp"
 #include "State.hpp"
 #include "UndefineFlag.hpp"
-#include "XmlFlag.hpp"
+#include "XMLFlags.hpp"

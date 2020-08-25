@@ -28,6 +28,7 @@ bool compress(std::string& body, Mode mode) noexcept {
         case Mode::gzip:
             return libdeflate_gzip_compress(c.get(), body.data(), body.size(), out.data(), libdeflate_gzip_compress_bound(c.get(), body.size()));
         }
+        UNREACHABLE;
     }();
     if (actual_compressed_size == 0)
         return false;

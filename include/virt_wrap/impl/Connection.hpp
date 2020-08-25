@@ -13,6 +13,7 @@
 #include "../Domain.hpp"
 #include "../Network.hpp"
 #include "../NodeDevice.hpp"
+#include "../StoragePool.hpp"
 #include "../fwd.hpp"
 #include "../utility.hpp"
 
@@ -26,12 +27,12 @@ unsigned long getVersion() {
 }
 
 ConnectCredential::ConnectCredential(const virConnectCredential& in) noexcept
-    : type(CredentialType(in.type)), prompt(in.prompt), challenge(in.challenge), defresult(in.defresult) {}
+    : type(enums::connection::CredentialType(in.type)), prompt(in.prompt), challenge(in.challenge), defresult(in.defresult) {}
 
 template <typename Callback>
 template <typename Container>
 inline ConnectionAuth<Callback>::ConnectionAuth(Container c, Callback callback) : callback(callback) {
-    if constexpr (std::is_same_v<Container, std::vector<CredentialType>>)
+    if constexpr (std::is_same_v<Container, std::vector<enums::connection::CredentialType>>)
         cred_types = std::forward(c);
     else {
         cred_types.reserve(c.size());
@@ -66,7 +67,8 @@ inline Connection::Connection(gsl::czstring<> name, bool rd_only) noexcept {
     underlying = rd_only ? virConnectOpenReadOnly(name) : virConnectOpen(name);
 }
 
-template <typename Callback> inline Connection::Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, Flags flags) noexcept {
+template <typename Callback>
+inline Connection::Connection(gsl::czstring<> name, ConnectionAuth<Callback>& auth, enums::connection::Flags flags) noexcept {
     virConnectAuth c_auth = auth;
     underlying = virConnectOpenAuth(name, &c_auth, to_integral(flags));
 }
@@ -113,6 +115,15 @@ void Connection::setKeepAlive(int interval, unsigned count) {
     if (virConnectSetKeepAlive(underlying, interval, count))
         throw std::runtime_error{"virConnectSetKeepAlive"};
 }
+
+[[nodiscard]] inline gsl::zstring<> Connection::findStoragePoolSources(gsl::czstring<> type, gsl::czstring<> srcSpec) const noexcept {
+    return virConnectFindStoragePoolSources(underlying, type, srcSpec, 0u);
+}
+#if LIBVIR_VERSION_NUMBER >= 5002000
+[[nodiscard]] inline gsl::zstring<> Connection::getStoragePoolCapabilities() const noexcept {
+    return virConnectGetStoragePoolCapabilities(underlying, 0u);
+}
+#endif
 
 inline gsl::zstring<> Connection::getCapabilities() const noexcept { return virConnectGetCapabilities(underlying); }
 
@@ -188,7 +199,7 @@ template <> auto Connection::listDefinedDomains<std::string>() const {
     return ret;
 }
 
-auto Connection::listAllDomains(List::Domains::Flag flags) const -> std::vector<Domain> {
+auto Connection::listAllDomains(enums::connection::list::domains::Flag flags) const -> std::vector<Domain> {
     std::vector<Domain> ret;
     gsl::owner<virDomainPtr*> domains;
 
@@ -203,15 +214,15 @@ auto Connection::listAllDomains(List::Domains::Flag flags) const -> std::vector<
     return ret;
 }
 
-auto Connection::getAllDomainStats(Domain::Stats::Types stats, Connection::GetAllDomains::Stats::Flags flags) -> std::vector<Domain::Stats::Record> {
+auto Connection::getAllDomainStats(enums::domain::stats::Types stats, enums::connection::get_all_domains::stats::Flags flags) {
     virDomainStatsRecordPtr* ptr;
     const int res = virConnectGetAllDomainStats(underlying, to_integral(stats), &ptr, to_integral(flags));
     if (res < 0)
         throw std::runtime_error{"virConnectGetAllDomainStats"};
 
-    std::vector<Domain::Stats::Record> recs;
+    std::vector<Domain::StatsRecord> recs;
     recs.reserve(static_cast<std::size_t>(res));
-    std::transform(*ptr, *ptr + res, std::back_inserter(recs), [](const virDomainStatsRecord& rec) { return Domain::Stats::Record{rec}; });
+    std::transform(*ptr, *ptr + res, std::back_inserter(recs), [](const virDomainStatsRecord& rec) { return Domain::StatsRecord{rec}; });
     virDomainStatsRecordListFree(ptr);
     return recs;
 }
@@ -230,11 +241,11 @@ Domain Connection::domainLookupByUUIDString(gsl::czstring<> uuid_str) const noex
 }
 Domain Connection::domainLookupByUUIDString(const std::string& uuid_str) const noexcept { return domainLookupByUUIDString(uuid_str.c_str()); }
 
-bool Connection::domainSaveImageDefineXML(gsl::czstring<> file, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept {
+bool Connection::domainSaveImageDefineXML(gsl::czstring<> file, gsl::czstring<> dxml, enums::domain::SaveRestoreFlag flags) noexcept {
     return virDomainSaveImageDefineXML(underlying, file, dxml, to_integral(flags)) >= 0;
 }
 
-[[nodiscard]] UniqueZstring Connection::domainSaveImageGetXMLDesc(gsl::czstring<> file, Domain::SaveImageXMLFlag flags) const noexcept {
+[[nodiscard]] UniqueZstring Connection::domainSaveImageGetXMLDesc(gsl::czstring<> file, enums::domain::SaveImageXMLFlag flags) const noexcept {
     return UniqueZstring{virDomainSaveImageGetXMLDesc(underlying, file, to_integral(flags))};
 }
 
@@ -266,7 +277,7 @@ std::vector<unsigned long long> Connection::nodeGetCellsFreeMemory() const {
     return ret;
 }
 
-[[nodiscard]] auto Connection::listAllNetworks(Connection::List::Networks::Flag flags) const noexcept {
+[[nodiscard]] auto Connection::listAllNetworks(enums::connection::list::networks::Flag flags) const noexcept {
     return virt::meta::light::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, to_integral(flags));
 }
 
@@ -287,15 +298,15 @@ auto Connection::extractNetworksNames() const -> std::vector<std::string> {
     return virt::meta::heavy::wrap_oparm_owning_fill_freeable_arr<std::string>(underlying, virConnectNumOfNetworks, virConnectListNetworks);
 }
 
-std::vector<Network> Connection::extractAllNetworks(List::Networks::Flag flags) const {
+std::vector<Network> Connection::extractAllNetworks(enums::connection::list::networks::Flag flags) const {
     return virt::meta::heavy::wrap_opram_owning_set_destroyable_arr<Network>(underlying, virConnectListAllNetworks, to_integral(flags));
 }
 
-auto Connection::listAllDevices(List::Devices::Flags flags) const noexcept {
+auto Connection::listAllDevices(enums::connection::list::devices::Flags flags) const noexcept {
     return meta::light::wrap_opram_owning_set_destroyable_arr<NodeDevice, UniqueNullTerminatedSpan>(underlying, virConnectListAllNodeDevices,
                                                                                                     to_integral(flags));
 }
-std::vector<NodeDevice> Connection::extractAllDevices(List::Devices::Flags flags) const {
+std::vector<NodeDevice> Connection::extractAllDevices(enums::connection::list::devices::Flags flags) const {
     return meta::heavy::wrap_opram_owning_set_destroyable_arr<NodeDevice>(underlying, virConnectListAllNodeDevices, to_integral(flags));
 }
 
@@ -317,35 +328,45 @@ NodeDevice Connection::deviceLookupSCSIHostByWWN(gsl::czstring<> wwnn, gsl::czst
     return NodeDevice{virNodeDeviceLookupSCSIHostByWWN(underlying, wwnn, wwpn, 0)};
 }
 
+[[nodiscard]] inline auto Connection::listAllStoragePools(enums::connection::list::storage_pool::Flag flags) const noexcept {
+    return meta::light::wrap_opram_owning_set_destroyable_arr<StoragePool>(underlying, virConnectListAllStoragePools, to_integral(flags));
+}
+[[nodiscard]] inline std::vector<StoragePool> Connection::extractAllStoragePools(enums::connection::list::storage_pool::Flag flags) const {
+    return meta::heavy::wrap_opram_owning_set_destroyable_arr<StoragePool>(underlying, virConnectListAllStoragePools, to_integral(flags));
+}
+[[nodiscard]] inline auto Connection::listDefinedStoragePoolsNames() const noexcept {
+    return meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfDefinedStoragePools, virConnectListDefinedStoragePools);
+}
+[[nodiscard]] inline auto Connection::listStoragePoolsNames() const noexcept {
+    return meta::light::wrap_oparm_owning_fill_freeable_arr(underlying, virConnectNumOfStoragePools, virConnectListStoragePools);
+}
+[[nodiscard]] inline int Connection::numOfDefinedStoragePools() const noexcept { return virConnectNumOfDefinedStoragePools(underlying); }
+[[nodiscard]] inline int Connection::numOfStoragePools() const noexcept { return virConnectNumOfStoragePools(underlying); }
+
+inline StoragePool Connection::storagePoolLookupByName(gsl::czstring<> name) const noexcept {
+    return StoragePool{virStoragePoolLookupByName(underlying, name)};
+}
+inline StoragePool Connection::storagePoolLookupByTargetPath(gsl::czstring<> path) const noexcept {
+    return StoragePool{virStoragePoolLookupByTargetPath(underlying, path)};
+}
+inline StoragePool Connection::storagePoolLookupByUUID(gsl::basic_zstring<const unsigned char> uuid) const noexcept {
+    return StoragePool{virStoragePoolLookupByUUID(underlying, uuid)};
+}
+inline StoragePool Connection::storagePoolLookupByUUIDString(gsl::czstring<> uuidstr) const noexcept {
+    return StoragePool{virStoragePoolLookupByUUIDString(underlying, uuidstr)};
+}
+
+[[nodiscard]] inline StorageVol Connection::storageVolLookupByKey(gsl::czstring<> key) const noexcept {
+    return StorageVol{virStorageVolLookupByKey(underlying, key)};
+}
+[[nodiscard]] inline StorageVol Connection::storageVolLookupByPath(gsl::czstring<> path) const noexcept {
+    return StorageVol{virStorageVolLookupByPath(underlying, path)};
+}
+
 inline bool Connection::restore(gsl::czstring<> from) noexcept { return virDomainRestore(underlying, from) == 0; }
 
-inline bool Connection::restore(gsl::czstring<> from, gsl::czstring<> dxml, Domain::SaveRestoreFlag flags) noexcept {
+inline bool Connection::restore(gsl::czstring<> from, gsl::czstring<> dxml, enums::domain::SaveRestoreFlag flags) noexcept {
     return virDomainRestoreFlags(underlying, from, dxml, to_integral(flags)) == 0;
 }
 
-constexpr inline Connection::Flags operator|(Connection::Flags lhs, Connection::Flags rhs) noexcept {
-    return Connection::Flags(to_integral(lhs) | to_integral(rhs));
-}
-
-constexpr inline Connection::List::Domains::Flag operator|(Connection::List::Domains::Flag lhs, Connection::List::Domains::Flag rhs) noexcept {
-    return Connection::List::Domains::Flag(EHTag{}, to_integral(lhs) | to_integral(rhs));
-}
-constexpr inline Connection::List::Domains::Flag& operator|=(Connection::List::Domains::Flag& lhs, Connection::List::Domains::Flag rhs) noexcept {
-    return lhs = lhs | rhs;
-}
-[[nodiscard]] constexpr inline Connection::List::Networks::Flag operator|(Connection::List::Networks::Flag lhs,
-                                                                          Connection::List::Networks::Flag rhs) noexcept {
-    return Connection::List::Networks::Flag{to_integral(lhs) | to_integral(rhs)};
-}
-constexpr inline Connection::List::Networks::Flag& operator|=(Connection::List::Networks::Flag& lhs, Connection::List::Networks::Flag rhs) noexcept {
-    return lhs = lhs | rhs;
-}
-constexpr inline Connection::GetAllDomains::Stats::Flags operator|(Connection::GetAllDomains::Stats::Flags lhs,
-                                                                   Connection::GetAllDomains::Stats::Flags rhs) noexcept {
-    return Connection::GetAllDomains::Stats::Flags(to_integral(lhs) | to_integral(rhs));
-}
-
-constexpr inline Connection::List::Devices::Flags operator|(Connection::List::Devices::Flags lhs, Connection::List::Devices::Flags rhs) noexcept {
-    return Connection::List::Devices::Flags{to_integral(lhs) | to_integral(rhs)};
-}
 }

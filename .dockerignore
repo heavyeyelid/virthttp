@@ -1,4 +1,7 @@
 .vscode
-build
+.idea
+.git*
+cmake-build-debug
 docs
+Doxyfile
 medias

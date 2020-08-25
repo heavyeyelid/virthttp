@@ -1,10 +1,11 @@
 #pragma once
+#include <optional>
 #include <tuple>
 #include <rapidjson/rapidjson.h>
 #include <virt_wrap/Error.hpp>
-#include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
 #include "wrapper/dispatch.hpp"
+#include "wrapper/domain_actions_table.hpp"
 #include "wrapper/virt2json.hpp"
 #include "base.hpp"
 #include "flagwork.hpp"
@@ -12,40 +13,71 @@
 #include "urlparser.hpp"
 #include "virt_wrap.hpp"
 
+/**
+ * \internal
+ * jdispatcher values for domain handlers as a type list
+ **/
 using DomainJDispatcherVals =
     std::tuple<JDispatchVals<JTypeList<rapidjson::kStringType, rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>,
                JDispatchVals<JTypeList<rapidjson::kObjectType>, JTypeList<rapidjson::kArrayType>>, JDispatchVals<JAll>>;
+/**
+ * \internal
+ * jdispatcher values for domain handlers as a tuple
+ **/
 constexpr DomainJDispatcherVals domain_jdispatcher_vals{};
 
+/**
+ * \internal jdispatchers for domain handlers as an array
+ **/
 constexpr std::array<JDispatch, std::tuple_size_v<DomainJDispatcherVals>> domain_jdispatchers = gen_jdispatchers(domain_jdispatcher_vals);
 
+/**
+ * \internal
+ * Domains-specific handler utilities
+ **/
 struct DomainUnawareHandlers : public HandlerContext {
     explicit DomainUnawareHandlers(HandlerContext& ctx) : HandlerContext(ctx) {}
 
-    [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
-        virt::Connection::List::Domains::Flag flags = virt::Connection::List::Domains::Flag::DEFAULT;
+    /**
+     * \internal
+     * Extractor of virt::Connection::List::Domains::Flag from a URI's target
+     *
+     * \param[in] target the target to extract the flag from
+     * \return the flag, or `std::nullopt` on error
+     * */
+    [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept
+        -> std::optional<virt::enums::connection::list::domains::Flag> {
+        using namespace virt::enums::connection::list::domains;
+        Flag flags = Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
-            flags |= *activity ? virt::Connection::List::Domains::Flag::ACTIVE : virt::Connection::List::Domains::Flag::INACTIVE;
+            flags |= *activity ? Flag::ACTIVE : Flag::INACTIVE;
         if (auto persistence = target.getBool("persistent"); persistence)
-            flags |= *persistence ? virt::Connection::List::Domains::Flag::PERSISTENT : virt::Connection::List::Domains::Flag::TRANSIENT;
+            flags |= *persistence ? Flag::PERSISTENT : Flag::TRANSIENT;
         if (auto savemgmt = target.getBool("managed_save"); savemgmt)
-            flags |= *savemgmt ? virt::Connection::List::Domains::Flag::MANAGEDSAVE : virt::Connection::List::Domains::Flag::NO_MANAGEDSAVE;
+            flags |= *savemgmt ? Flag::MANAGEDSAVE : Flag::NO_MANAGEDSAVE;
         if (auto autostart = target.getBool("autostart"); autostart)
-            flags |= *autostart ? virt::Connection::List::Domains::Flag::AUTOSTART : virt::Connection::List::Domains::Flag::NO_AUTOSTART;
+            flags |= *autostart ? Flag::AUTOSTART : Flag::NO_AUTOSTART;
         if (auto snapshot = target.getBool("has_snapshot"); snapshot)
-            flags |= *snapshot ? virt::Connection::List::Domains::Flag::HAS_SNAPSHOT : virt::Connection::List::Domains::Flag::NO_SNAPSHOT;
+            flags |= *snapshot ? Flag::HAS_SNAPSHOT : Flag::NO_SNAPSHOT;
 
-        const auto opt_flags = target_get_composable_flag<virt::Connection::List::Domains::Flag>(target, "state");
+        const auto opt_flags = target_get_composable_flag<Flag>(target, "state");
         if (!opt_flags)
             return error(301), std::nullopt;
         return {flags | *opt_flags};
     }
 };
 
+/**
+ * \internal
+ * Domain-specific handlers
+ **/
 class DomainHandlers : public HandlerMethods {
-    virt::Domain& dom;
+    virt::Domain& dom; ///< Current libvirt domain
 
   public:
+    /**
+     * \internal
+     **/
     explicit DomainHandlers(HandlerContext& ctx, virt::Domain& dom) : HandlerMethods(ctx), dom(dom) {}
 
     DependsOutcome create(const rapidjson::Value& obj) override {
@@ -66,86 +98,59 @@ class DomainHandlers : public HandlerMethods {
 
     DependsOutcome query(const rapidjson::Value& action) override {
         rapidjson::Value res_val;
-        auto& path_parts = target.getPathParts();
+        auto& jalloc = json_res.GetAllocator();
+        const auto& path_parts = target.getPathParts();
         if (path_parts.size() < 5) {
             res_val.SetObject();
             const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
             const auto os_type = dom.getOSType();
-            res_val.AddMember("name", rapidjson::Value(dom.getName(), json_res.GetAllocator()), json_res.GetAllocator());
-            res_val.AddMember("uuid", dom.extractUUIDString(), json_res.GetAllocator());
-            res_val.AddMember("id", static_cast<int>(dom.getID()), json_res.GetAllocator());
-            res_val.AddMember("status", rapidjson::StringRef(virt::Domain::State(EHTag{}, state).to_string().data()), json_res.GetAllocator());
-            res_val.AddMember("os", rapidjson::Value(os_type.get(), json_res.GetAllocator()), json_res.GetAllocator());
-            res_val.AddMember("ram", memory, json_res.GetAllocator());
-            res_val.AddMember("ram_max", max_mem, json_res.GetAllocator());
-            res_val.AddMember("cpu", nvirt_cpu, json_res.GetAllocator());
+            res_val.AddMember("name", rapidjson::Value(dom.getName(), jalloc), jalloc);
+            res_val.AddMember("uuid", dom.extractUUIDString(), jalloc);
+            res_val.AddMember("id", static_cast<int>(dom.getID()), jalloc);
+            res_val.AddMember("status", rapidjson::StringRef(virt::enums::domain::State(EHTag{}, state).to_string().data()), jalloc);
+            res_val.AddMember("os", rapidjson::Value(os_type.get(), jalloc), jalloc);
+            res_val.AddMember("ram", memory, jalloc);
+            res_val.AddMember("ram_max", max_mem, jalloc);
+            res_val.AddMember("cpu", nvirt_cpu, jalloc);
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         }
 
+
+
         const auto outcome = parameterized_depends_scope(
-            subquery(
-                "xml_desc", "options", SUBQ_LIFT(dom.getXMLDesc),
-                [&](auto xml) {
-                    return xml ? std::pair{rapidjson::Value(xml, json_res.GetAllocator()), true} : (error(-2), std::pair{rapidjson::Value{}, false});
-                },
-                ti<virt::Domain::XmlFlag>),
-            subquery("fs_info", SUBQ_LIFT(dom.getFSInfo),
-                     [&](auto fs_infos) {
-                         if (!fs_infos.get()) {
-                             error(-999); // getting filesystem information failed
-                             return std::pair{rapidjson::Value{}, false};
-                         }
+            subquery("xml_desc", "options", ti<virt::enums::domain::XMLFlags>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
+            subquery("fs_info", SUBQ_LIFT(dom.getFSInfo), fwd_as_if_err(201), // getting filesystem information failed
+                     [&](auto fs_infos, auto& jalloc) {
                          rapidjson::Value jvres;
                          for (const virDomainFSInfo& fs_info : fs_infos) {
                              rapidjson::Value sub;
-                             sub.AddMember("name", rapidjson::Value(fs_info.name, json_res.GetAllocator()), json_res.GetAllocator());
-                             sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, json_res.GetAllocator()), json_res.GetAllocator());
-                             sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, json_res.GetAllocator()), json_res.GetAllocator());
+                             sub.AddMember("name", rapidjson::Value(fs_info.name, jalloc), jalloc);
+                             sub.AddMember("mountpoint", rapidjson::Value(fs_info.mountpoint, jalloc), jalloc);
+                             sub.AddMember("fs_type", rapidjson::Value(fs_info.fstype, jalloc), jalloc);
                              {
                                  rapidjson::Value dev_aliases;
                                  dev_aliases.SetArray();
                                  for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
-                                     dev_aliases.PushBack(rapidjson::Value(dev_alias, json_res.GetAllocator()), json_res.GetAllocator());
-                                 sub.AddMember("disk_dev_aliases", dev_aliases, json_res.GetAllocator());
+                                     dev_aliases.PushBack(rapidjson::Value(dev_alias, jalloc), jalloc);
+                                 sub.AddMember("disk_dev_aliases", dev_aliases, jalloc);
                              }
-                             jvres.PushBack(sub, json_res.GetAllocator());
+                             jvres.PushBack(sub, jalloc);
                          }
-                         return std::pair{std::move(jvres), true};
+                         return jvres;
                      }),
-            subquery("hostname", SUBQ_LIFT(dom.getHostname),
-                     [&](auto hostname) {
-                         return hostname ? std::pair{rapidjson::Value(static_cast<const char*>(hostname), json_res.GetAllocator()), true}
-                                         : (error(-2), std::pair{rapidjson::Value{}, false});
-                     }),
-            subquery("time", SUBQ_LIFT(dom.getTime),
-                     [&](auto opt_time) {
-                         if (!opt_time) {
-                             error(-2);
-                             return std::pair{rapidjson::Value{}, false};
-                         }
-                         rapidjson::Value ret{};
-                         ret.SetObject();
-                         ret.AddMember("seconds", static_cast<int64_t>(opt_time->seconds), json_res.GetAllocator());
-                         ret.AddMember("nanosec", static_cast<unsigned>(opt_time->nanosec), json_res.GetAllocator());
-                         return std::pair{std::move(ret), true};
-                     }),
-            subquery("scheduler_type", SUBQ_LIFT(dom.getSchedulerType),
-                     [&](auto sp) {
-                         if (!sp.second) {
-                             error(-2);
-                             return std::pair{rapidjson::Value{}, false};
-                         }
-                         rapidjson::Value ret{};
-                         ret.SetObject();
-                         ret.AddMember("type", rapidjson::Value(static_cast<const char*>(sp.first), json_res.GetAllocator()),
-                                       json_res.GetAllocator());
-                         ret.AddMember("params_count", static_cast<int>(sp.second), json_res.GetAllocator());
-                         return std::pair{std::move(ret), true};
-                     }),
-            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), [&](const auto& otp) {
-                return otp ? std::pair{to_json(*otp, json_res.GetAllocator()), true} : (error(-2), std::pair{rapidjson::Value{}, false});
-            }))(4, target, res_val, [&](auto... args) { return error(args...); });
+            subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(-2)), subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2)),
+            subquery(
+                "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
+                [&](auto sp, auto& jalloc) {
+                    rapidjson::Value ret{};
+                    ret.SetObject();
+                    ret.AddMember("type", rapidjson::Value(static_cast<const char*>(sp.first), jalloc), jalloc);
+                    ret.AddMember("params_count", static_cast<int>(sp.second), jalloc);
+                    return ret;
+                }),
+            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2)))(4, target, res_val, json_res.GetAllocator(),
+                                                                                                       [&](auto... args) { return error(args...); });
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
         return outcome;
@@ -154,24 +159,25 @@ class DomainHandlers : public HandlerMethods {
         const auto& action_obj = *action.MemberBegin();
         const auto& [action_name, action_val] = action_obj;
         const auto hdl = domain_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-        return hdl ? hdl(action_val, json_res, dom, key_str) : (error(123), DependsOutcome::FAILURE);
+        return hdl ? hdl(action_val, json_res, dom) : (error(123), DependsOutcome::FAILURE);
     }
     DependsOutcome vacuum(const rapidjson::Value& action) override {
+        auto& jalloc = json_res.GetAllocator();
         auto success = [&] {
             rapidjson::Value res_val;
             res_val.SetObject();
-            res_val.AddMember("deleted", true, json_res.GetAllocator());
+            res_val.AddMember("deleted", true, jalloc);
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         };
         auto failure = [&] {
             rapidjson::Value msg_val;
             msg_val.SetObject();
-            msg_val.AddMember("libvirt", rapidjson::Value(virt::extractLastError().message, json_res.GetAllocator()), json_res.GetAllocator());
+            msg_val.AddMember("libvirt", rapidjson::Value(virt::extractLastError().message, jalloc), jalloc);
             json_res.message(std::move(msg_val));
             return error(216), DependsOutcome::FAILURE;
         };
-        const auto opt_flags = target_get_composable_flag<virt::Domain::UndefineFlag>(target, "options");
+        const auto opt_flags = target_get_composable_flag<virt::enums::domain::UndefineFlag>(target, "options");
         if (!opt_flags)
             return error(301), DependsOutcome::FAILURE;
         return dom.undefine(*opt_flags) ? success() : failure();

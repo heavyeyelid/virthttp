@@ -54,8 +54,8 @@ For more examples and a usage reference, see the [API documentation](https://git
 ## Building
 
 **!! IMPORTANT !!**  
-While compiling for any other target than Linux or BSD based OSes, there is no platform-dependent code in this repository.  
-Also, we currently only test with **Clang [7,8,9]**; GCC support used to be present and we are working on bringing it back again.
+While compiling for any other target than Linux or BSD based OSes, there is no platform-dependent code in this repository.
+Also, we currently only test with **Clang [7,8,9]** and **GCC [8,9]**
 
 ### Dependencies *(debian packages)*
 - libvirt-dev
@@ -76,3 +76,9 @@ $ cd build/
 $ cmake ..
 $ make -j $(nproc) # or simply 'ninja' if you use ninja-build 
 ```
+
+### Generating developer documentation
+
+This project uses Doxygen for its developer documentation.  
+To generate the HTML version from the code, simply run `doxygen Doxyfile` at the root directory of this repository;
+you will find the generated HTML in a new `doc/` folder.

@@ -8,6 +8,10 @@
 #include <INIReader.h>
 #include "logger.hpp"
 
+/**
+ * \internal
+ * Runtime configuration loader
+ **/
 class IniConfig {
   private:
     std::string default_http_auth_key = "123456789abcdefgh";

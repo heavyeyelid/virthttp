@@ -3,11 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::DestroyFlag : private VirtEnumStorage<virDomainDestroyFlagsValues>,
-                            public VirtEnumBase<DestroyFlag>,
-                            public EnumSetHelper<DestroyFlag> {
+namespace virt::enums::domain {
+class DestroyFlag : private VirtEnumStorage<virDomainDestroyFlagsValues>, public VirtEnumBase<DestroyFlag>, public EnumSetHelper<DestroyFlag> {
     friend VirtEnumBase<DestroyFlag>;
     friend EnumSetHelper<DestroyFlag>;
     enum class Underlying {

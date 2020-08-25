@@ -3,11 +3,10 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::ModificationImpactFlag : private VirtEnumStorage<virDomainModificationImpact>,
-                                       public VirtEnumBase<ModificationImpactFlag>,
-                                       public EnumSetHelper<ModificationImpactFlag> {
+namespace virt::enums::domain {
+class ModificationImpactFlag : private VirtEnumStorage<virDomainModificationImpact>,
+                               public VirtEnumBase<ModificationImpactFlag>,
+                               public EnumSetHelper<ModificationImpactFlag> {
     friend VirtEnumBase<ModificationImpactFlag>;
     friend EnumSetHelper<ModificationImpactFlag>;
     enum class Underlying {

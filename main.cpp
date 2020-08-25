@@ -10,6 +10,12 @@
 
 using namespace std::literals;
 
+/**
+ * \internal
+ * \brief Program entry-point
+ *
+ * Loads the config, opens the listening port, and launches the threads
+ **/
 int main(int argc, char** argv) {
     GeneralStore gstore{IniConfig{"config.ini"}};
 
@@ -36,6 +42,5 @@ int main(int argc, char** argv) {
         v.emplace_back([&ioc] { ioc.run(); });
     ioc.run();
 
-    // iniConfig.reset(nullptr); // Better to run destructors in the lifetime of main
     return EXIT_SUCCESS;
 }

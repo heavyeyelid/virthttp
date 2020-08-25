@@ -29,13 +29,13 @@ class Session : public std::enable_shared_from_this<Session> {
             // Write the response
             boost::beast::http::async_write(
                 self_.socket_, *sp,
-                boost::beast::net::bind_executor(self_.strand_, std::bind(&Session::on_write, self_.shared_from_this(), std::placeholders::_1,
+                boost::asio::bind_executor(self_.strand_, std::bind(&Session::on_write, self_.shared_from_this(), std::placeholders::_1,
                                                                           std::placeholders::_2, sp->need_eof())));
         }
     };
 
-    boost::beast::net::ip::tcp::socket socket_;
-    boost::beast::net::strand<boost::beast::net::ip::tcp::socket::executor_type> strand_;
+    boost::asio::ip::tcp::socket socket_;
+    boost::asio::strand<boost::asio::ip::tcp::socket::executor_type> strand_;
     boost::beast::flat_buffer buffer_;
     std::reference_wrapper<GeneralStore> m_gstore;
     boost::beast::http::request<boost::beast::http::string_body> req_;
@@ -44,7 +44,7 @@ class Session : public std::enable_shared_from_this<Session> {
 
   public:
     // Take ownership of the socket
-    explicit Session(boost::beast::net::ip::tcp::socket socket, GeneralStore& gstore)
+    explicit Session(boost::asio::ip::tcp::socket socket, GeneralStore& gstore)
         : socket_(std::move(socket)), strand_(socket_.get_executor()), m_gstore(gstore), lambda_(*this) {}
 
     // Start the asynchronous operation
@@ -57,7 +57,7 @@ class Session : public std::enable_shared_from_this<Session> {
 
         // Read a request
         boost::beast::http::async_read(socket_, buffer_, req_,
-                                       boost::beast::net::bind_executor(
+                                       boost::asio::bind_executor(
                                            strand_, std::bind(&Session::on_read, shared_from_this(), std::placeholders::_1, std::placeholders::_2)));
     }
 
@@ -97,7 +97,7 @@ class Session : public std::enable_shared_from_this<Session> {
     void do_close() {
         // Send a TCP shutdown
         boost::beast::error_code ec;
-        socket_.shutdown(boost::beast::net::ip::tcp::socket::shutdown_send, ec);
+        socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
 
         // At this point the connection is closed gracefully
     }
