@@ -23,4 +23,13 @@ struct HandlerContext {
         -> decltype(json_res.error(std::forward<Args>(args)...)) {
         return json_res.error(std::forward<Args>(args)...);
     };
+
+    const auto fwd_err(bool fwd, int code) {
+        if (!fwd)
+            error(code);
+        return fwd;
+    };
+    const auto fwd_as_if_err(int code) {
+        return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); };
+    };
 };

@@ -3,9 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::ConsoleFlag : private VirtEnumStorage<virDomainConsoleFlags>, public VirtEnumBase<ConsoleFlag>, public EnumSetHelper<ConsoleFlag> {
+namespace virt::enums::domain {
+class ConsoleFlag : private VirtEnumStorage<virDomainConsoleFlags>, public VirtEnumBase<ConsoleFlag>, public EnumSetHelper<ConsoleFlag> {
     friend VirtEnumBase<ConsoleFlag>;
     friend EnumSetHelper<ConsoleFlag>;
     enum class Underlying {

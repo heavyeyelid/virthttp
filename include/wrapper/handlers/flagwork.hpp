@@ -136,11 +136,15 @@ auto subquery(std::string_view name, std::string_view opt_tag, [[maybe_unused]] 
         if (target.getPathParts()[sq_lev] == name) {
             using Flag = typename TI::type;
             Flag flag{};
-            const auto opt_flags = target_get_composable_flag<Flag>(target, opt_tag);
-            if (!opt_flags)
-                return error(301), DependsOutcome::FAILURE;
-            flag = *opt_flags;
-            auto&& res = lifted(flag);
+            if constexpr (std::is_same_v<Flag, std::string_view> || std::is_same_v<Flag, std::string>)
+                flag = target[opt_tag];
+            else {
+                const auto opt_flags = target_get_composable_flag<Flag>(target, opt_tag);
+                if (!opt_flags)
+                    return error(301), DependsOutcome::FAILURE;
+                flag = *opt_flags;
+            }
+            auto&& res = lifted(std::move(flag));
             return valid_check(res) ? (res_val = std::move(to_json(std::move(res))), DependsOutcome::SUCCESS) : DependsOutcome::FAILURE;
         }
         return DependsOutcome::SKIPPED;

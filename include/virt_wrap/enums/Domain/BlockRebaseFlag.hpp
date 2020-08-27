@@ -3,11 +3,10 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::BlockRebaseFlag : private VirtEnumStorage<virDomainBlockRebaseFlags>,
-                                public VirtEnumBase<BlockRebaseFlag>,
-                                public EnumSetHelper<BlockRebaseFlag> {
+namespace virt::enums::domain {
+class BlockRebaseFlag : private VirtEnumStorage<virDomainBlockRebaseFlags>,
+                        public VirtEnumBase<BlockRebaseFlag>,
+                        public EnumSetHelper<BlockRebaseFlag> {
     friend VirtEnumBase<BlockRebaseFlag>;
     friend EnumSetHelper<BlockRebaseFlag>;
     enum class Underlying {

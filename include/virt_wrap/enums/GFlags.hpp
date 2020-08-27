@@ -2,10 +2,10 @@
 
 #include <array>
 #include <libvirt/libvirt.h>
-#include "enums/Base.hpp"
-#include "utility.hpp"
+#include "../utility.hpp"
+#include "Base.hpp"
 
-namespace virt {
+namespace virt::enums {
 
 class TypedParameterFlag : private VirtEnumStorage<virTypedParameterFlags>,
                            public VirtEnumBase<TypedParameterFlag>,

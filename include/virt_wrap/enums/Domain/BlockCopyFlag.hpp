@@ -3,10 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-class Domain::BlockCopyFlag : private VirtEnumStorage<virDomainBlockCopyFlags>,
-                              public VirtEnumBase<BlockCopyFlag>,
-                              public EnumSetHelper<BlockCopyFlag> {
+namespace virt::enums::domain {
+class BlockCopyFlag : private VirtEnumStorage<virDomainBlockCopyFlags>, public VirtEnumBase<BlockCopyFlag>, public EnumSetHelper<BlockCopyFlag> {
     friend VirtEnumBase<BlockCopyFlag>;
     friend EnumSetHelper<BlockCopyFlag>;
     enum class Underlying {

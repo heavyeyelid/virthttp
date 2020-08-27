@@ -3,9 +3,9 @@
 #include <tuple>
 #include <boost/json.hpp>
 #include <virt_wrap/Error.hpp>
-#include "wrapper/actions_table.hpp"
 #include "wrapper/depends.hpp"
 #include "wrapper/dispatch.hpp"
+#include "wrapper/domain_actions_table.hpp"
 #include "wrapper/virt2json.hpp"
 #include "base.hpp"
 #include "flagwork.hpp"
@@ -45,20 +45,22 @@ struct DomainUnawareHandlers : public HandlerContext {
      * \param[in] target the target to extract the flag from
      * \return the flag, or `std::nullopt` on error
      * */
-    [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept -> std::optional<virt::Connection::List::Domains::Flag> {
-        virt::Connection::List::Domains::Flag flags = virt::Connection::List::Domains::Flag::DEFAULT;
+    [[nodiscard]] constexpr auto search_all_flags(const TargetParser& target) const noexcept
+        -> std::optional<virt::enums::connection::list::domains::Flag> {
+        using namespace virt::enums::connection::list::domains;
+        Flag flags = Flag::DEFAULT;
         if (auto activity = target.getBool("active"); activity)
-            flags |= *activity ? virt::Connection::List::Domains::Flag::ACTIVE : virt::Connection::List::Domains::Flag::INACTIVE;
+            flags |= *activity ? Flag::ACTIVE : Flag::INACTIVE;
         if (auto persistence = target.getBool("persistent"); persistence)
-            flags |= *persistence ? virt::Connection::List::Domains::Flag::PERSISTENT : virt::Connection::List::Domains::Flag::TRANSIENT;
+            flags |= *persistence ? Flag::PERSISTENT : Flag::TRANSIENT;
         if (auto savemgmt = target.getBool("managed_save"); savemgmt)
-            flags |= *savemgmt ? virt::Connection::List::Domains::Flag::MANAGEDSAVE : virt::Connection::List::Domains::Flag::NO_MANAGEDSAVE;
+            flags |= *savemgmt ? Flag::MANAGEDSAVE : Flag::NO_MANAGEDSAVE;
         if (auto autostart = target.getBool("autostart"); autostart)
-            flags |= *autostart ? virt::Connection::List::Domains::Flag::AUTOSTART : virt::Connection::List::Domains::Flag::NO_AUTOSTART;
+            flags |= *autostart ? Flag::AUTOSTART : Flag::NO_AUTOSTART;
         if (auto snapshot = target.getBool("has_snapshot"); snapshot)
-            flags |= *snapshot ? virt::Connection::List::Domains::Flag::HAS_SNAPSHOT : virt::Connection::List::Domains::Flag::NO_SNAPSHOT;
+            flags |= *snapshot ? Flag::HAS_SNAPSHOT : Flag::NO_SNAPSHOT;
 
-        const auto opt_flags = target_get_composable_flag<virt::Connection::List::Domains::Flag>(target, "state");
+        const auto opt_flags = target_get_composable_flag<Flag>(target, "state");
         if (!opt_flags)
             return error(301), std::nullopt;
         return {flags | *opt_flags};
@@ -96,7 +98,7 @@ class DomainHandlers : public HandlerMethods {
 
     DependsOutcome query(const boost::json::value& action) override {
         boost::json::value res_val;
-        auto& path_parts = target.getPathParts();
+        const auto& path_parts = target.getPathParts();
         if (path_parts.size() < 5) {
             auto& res_obj = res_val.emplace_object();
             const auto [state, max_mem, memory, nvirt_cpu, cpu_time] = dom.getInfo();
@@ -104,7 +106,7 @@ class DomainHandlers : public HandlerMethods {
             res_obj.emplace("name", dom.getName());
             res_obj.emplace("uuid", dom.extractUUIDString());
             res_obj.emplace("id", static_cast<int>(dom.getID()));
-            res_obj.emplace("status", virt::Domain::State(EHTag{}, state).to_string());
+            res_obj.emplace("status", virt::enums::domain::State(EHTag{}, state).to_string());
             res_obj.emplace("os", os_type.get());
             res_obj.emplace("ram", memory);
             res_obj.emplace("ram_max", max_mem);
@@ -113,15 +115,10 @@ class DomainHandlers : public HandlerMethods {
             return DependsOutcome::SUCCESS;
         }
 
-        const auto fwd_err = [&](bool fwd, int code) -> bool {
-            if (!fwd)
-                error(code);
-            return fwd;
-        };
-        const auto fwd_as_if_err = [&](int code) { return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); }; };
+
 
         const auto outcome = parameterized_depends_scope(
-            subquery("xml_desc", "options", ti<virt::Domain::XmlFlag>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
+            subquery("xml_desc", "options", ti<virt::enums::domain::XMLFlags>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
             subquery("fs_info", SUBQ_LIFT(dom.getFSInfo), fwd_as_if_err(201), // getting filesystem information failed
                      [&](auto fs_infos) {
                          boost::json::array jvres;
@@ -162,7 +159,7 @@ class DomainHandlers : public HandlerMethods {
             json_res.message(boost::json::object{{"libvirt", virt::extractLastError().message}});
             return error(216), DependsOutcome::FAILURE;
         };
-        const auto opt_flags = target_get_composable_flag<virt::Domain::UndefineFlag>(target, "options");
+        const auto opt_flags = target_get_composable_flag<virt::enums::domain::UndefineFlag>(target, "options");
         if (!opt_flags)
             return error(301), DependsOutcome::FAILURE;
         return dom.undefine(*opt_flags) ? success() : failure();

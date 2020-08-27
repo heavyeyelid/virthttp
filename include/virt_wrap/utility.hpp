@@ -22,6 +22,7 @@
 template <typename E, std::enable_if_t<std::is_enum_v<E>, int> = 0> constexpr inline decltype(auto) to_integral(E e) {
     return static_cast<typename std::underlying_type<E>::type>(e);
 }
+template <typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0> constexpr inline decltype(auto) to_integral(T v) { return v; }
 
 class Empty {};
 

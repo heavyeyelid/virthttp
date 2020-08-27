@@ -3,11 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::ShutdownFlag : private VirtEnumStorage<virDomainShutdownFlagValues>,
-                             public VirtEnumBase<ShutdownFlag>,
-                             public EnumSetHelper<ShutdownFlag> {
+namespace virt::enums::domain {
+class ShutdownFlag : private VirtEnumStorage<virDomainShutdownFlagValues>, public VirtEnumBase<ShutdownFlag>, public EnumSetHelper<ShutdownFlag> {
     friend VirtEnumBase<ShutdownFlag>;
     friend EnumSetHelper<ShutdownFlag>;
     enum class Underlying {

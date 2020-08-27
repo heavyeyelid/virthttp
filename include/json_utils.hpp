@@ -44,8 +44,10 @@ struct JsonRes : public boost::json::object {
         err.emplace("code", code);
         err.emplace("message", error_messages[code]);
 
-        if (auto vir_err = virt::extractLastError(); vir_err)
-            err.emplace("libvirt", vir_err.message);
+        if (code > 100 || code < 0) {
+            if (auto vir_err = virt::extractLastError(); vir_err)
+                err.emplace("libvirt", vir_err.message);
+        }
 
         (*this)["errors"].get_array().push_back(err);
     };

@@ -3,9 +3,8 @@
 #include "virt_wrap/utility.hpp"
 #include <libvirt/libvirt-domain.h>
 
-namespace virt {
-
-class Domain::CreateFlag : private VirtEnumStorage<virDomainCreateFlags>, public VirtEnumBase<CreateFlag>, public EnumSetHelper<CreateFlag> {
+namespace virt::enums::domain {
+class CreateFlag : private VirtEnumStorage<virDomainCreateFlags>, public VirtEnumBase<CreateFlag>, public EnumSetHelper<CreateFlag> {
     friend VirtEnumBase<CreateFlag>;
     friend EnumSetHelper<CreateFlag>;
     enum class Underlying {
