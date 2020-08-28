@@ -205,17 +205,6 @@ enum class SetTimeFlag {
 enum class SetUserPasswordFlag {
     ENCRYPTED = VIR_DOMAIN_PASSWORD_ENCRYPTED, /* the password is already encrypted */
 };
-enum class VCpuFlag {
-    /* See ModificationImpactFlag for these flags.  */
-    CURRENT = VIR_DOMAIN_VCPU_CURRENT,
-    LIVE = VIR_DOMAIN_VCPU_LIVE,
-    CONFIG = VIR_DOMAIN_VCPU_CONFIG,
-
-    /* Additionally, these flags may be bitwise-OR'd in.  */
-    MAXIMUM = VIR_DOMAIN_VCPU_MAXIMUM,           /* Max rather than current count */
-    GUEST = VIR_DOMAIN_VCPU_GUEST,               /* Modify state of the cpu in the guest */
-    HOTPLUGGABLE = VIR_DOMAIN_VCPU_HOTPLUGGABLE, /* Make vcpus added hot(un)pluggable */
-};
 
 class SaveRestoreFlag;
 } // namespace virt::enums::domain

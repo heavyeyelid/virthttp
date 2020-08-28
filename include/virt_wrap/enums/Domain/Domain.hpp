@@ -29,4 +29,5 @@
 #include "ShutdownFlag.hpp"
 #include "State.hpp"
 #include "UndefineFlag.hpp"
+#include "VCpuFlag.hpp"
 #include "XMLFlags.hpp"

@@ -35,6 +35,8 @@ inline auto to_json(const virt::TypedParams& tp) noexcept -> boost::json::value 
     return ret;
 }
 
+inline auto to_json(int i) -> boost::json::value { return {i}; }
+
 inline auto to_json(const char* cstr) -> boost::json::value { return {cstr}; }
 
 inline auto to_json(UniqueZstring zstr) -> boost::json::value { return to_json(static_cast<const char*>(zstr)); }
@@ -42,9 +44,7 @@ inline auto to_json(UniqueZstring zstr) -> boost::json::value { return to_json(s
 using VirtWrappedDomainTime = decltype(*std::declval<virt::Domain>().getTime());
 
 auto to_json(VirtWrappedDomainTime time) -> boost::json::value {
-    return boost::json::object{
-        {"seconds", static_cast<int64_t>(time.seconds)},
-        {"nanosec", static_cast<unsigned>(time.nanosec)}
+    return boost::json::object{{"seconds", static_cast<int64_t>(time.seconds)}, {"nanosec", static_cast<unsigned>(time.nanosec)}
     };
 }
 

@@ -115,7 +115,13 @@ class DomainHandlers : public HandlerMethods {
             return DependsOutcome::SUCCESS;
         }
 
-
+        const auto fwd_err = [&](bool fwd, int code) -> bool {
+            if (!fwd)
+                error(code);
+            return fwd;
+        };
+        const auto fwd_as_pred_err = [&](int code, auto pred) { return [&, code, pred](const auto& arg) { return fwd_err(pred(arg), code); }; };
+        const auto fwd_as_if_err = [&](int code) { return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); }; };
 
         const auto outcome = parameterized_depends_scope(
             subquery("xml_desc", "options", ti<virt::enums::domain::XMLFlags>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
@@ -134,6 +140,10 @@ class DomainHandlers : public HandlerMethods {
                          return jvres;
                      }),
             subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(-2)), subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2)),
+            subquery("max_memory", SUBQ_LIFT(dom.getMaxMemory), fwd_as_if_err(-2)),
+            subquery("max_vcpus", SUBQ_LIFT(dom.getMaxVcpus), fwd_as_pred_err(-2, [](int val) { return val >= 0; })),
+            subquery("num_vcpus", "options", ti<virt::enums::domain::VCpuFlag>, SUBQ_LIFT(dom.getNumVcpus),
+                     fwd_as_pred_err(-2, [](int val) { return val >= 0; })),
             subquery(
                 "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
                 [&](auto sp) -> boost::json::object {

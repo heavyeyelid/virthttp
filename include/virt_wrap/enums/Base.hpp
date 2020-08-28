@@ -49,11 +49,16 @@ template <class... Es> class EnumSetTie {
     Underlying underlying;
 
   public:
-    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
-    constexpr explicit EnumSetTie(E v) : underlying(v) {}
-    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_convertible_v<E, Underlying>, std::is_same_v<E, Es>...>>>
-    constexpr EnumSetTie& operator=(E v) noexcept {
+    constexpr EnumSetTie() noexcept = default;
+    constexpr EnumSetTie(Underlying v) : underlying{v} {}
+    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_same<E, Es>...>>>
+    constexpr explicit EnumSetTie(E v) : underlying(to_integral(v)) {}
+    constexpr EnumSetTie& operator=(Underlying v) noexcept {
         underlying = v;
+        return *this;
+    }
+    template <class E, class = std::enable_if_t<std::disjunction_v<std::is_same<E, Es>...>>> constexpr EnumSetTie& operator=(E v) noexcept {
+        underlying = to_integral(v);
         return *this;
     }
     friend constexpr auto to_integral(EnumSetTie est) { return est.underlying; }
@@ -61,7 +66,7 @@ template <class... Es> class EnumSetTie {
     constexpr static auto from_string(std::string_view sv) {
         std::optional<EnumSetTie<Es...>> ret{};
         visit(std::tuple<Es...>{}, [=, &ret](auto ec) {
-            if (const auto res = decltype(ec)::from_string(sv); res)
+            if (const auto res = decltype(ec)::from_string(sv); !ret && res)
                 ret = *res;
         });
         return ret;
