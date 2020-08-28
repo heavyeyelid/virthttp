@@ -137,7 +137,7 @@ class NetworkHandlers : public HandlerMethods {
                                            {"persistent", json_is_persistent}};
 
             if (path_parts.size() == 4)
-                res_val.emplace("bridge", nw.getBridgeName());
+                res_val.emplace("bridge", to_json(nw.getBridgeName()));
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         }

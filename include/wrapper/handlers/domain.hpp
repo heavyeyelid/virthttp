@@ -128,7 +128,7 @@ class DomainHandlers : public HandlerMethods {
                              sub.emplace("mountpoint", fs_info.mountpoint);
                              sub.emplace("fs_type", fs_info.fstype);
                              auto& dev_aliases = sub["disk_dev_aliases"].emplace_array();
-                             for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<long>(fs_info.ndevAlias)})
+                             for (const char* dev_alias : gsl::span{fs_info.devAlias, static_cast<unsigned>(fs_info.ndevAlias)})
                                  dev_aliases.emplace_back(dev_alias);
                          }
                          return jvres;

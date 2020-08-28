@@ -584,7 +584,7 @@ class Domain::heavy::IOThreadInfo {
     inline ~IOThreadInfo() = default;
     constexpr unsigned iothread_id() const noexcept { return m_iothread_id; }
     constexpr unsigned& iothread_id() noexcept { return m_iothread_id; }
-    gsl::span<const unsigned char> cpumap() const noexcept { return {m_cpumap.data(), static_cast<long>(m_cpumap.size())}; }
+    gsl::span<const unsigned char> cpumap() const noexcept { return {m_cpumap.data(), static_cast<unsigned>(m_cpumap.size())}; }
     CpuMap cpumap() noexcept { return {m_cpumap.data(), static_cast<int>(m_cpumap.size())}; }
 };
 
