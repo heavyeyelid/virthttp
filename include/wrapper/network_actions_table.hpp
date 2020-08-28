@@ -16,7 +16,7 @@
 #include "json_utils.hpp"
 #include "utils.hpp"
 
-using NetworkActionsHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Network& nw);
+using NetworkActionsHdl = DependsOutcome (*)(const boost::json::value& val, JsonRes& json_res, virt::Network& nw);
 class NetworkActionsTable : public NamedCallTable<NetworkActionsTable, NetworkActionsHdl> {
   private:
     friend NamedCallTable<NetworkActionsTable, NetworkActionsHdl>;

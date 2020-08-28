@@ -153,10 +153,9 @@ class NetworkHandlers : public HandlerMethods {
     }
 
     auto alter(const boost::json::value& action) -> DependsOutcome override {
-        const auto& action_obj = action;
-        const auto& [action_name, action_val] = action_obj;
-        const auto hdl = network_actions_table[std::string_view{action_name.GetString(), action_name.GetStringLength()}];
-        return hdl ? hdl(action_val, json_res, nw) : (error(123), DependsOutcome::FAILURE);
+        const auto& [key, value] = *action.get_object().begin();
+        const auto hdl = network_actions_table[key];
+        return hdl ? hdl(value, json_res, nw) : (error(123), DependsOutcome::FAILURE);
     }
 
     auto vacuum(const boost::json::value& action) -> DependsOutcome override {

@@ -7,7 +7,7 @@
 #include "virt_wrap/Domain.hpp"
 #include "actions_table.hpp"
 
-using DomainActionsHdl = DependsOutcome (*)(const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom);
+using DomainActionsHdl = DependsOutcome (*)(const boost::json::value& val, JsonRes& json_res, virt::Domain& dom);
 class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActionsHdl> {
   private:
     friend NamedCallTable<DomainActionsTable, DomainActionsHdl>;
@@ -16,31 +16,29 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
 
     constexpr static std::array<std::string_view, 7> keys = {"power_mgt", "name", "memory", "max_memory", "autostart", "send_signal", "send_keys"};
     constexpr static std::array<Hdl, 7> fcns = {
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
+        +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
             auto pm_message = [&](gsl::czstring<> name, gsl::czstring<> value) {
-                rapidjson::Value msg_val{};
-                msg_val.SetObject();
-                msg_val.AddMember(rapidjson::StringRef(name), rapidjson::StringRef(value), json_res.GetAllocator());
-                json_res.message(msg_val);
+                json_res.message(boost::json::object{{name, value}});
                 return DependsOutcome::SUCCESS;
             };
 
             constexpr auto getShutdownFlag = getFlag<virt::enums::domain::ShutdownFlag>;
 
-            const rapidjson::Value* json_flag = nullptr;
+            const boost::json::value* json_flag = nullptr;
             gsl::czstring<> pm_req{};
 
-            if (val.IsString()) {
-                pm_req = val.GetString();
-            } else if (val.IsObject()) {
-                auto it_req = val.FindMember("request");
-                auto it_flags = val.FindMember("type");
-                if (it_req == val.MemberEnd())
+            if (val.is_string()) {
+                pm_req = val.get_string().c_str();
+            } else if (val.is_object()) {
+                const auto& obj = val.get_object();
+                auto it_req = obj.find("request");
+                auto it_flags = obj.find("type");
+                if (it_req == obj.end())
                     return error(300);
-                if (it_flags != val.MemberEnd())
-                    json_flag = &it_flags->value;
-                pm_req = it_req->value.GetString();
+                if (it_flags != obj.end())
+                    json_flag = &it_flags->value();
+                pm_req = it_req->value().get_string().c_str();
             } else {
                 return error(300);
             }
@@ -98,65 +96,68 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                        PM_PREREQ(if (dom_state != virt::enums::domain::State::PAUSED) return error(211);)),
                 [&]() { return error(300); });
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
+        +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.IsString())
+            if (!val.is_string())
                 return error(0);
-            if (!dom.rename(val.GetString()))
+            if (!dom.rename(val.get_string().c_str()))
                 return error(205);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
+        +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.IsInt())
+            if (!val.is_int64())
                 return error(0);
-            if (!dom.setMemory(val.GetInt()))
+            if (!dom.setMemory(val.get_uint64()))
                 return error(206);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
+        +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.IsInt())
+            if (!val.is_int64())
                 return error(0);
-            if (!dom.setMaxMemory(val.GetInt()))
+            if (!dom.setMaxMemory(val.get_uint64()))
                 return error(207);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
+        +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.IsBool())
+            if (!val.is_bool())
                 return error(0);
-            if (!dom.setAutoStart(val.GetBool()))
+            if (!dom.setAutoStart(val.get_bool()))
                 return error(208);
             return DependsOutcome::SUCCESS;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
+        +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             const auto res = wrap_fcn(
                 val, json_res, [&](auto... args) { return dom.sendProcessSignal(args...); }, WArg<JTag::Int64>{"pid"},
                 WArg<JTag::Enum, JTag::None, virt::enums::domain::ProcessSignal>{"signal"});
             return res ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
         },
-        +[](const rapidjson::Value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
+        +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.IsObject())
+            if (!val.is_object())
                 return error(0);
+            const auto& val_obj = val.get_object();
 
-            const auto keycodeset_opt = extract_param<JTag::Enum, JTag::None, virt::enums::domain::KeycodeSet>(val, "keycode_set", json_res);
+            const auto keycodeset_opt =
+                extract_param<JTag::Enum, JTag::None, virt::enums::domain::KeycodeSet>(val_obj, "keycode_set", json_res);
             if (!keycodeset_opt)
                 return error(0);
             const auto keycodeset = *keycodeset_opt;
 
-            const auto holdtime_opt = extract_param<JTag::Uint32>(val, "hold_time", json_res);
+            const auto holdtime_opt = extract_param<JTag::Uint64>(val_obj, "hold_time", json_res);
             if (!holdtime_opt)
                 return error(0);
             const auto holdtime = *holdtime_opt;
 
-            const auto keys_opt = extract_param<JTag::Array, JTag::Uint32>(val, "keys", json_res);
+            const auto keys_opt = extract_param<JTag::Array, JTag::Uint64>(val_obj, "keys", json_res);
             if (!keys_opt)
                 return error(0);
             const auto keys = *keys_opt;
+            std::vector<unsigned> narrow_keys{keys.begin(), keys.end()};
 
-            return dom.sendKey(keycodeset, holdtime, gsl::span(keys.data(), keys.size())) ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
+            return dom.sendKey(keycodeset, holdtime, narrow_keys) ? DependsOutcome::SUCCESS : DependsOutcome::FAILURE;
         }};
     static_assert(keys.size() == fcns.size());
 } constexpr static const domain_actions_table{};

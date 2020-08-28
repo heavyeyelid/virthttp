@@ -31,7 +31,7 @@ template <class F> auto getCombinedFlags(const boost::json::value& json_flag, Js
             for (const auto& json_el : json_arr) {
                 if (!json_el.is_string())
                     return std::nullopt;
-                const auto v = getFlag<F>(json_el, error);
+                const auto v = getFlag<F>(json_el.get_string(), error);
                 if (!v)
                     return std::nullopt;
                 flagset |= *v;
@@ -39,10 +39,10 @@ template <class F> auto getCombinedFlags(const boost::json::value& json_flag, Js
         } else {
             if (json_arr.size() > 1)
                 return error(301);
-            return {json_arr.empty() ? F{} : getFlag<F>(json_arr[0], error)};
+            return {json_arr.empty() ? F{} : getFlag<F>(json_arr[0].get_string(), error)};
         }
     } else if (json_flag.is_string()) {
-        const auto v = getFlag<F>(json_flag, error);
+        const auto v = getFlag<F>(json_flag.get_string(), error);
         if (!v)
             return std::nullopt;
         flagset = *v;
