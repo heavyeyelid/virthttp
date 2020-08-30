@@ -39,7 +39,14 @@ boost::json::string handle_json(GeneralStore& gstore, const http::request<Body, 
         if (idx < 0)
             return error(3);
         const auto mth = HandlerMethods::methods[idx];
-        auto json_req = boost::json::parse(req.body());
+        const auto& body = req.body();
+        boost::json::value json_req{};
+        if (!body.empty()) {
+            std::error_code ec;
+            json_req = boost::json::parse(req.body(), ec);
+            if (ec)
+                return error(8);
+        }
 
         auto exec = jdispatchers[idx](json_req, [&](const auto& jval) { return (hdls.*mth)(jval); });
         if (skip_resolve)

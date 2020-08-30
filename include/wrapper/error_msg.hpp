@@ -24,6 +24,7 @@ class ErrorMessages {
         P{5, "Bad subsystem"sv},
         P{6, "Subsystem requires parameters"},
         P{7, "Bad subsystem parameter"},
+        P{8, "Malformed JSON body"},
         P{10, "Failed to open connection to the libvirt daemon"sv},
         P{100, "Bad object identifier"sv},
         P{101, "Invalid search key"sv},

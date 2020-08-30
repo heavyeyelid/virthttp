@@ -85,7 +85,7 @@ class JDispatch {
     template <class Hdl> auto operator()(const boost::json::value& jval, Hdl&& hdl) const {
         return [&, this, hdl = std::forward<Hdl>(hdl)](HandlerContext& hc) {
             const auto jkind = jval.kind();
-            if (!singles.empty() && static_cast<int>(singles[0]) == -1) {
+            if (!singles.empty() && singles[0] == boost::json::kind(-1)) {
                 return (void)hdl(jval);
             } else {
                 if (cexpr::find(singles.begin(), singles.end(), jkind) != singles.end())
