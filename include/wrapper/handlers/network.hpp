@@ -82,7 +82,7 @@ class NetworkHandlers : public HandlerMethods {
         const auto create_nw = [&](std::string_view xml) {
             nw = virt::Network::createXML(conn, xml.data());
             if (!nw)
-                return error(-999), DependsOutcome::FAILURE;
+                return error(999), DependsOutcome::FAILURE;
             boost::json::value res_val;
             json_res.result(boost::json::object{{"created", true}});
             return DependsOutcome::SUCCESS;
@@ -93,7 +93,7 @@ class NetworkHandlers : public HandlerMethods {
         if (obj.is_array()) {
             for (const auto& item : obj.get_array()) {
                 if (!item.is_string())
-                    return error(-999), DependsOutcome::FAILURE; // Not a string array
+                    return error(999), DependsOutcome::FAILURE; // Not a string array
                 if (create_nw(item.get_string()) == DependsOutcome::FAILURE)
                     return DependsOutcome::FAILURE; // Error while creating network
             }
@@ -143,9 +143,9 @@ class NetworkHandlers : public HandlerMethods {
         }
 
         const auto outcome =
-            parameterized_depends_scope(subquery("dhcp-leases", "mac", ti<std::string>, SUBQ_LIFT(nw.extractDHCPLeases), fwd_as_if_err(-2)),
+            parameterized_depends_scope(subquery("dhcp-leases", "mac", ti<std::string>, SUBQ_LIFT(nw.extractDHCPLeases), fwd_as_if_err(999)),
                                         subquery("dumpxml", "options", ti<virt::enums::network::XMLFlags>, SUBQ_LIFT(nw.getXMLDesc),
-                                                 fwd_as_if_err(-2)))(4, target, res_val, [&](auto... args) { return error(args...); });
+                                                 fwd_as_if_err(999)))(4, target, res_val, [&](auto... args) { return error(args...); });
 
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
@@ -165,7 +165,7 @@ class NetworkHandlers : public HandlerMethods {
         };
         const auto failure = [&] {
             json_res.message(boost::json::object{{"libvirt", virt::extractLastError().message}});
-            return error(-999), DependsOutcome::FAILURE;
+            return error(999), DependsOutcome::FAILURE;
         };
         return nw.undefine() ? success() : failure();
     }

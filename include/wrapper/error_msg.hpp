@@ -54,6 +54,7 @@ class ErrorMessages {
         P{301, "Invalid flag"sv},
         P{500, "Error occurred while getting network status"sv},
         P{503, "Error occurred while getting network autostart"sv},
+        P{999, "libvirt error"},
     };
 
   public:

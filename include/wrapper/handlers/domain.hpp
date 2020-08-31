@@ -124,7 +124,7 @@ class DomainHandlers : public HandlerMethods {
         const auto fwd_as_if_err = [&](int code) { return [&, code](const auto& arg) { return fwd_err(static_cast<bool>(arg), code); }; };
 
         const auto outcome = parameterized_depends_scope(
-            subquery("xml_desc", "options", ti<virt::enums::domain::XMLFlags>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(-2)),
+            subquery("xml_desc", "options", ti<virt::enums::domain::XMLFlags>, SUBQ_LIFT(dom.getXMLDesc), fwd_as_if_err(999)),
             subquery("fs_info", SUBQ_LIFT(dom.getFSInfo), fwd_as_if_err(201), // getting filesystem information failed
                      [&](auto fs_infos) {
                          boost::json::array jvres;
@@ -139,17 +139,17 @@ class DomainHandlers : public HandlerMethods {
                          }
                          return jvres;
                      }),
-            subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(-2)), subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(-2)),
-            subquery("max_memory", SUBQ_LIFT(dom.getMaxMemory), fwd_as_if_err(-2)),
-            subquery("max_vcpus", SUBQ_LIFT(dom.getMaxVcpus), fwd_as_pred_err(-2, [](int val) { return val >= 0; })),
+            subquery("hostname", SUBQ_LIFT(dom.getHostname), fwd_as_if_err(999)), subquery("time", SUBQ_LIFT(dom.getTime), fwd_as_if_err(999)),
+            subquery("max_memory", SUBQ_LIFT(dom.getMaxMemory), fwd_as_if_err(999)),
+            subquery("max_vcpus", SUBQ_LIFT(dom.getMaxVcpus), fwd_as_pred_err(999, [](int val) { return val >= 0; })),
             subquery("num_vcpus", "options", ti<virt::enums::domain::VCpuFlag>, SUBQ_LIFT(dom.getNumVcpus),
-                     fwd_as_pred_err(-2, [](int val) { return val >= 0; })),
+                     fwd_as_pred_err(999, [](int val) { return val >= 0; })),
             subquery(
-                "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, -2); },
+                "scheduler_type", SUBQ_LIFT(dom.getSchedulerType), [&](const auto& sp) { return fwd_err(sp.second, 999); },
                 [&](auto sp) -> boost::json::object {
                     return {{"type", static_cast<const char*>(sp.first)}, {"params_count", static_cast<int>(sp.second)}};
                 }),
-            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(-2)))(4, target, res_val,
+            subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(999)))(4, target, res_val,
                                                                                                        [&](auto... args) { return error(args...); });
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
