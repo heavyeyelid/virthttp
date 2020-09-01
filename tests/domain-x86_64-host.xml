@@ -1,0 +1,11 @@
+<domain type='qemu'>
+  <name>test</name>
+  <memory unit='KiB'>131072</memory>
+  <os>
+    <type arch='i686' machine='pc'>hvm</type>
+  </os>
+  <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+  </devices>
+</domain>
+
