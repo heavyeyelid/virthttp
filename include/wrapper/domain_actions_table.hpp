@@ -114,7 +114,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
         },
         +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.is_int64())
+            if (!val.is_uint64())
                 return error(0);
             if (!dom.setMaxMemory(val.get_uint64()))
                 return error(207);
@@ -140,8 +140,7 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
                 return error(0);
             const auto& val_obj = val.get_object();
 
-            const auto keycodeset_opt =
-                extract_param<JTag::Enum, JTag::None, virt::enums::domain::KeycodeSet>(val_obj, "keycode_set", json_res);
+            const auto keycodeset_opt = extract_param<JTag::Enum, JTag::None, virt::enums::domain::KeycodeSet>(val_obj, "keycode_set", json_res);
             if (!keycodeset_opt)
                 return error(0);
             const auto keycodeset = *keycodeset_opt;
