@@ -111,6 +111,7 @@ class DomainHandlers : public HandlerMethods {
             res_obj.emplace("ram", memory);
             res_obj.emplace("ram_max", max_mem);
             res_obj.emplace("cpu", nvirt_cpu);
+            res_obj.emplace("autostart", dom.getAutostart());
             json_res.result(std::move(res_val));
             return DependsOutcome::SUCCESS;
         }
@@ -150,7 +151,7 @@ class DomainHandlers : public HandlerMethods {
                     return {{"type", static_cast<const char*>(sp.first)}, {"params_count", static_cast<int>(sp.second)}};
                 }),
             subquery("launch_security_info", SUBQ_LIFT(dom.getLaunchSecurityInfo), fwd_as_if_err(999)))(4, target, res_val,
-                                                                                                       [&](auto... args) { return error(args...); });
+                                                                                                        [&](auto... args) { return error(args...); });
         if (outcome == DependsOutcome::SUCCESS)
             json_res.result(std::move(res_val));
         return outcome;
