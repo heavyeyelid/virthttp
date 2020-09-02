@@ -55,21 +55,22 @@ def pw_mgt_test(action):
         exit(9)
 
 
+if action_table_test('max_memory', 196608)["ram_max"] != 196608:
+    exit(10)
+
 pw_mgt_test('start')
+
+if action_table_test('memory', 196608)["ram"] != 196608:
+    exit(11)
+
 pw_mgt_test('reset')
 pw_mgt_test('suspend')
 pw_mgt_test('resume')
 pw_mgt_test('destroy')
 
 if action_table_test('name', TEST_DOMAIN_NAME + '_renamed')["name"] != TEST_DOMAIN_NAME + '_renamed':
-    exit(10)
+    exit(12)
 if not requests.patch(API_URI + '/by-uuid/' + domain_uuid, json={"name": TEST_DOMAIN_NAME}).json()["success"]:
-    exit(10)
-
-if action_table_test('memory', 196608)["ram"] != 196608:
-    exit(11)
-
-if action_table_test('max_memory', 262144)["max_memory"]["ram_max"] != 262144:
     exit(12)
 
 if not action_table_test('autostart', True)["autostart"]:
