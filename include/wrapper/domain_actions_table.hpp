@@ -106,17 +106,21 @@ class DomainActionsTable : public NamedCallTable<DomainActionsTable, DomainActio
         },
         +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.is_int64())
+            boost::json::error_code ec;
+            auto memory = boost::json::number_cast<uint64_t>(val, ec);
+            if (ec)
                 return error(0);
-            if (!dom.setMemory(val.get_uint64()))
+            if (!dom.setMemory(memory))
                 return error(206);
             return DependsOutcome::SUCCESS;
         },
         +[](const boost::json::value& val, JsonRes& json_res, virt::Domain& dom) -> DependsOutcome {
             auto error = [&](auto... args) { return json_res.error(args...), DependsOutcome::FAILURE; };
-            if (!val.is_uint64())
+            boost::json::error_code ec;
+            auto max_memory = boost::json::number_cast<uint64_t>(val, ec);
+            if (ec)
                 return error(0);
-            if (!dom.setMaxMemory(val.get_uint64()))
+            if (!dom.setMaxMemory(max_memory))
                 return error(207);
             return DependsOutcome::SUCCESS;
         },
