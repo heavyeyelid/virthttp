@@ -7,7 +7,7 @@ fi
 ## Defines all variables that will be used in tests ##
 {
   echo "LIBVIRT_URI=qemu:///system"
-  echo "API_URI=http://127.0.0.1:8081/libvirt/domains"
+  echo "API_URI=http://127.0.0.1:8081/libvirt"
   echo "ARCH=$(uname -m)"
   echo "TEST_DOMAIN_NAME=test"
   echo "TEST_NETWORK_NAME=test"
